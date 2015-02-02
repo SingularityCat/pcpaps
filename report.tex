@@ -1,0 +1,101 @@
+\documentclass[10pt,a4paper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{lmodern}
+\usepackage{tabularx}
+\usepackage{float}
+\usepackage{listingsutf8}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+
+% Shamelessly pinched from 'dbaupp'. cheers!
+% http://tex.stackexchange.com/questions/51645/x86-64-assembler-language-dialect-for-the-listings-package
+\lstdefinelanguage
+   [x64]{Assembler}     % add a "x64" dialect of Assembler
+   [x86masm]{Assembler} % based on the "x86masm" dialect
+   % with these extra keywords:
+   {morekeywords={CDQE,CQO,CMPSQ,CMPXCHG16B,JRCXZ,LODSQ,MOVSXD, %
+                  POPFQ,PUSHFQ,SCASQ,STOSQ,IRETQ,RDTSCP,SWAPGS, %
+                  SYSCALL, %
+                  rax,rdx,rcx,rbx,rsi,rdi,rsp,rbp, %
+                  r8,r8d,r8w,r8b,r9,r9d,r9w,r9b}} % etc.
+
+\author{Elliot Thomas\\ University of Westminster}
+\title{Network Packet Capture Generation and Falsification}
+\date{\today}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+\end{abstract}
+\pagebreak
+\tableofcontents
+
+\chapter{Introduction}
+Education is important. Education is one of the underpinnings of a progessive society, along with law and order and a few other things.
+Despite this, it seems human ingenuity is educations greatest enemy. Humans are lazy - most of us will strive to do as little work as possible for the greatest gain.
+We seek to make our lives better, easier, all to spend more time on the things we enjoy. For many, this will be leisure activities, for some, socialising, the humble few may take joy in aulturism.
+But motivations are irrelevant here, just the effects.
+In academia, plagarism is problem - people are unwilling to put the time in to do their own work. They realise that if someone else has solved a problem identical to theirs, they could just reuse that.
+What these people fail to realise, is that there is no substitute for experience. This problem is relevant in all fields, academic or applied, practical or theoretical; computer security and forensics is no exeception.
+
+\section{The Problem}
+Teaching network security and forensics is aided greatly by the presentation of example packet captures. These are used to learn and practice analytical skills, and to assess the level of understanding and knowledge that students hold.
+Creating such packet captures is not difficult, but there are few tools availible for automating the process.
+
+\section{Existing Solutions}
+Suprisingly few, it would seem.
+
+\subsection{editcap}
+Editcap is a program Distributed as part of wireshark.
+
+From manpage\cite{editcap-man}:
+\indent Editcap is a program that reads some or all of the captured packets from the infile, optionally converts them in various ways and writes the resulting packets to the capture outfile (or outfiles).
+
+Relevant functionality:
+ - Allows splitting a file into a series of files,
+   according to the time they were sent; ie, splitting every 2 seconds:
+   (1, 1, 2, 3, 5, 7, 8) -> (1, 1, 2), (3), (5), (7, 8)
+
+\chapter{Research}
+\section{Programming language}
+Choosing a programming language is, obviously, a decision that needs to be made, and there is no single correct choice. There are many factors influencing such a decision, each one needs to be considered. There were three major factors considered in this decision: requirements - what does the program require? knowledge - how difficult will it be to program in and maintain? availibility - on what platforms can projects using this language be used?
+At it's heart, this project is a data processing project. There are no requirements for real-time processing, no requirements for concurrency, no requirement to make use of or implement a specific API nor requirements for any kind of interactive behaviour. This project can very easily be designed and implemented as a batch program - give input, run program, get output.
+
+Given the minimalistic requirements of the program, just about any turing-complete language is servicable. As such, the decision will have to be made predominantly on the other three factors. That's not to say entirely, some languages lend themselves quite well to generic data manipulation, while others are more specilised and geared towards specific purposes. For instance, Javascript is more suited towards web-based projects (given that it's usual interpreter is a web browser), while C, Java and Python are more general purpose. Haskell, Java and Python have good support for abstract data structures while various assembly languages barely have the notion of a data type.
+
+Knowledge is a subjective factor that pertains to the programmer(s) developing the project. It is a limiting factor; a programmer proficient in C is not necessarily going to be able to understand a very different language such as Haskell. Also worth mentioning is simple preference - while not a overriding factor - can help shape a choice.
+
+Availibility for most languages is somewhat of a non-issue. Given that portability is a desirable outcome, only languages which have a usable and consistent enough implementation across platforms will be considered. This eliminates some languages such as C sharp, Visual Basic (or any .NET language).
+It is also worth noting portability - are there provisions for file input/output? In the case of the various assembly languages, this is left to the programmer. Even if the assembly language itself is abstract and portable, it only dictates how the processor is used. For instance, on Linux, to write data to 'stdout' (standard output),
+
+\begin{lstlisting}[language={[x64]Assembler}]
+mov rax, 1   ; system call constant for write on Linux64
+mov rdi, 1   ; first argument: file descriptor to write to, in this case, stdout.
+mov rsi, msg ; second argument: buffer holding data to be written.
+mov rdx, len ; third argument: number of bytes to write.
+syscall      ; Do the system call. Similair to int 0x80.
+\end{lstlisting}
+
+Time was the unspoken major factor in this decision, and given the liberty to choose any programming language means ones in which the programmer has experience will take precedence. This means that languages designed with unfamiliar paradigms (such as Haskell, being a functional programming language\cite{haskfunc})
+
+\subsection{Python 2 or Python 3?}
+
+\section{Libraries}
+\section{}
+
+\begin{thebibliography}{99}
+\bibitem{editcap-man}
+    Richard Sharpe, Guy Harris, Ulf Lamping, 2014-11-12\\
+    EDITCAP (1), The Wireshark Network Analyzer
+
+\bibitem{haskfunc}
+    The Haskell 98 Report, Introduction\\
+    
+    \url{https://www.haskell.org/onlinereport/intro.html} (December, 2014)
+
+\end{thebibliography}
+\end{document}
