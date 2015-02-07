@@ -1,5 +1,5 @@
 import struct
-from . import packetfile
+from .common import PacketInfo, PacketReader, PacketWriter
 
 """
 pcap: Contains classes for reading and writing to pcap files.
@@ -58,10 +58,10 @@ Raises PcapFormatError on invalid magic."""
         packet_header_struct = PCAP_BE_PKT_HDR
         if magic.endswith(b"\xc3\xd4"):
             # Regular (microsecond) big-endian pcap file
-            timescale = 10**3
+            timescale = 10**6
         elif magic.endswith(b"\x3c\x4d"):
             # Nanosecond big-endian pcap file
-            timescale = 10**6
+            timescale = 10**9
         else:
             raise PcapFormatError("Invalid magic {0}".format(magic))
     elif magic.endswith(b"\xb2\xa1"):
@@ -71,10 +71,10 @@ Raises PcapFormatError on invalid magic."""
 
         if magic.startswith(b"\xd4\xc3"):
             # Regular (microsecond) little-endian pcap file
-            timescale = 10**3
+            timescale = 10**6
         elif magic.startswith(b"\xd4\xc3"):
             # Nanosecond little-endian pcap file
-            timescale = 10**6
+            timescale = 10**9
         else:
             raise PcapFormatError("Invalid magic {0}".format(magic))
     else:
@@ -93,7 +93,7 @@ class PcapRangeError(RuntimeError):
     pass
 
 
-class PcapReader(packetfile.PacketReader):
+class PcapReader(PacketReader):
     """PcapReader: reader for pcap files."""
     def __init__(self, fstream, magic=None):
         """Creates a PcapReader from an open stream.
@@ -138,14 +138,14 @@ Returns a PacketInfo tuple and data, or (None, None) on EOF"""
         packet_header = self.packet_header_struct.unpack(packet_header_data)
         packet_data = self.stream.read(packet_header[2])
 
-        packet_info = packetfile.PacketInfo(self.network,
-            packet_header[0], packet_header[1] * (10**6 // self.timescale),
+        packet_info = PacketInfo(
+            packet_header[0], packet_header[1] * (10**9 // self.timescale),
             packet_header[2], packet_header[3])
 
         return packet_info, packet_data
 
 
-class PcapWriter(packetfile.PacketWriter):
+class PcapWriter(PacketWriter):
     """"""
     def __init__(self, stream, magic=PCAP_LE_REGULAR, snaplen=65535, network=1):
         """Setup a new PcapWriter object, and write the header to file."""
@@ -164,14 +164,11 @@ class PcapWriter(packetfile.PacketWriter):
 
     def write_packet(self, packet_info, packet_data):
         """Writes a packet record header and data to the stream."""
-        # Can only write one kind of network in a pcap file.
-        if packet_info.network != self.network:
-            raise PcapRangeError("Tried writing packet with a different network type")
 
         # We truncate packet_data to either the packet_info or snaplen limits, if needed.
         maxlen = min(self.snaplen, packet_info.caplen, len(packet_data))
         packet_header_data = self.packet_header_struct.pack(
-            packet_info.timestamp, (packet_info.nanosec * self.timescale) // 10**6,
+            packet_info.timestamp, (packet_info.nanosec * self.timescale) // 10**9,
             maxlen, packet_info.origlen)
 
         self.stream.write(packet_header_data)
