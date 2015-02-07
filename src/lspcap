@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+
+import sys
+from packetfile import pcap, common
+
+f = open(sys.argv[1], "rb")
+
+reader = pcap.PcapReader(f)
+
+while True:
+    pi, pd = reader.read_packet()
+    if pi == None or pd == None:
+        break
+
+    common.print_packetinfo(pi)
