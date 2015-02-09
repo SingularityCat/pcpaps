@@ -1,5 +1,6 @@
 import struct
-from .common import PacketInfo, PacketReader, PacketWriter
+
+from .common import Packet, PacketReader, PacketWriter
 
 """
 pcap: Contains classes for reading and writing to pcap files.
@@ -125,12 +126,12 @@ Takes one mandatory and one optional argument,
 
     def read_packet(self):
         """Reads a packet record header and it's data from the stream.
-Returns a PacketInfo tuple and data, or (None, None) on EOF"""
+Returns a Packet tuple, or None on EOF"""
         packet_header_data = self.stream.read(self.packet_header_struct.size)
         # Test for EOF or truncation
         if packet_header_data == b"":
             # EOF
-            return None, None
+            return None
         elif 0 < len(packet_header_data) < self.packet_header_struct.size:
             # Truncation
             raise PcapFormatError("Stream truncated.")
@@ -138,18 +139,21 @@ Returns a PacketInfo tuple and data, or (None, None) on EOF"""
         packet_header = self.packet_header_struct.unpack(packet_header_data)
         packet_data = self.stream.read(packet_header[2])
 
-        packet_info = PacketInfo(
-            packet_header[0], packet_header[1] * (10**9 // self.timescale),
-            packet_header[2], packet_header[3])
+        # (unixtime, origlen, data)
+        packet = Packet(
+            packet_header[0] + self.thiszone + (packet_header[1] / self.timescale),
+            packet_header[3],
+            packet_data)
 
-        return packet_info, packet_data
+        return packet
 
 
 class PcapWriter(PacketWriter):
     """"""
-    def __init__(self, stream, magic=PCAP_LE_REGULAR, snaplen=65535, network=1):
-        """Setup a new PcapWriter object, and write the header to file."""
+    def __init__(self, stream, magic=PCAP_LE_REGULAR, thiszone=0, snaplen=65535, network=1):
+        """Setup a new PcapWriter object, and write a global header to the stream."""
         self.stream = stream
+        self.thiszone = thiszone
         self.snaplen = snaplen
         self.network = network
 
@@ -162,14 +166,17 @@ class PcapWriter(PacketWriter):
             PCAP_MAJOR_VER, PCAP_MINOR_VER, 0, 0,
             self.snaplen, self.network))
 
-    def write_packet(self, packet_info, packet_data):
+    def write_packet(self, packet):
         """Writes a packet record header and data to the stream."""
 
-        # We truncate packet_data to either the packet_info or snaplen limits, if needed.
-        maxlen = min(self.snaplen, packet_info.caplen, len(packet_data))
-        packet_header_data = self.packet_header_struct.pack(
-            packet_info.timestamp, (packet_info.nanosec * self.timescale) // 10**9,
-            maxlen, packet_info.origlen)
+        # Truncate packet.data to the snaplen limit, if needed.
+        maxlen = min(self.snaplen, len(packet.data))
 
-        self.stream.write(packet_header_data)
-        self.stream.write(packet_data[:maxlen])
+        # Build packet record header.
+        packet_header = self.packet_header_struct.pack(
+            int(packet.unixtime) - self.thiszone,
+            round((packet.unixtime % 1.0) * self.timescale),
+            maxlen, packet.origlen)
+
+        self.stream.write(packet_header)
+        self.stream.write(packet.data[:maxlen])
