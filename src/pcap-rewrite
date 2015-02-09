@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+
+import sys
+
+from packetfile import pcap
+
+prf = open(sys.argv[1], "rb")
+pwf = open(sys.argv[2], "wb")
+
+pr = pcap.PcapReader(prf)
+pw = pcap.PcapWriter(pwf)
+
+while True:
+    pkt = pr.read_packet()
+    if pkt is None:
+        break
+    pw.write_packet(pkt)
+
+
