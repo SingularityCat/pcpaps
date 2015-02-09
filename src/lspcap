@@ -8,8 +8,8 @@ f = open(sys.argv[1], "rb")
 reader = pcap.PcapReader(f)
 
 while True:
-    pi, pd = reader.read_packet()
-    if pi == None or pd == None:
+    pkt = reader.read_packet()
+    if pkt is None:
         break
 
-    common.print_packetinfo(pi)
+    common.print_packetinfo(pkt)
