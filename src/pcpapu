@@ -11,6 +11,8 @@ it can be imported and extended programatically.
 import sys
 import argparse
 
+import datetime
+
 import readline
 import code
 
@@ -19,14 +21,33 @@ from packetfile import packetfile
 pycon = code.InteractiveConsole(locals=locals())
 
 
+def merge(preaders, relative=True, offset=None):
+    """Function that takes a list of PacketReaders, and returns a single list of Packets."""
+    # Create a local copy of the 'preaders' argument.
+    tails = preaders[:]
+    heads = [src.read_packet() for src in tails]
+    queues = len(tails)
+    packets = []
+
+    while queues > 0:
+        # Delete Nones from head/tail lists
+        for i in range(0, queues):
+            if heads[i] is None:
+                
+        
+    
+
 # Set up the argparse based commandline argument parser.
 parser = argparse.ArgumentParser(description="Generate and doctor packet captures.")
 parser.add_argument(dest="outpath", help="output file")
 parser.add_argument("-i", "--in", dest="inpaths", action="append", required=True, help="Input file")
+parser.add_argument("-t", "--time-offset", dest="time_offset", action="store", help="Time offset, in Y/M/D H:M:S format.")
 
 # Logical program entry point.
 if __name__ == "__main__":
     arguments = parser.parse_args(sys.argv)
+    # Open all packet capture files.
+    packetfiles = [packetfile.pf_open_read(path) for path in parser.inpaths]
 
     pycon.interact()
     
