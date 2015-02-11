@@ -147,6 +147,10 @@ Returns a Packet tuple, or None on EOF"""
 
         return packet
 
+    def close(self):
+        """Closes the stream."""
+        self.stream.close()
+
 
 class PcapWriter(PacketWriter):
     """"""
@@ -180,3 +184,7 @@ class PcapWriter(PacketWriter):
 
         self.stream.write(packet_header)
         self.stream.write(packet.data[:maxlen])
+
+    def close(self):
+        """Closes the stream."""
+        self.stream.close()
