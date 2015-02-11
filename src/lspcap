@@ -7,9 +7,5 @@ f = open(sys.argv[1], "rb")
 
 reader = pcap.PcapReader(f)
 
-while True:
-    pkt = reader.read_packet()
-    if pkt is None:
-        break
-
+for pkt in reader:
     common.print_packetinfo(pkt)
