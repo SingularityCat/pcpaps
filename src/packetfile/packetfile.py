@@ -8,7 +8,7 @@ class PacketFileUnknwonFormatError(RuntimeError):
     """Exception raised when a file is unable to be opened."""
     pass
 
-def packetfile_open_read(fpath, **kwargs):
+def pf_open_read(fpath, **kwargs):
     """Function that tries to open a packet capture file for reading."""
     extension = os.path.splitext(fpath)[1]
 
@@ -31,7 +31,7 @@ def packetfile_open_read(fpath, **kwargs):
     raise PacketFileUnknownFormatError("Can't identify file format.")
 
 
-def packetfile_open_write(fpath, **kwargs):
+def pf_open_write(fpath, **kwargs):
     """Function that tries to open a packet capture file for writing."""
     extension = os.path.splitext(fpath)[1]
 
