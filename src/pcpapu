@@ -31,10 +31,27 @@ def merge(preaders, relative=True, offset=None):
 
     while queues > 0:
         # Delete Nones from head/tail lists
-        for i in range(0, queues):
+        i = 0
+        while i < queues:
             if heads[i] is None:
-                
-        
+                del heads[i]
+                del tails[i]
+                queues -= 1
+                continue
+            else:
+                i += 1
+
+        min_p = heads[0]
+        min_idx = 0
+        for j in range(1, queues):
+            if heads[j] < min_p:
+                min_p = heads[j]
+                min_idx = j
+        packets.append(heads[min_idx])
+        heads[min_idx] = tails[min_idx].read_packet()
+                i += 1
+
+    return packets
     
 
 # Set up the argparse based commandline argument parser.

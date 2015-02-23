@@ -62,14 +62,14 @@ Relevant functionality:
 
 \chapter{Research}
 \section{Programming language}
-Choosing a programming language is, obviously, a decision that needs to be made, and there is no single correct choice. There are many factors influencing such a decision, each one needs to be considered. There were three major factors considered in this decision: requirements - what does the program require? knowledge - how difficult will it be to program in and maintain? availibility - on what platforms can projects using this language be used?
+Choosing a programming language is, obviously, a decision that needs to be made, and there is no single correct choice. There are many factors influencing such a decision, each one needs to be considered. There were three major factors considered in this decision: requirements - what does the program require? knowledge - how difficult will it be to program in and maintain? availability - on what platforms can projects using this language be used?
 At it's heart, this project is a data processing project. There are no requirements for real-time processing, no requirements for concurrency, no requirement to make use of or implement a specific API nor requirements for any kind of interactive behaviour. This project can very easily be designed and implemented as a batch program - give input, run program, get output.
 
-Given the minimalistic requirements of the program, just about any turing-complete language is servicable. As such, the decision will have to be made predominantly on the other three factors. That's not to say entirely, some languages lend themselves quite well to generic data manipulation, while others are more specilised and geared towards specific purposes. For instance, Javascript is more suited towards web-based projects (given that it's usual interpreter is a web browser), while C, Java and Python are more general purpose. Haskell, Java and Python have good support for abstract data structures while various assembly languages barely have the notion of a data type.
+Given the minimalistic requirements of the program, just about any turing-complete language is serviceable. As such, the decision will have to be made predominantly on the other three factors. That's not to say entirely, some languages lend themselves quite well to generic data manipulation, while others are more specialised and geared towards specific purposes. For instance, Javascript is more suited towards web-based projects (given that it's usual interpreter is a web browser), while C, Java and Python are more general purpose. Haskell, Java and Python have good support for abstract data structures while various assembly languages barely have the notion of a data type.
 
 Knowledge is a subjective factor that pertains to the programmer(s) developing the project. It is a limiting factor; a programmer proficient in C is not necessarily going to be able to understand a very different language such as Haskell. Also worth mentioning is simple preference - while not a overriding factor - can help shape a choice.
 
-Availibility for most languages is somewhat of a non-issue. Given that portability is a desirable outcome, only languages which have a usable and consistent enough implementation across platforms will be considered. This eliminates some languages such as C sharp, Visual Basic (or any .NET language).
+Availability for most languages is somewhat of a non-issue. Given that portability is a desirable outcome, only languages which have a usable and consistent enough implementation across platforms will be considered. This eliminates some languages such as C sharp, Visual Basic (or any .NET language).
 It is also worth noting portability - are there provisions for file input/output? In the case of the various assembly languages, this is left to the programmer. Even if the assembly language itself is abstract and portable, it only dictates how the processor is used. For instance, on Linux, to write data to 'stdout' (standard output),
 
 \begin{lstlisting}[language={[x64]Assembler}]
@@ -85,7 +85,9 @@ Time was the unspoken major factor in this decision, and given the liberty to ch
 \subsection{Python 2 or Python 3?}
 
 \section{Libraries}
-\section{}
+\chapter{Appendix}
+\section{Formats}
+Pcap file format.
 
 \begin{thebibliography}{99}
 \bibitem{editcap-man}
