@@ -2,7 +2,7 @@
 
 import sys
 
-from packetfile import pcap
+from packet.capfile import pcap
 
 prf = open(sys.argv[1], "rb")
 pwf = open(sys.argv[2], "wb")

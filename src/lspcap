@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 import sys
-from packetfile import pcap, common
+from packet import common
+from packet.capfile import pcap
 
 f = open(sys.argv[1], "rb")
 

@@ -16,7 +16,8 @@ import datetime
 import readline
 import code
 
-from packetfile import packetfile
+from packet import 
+from packet.capfile import packetfile
 
 pycon = code.InteractiveConsole(locals=locals())
 
@@ -26,6 +27,7 @@ def merge(preaders, relative=True, offset=None):
     # Create a local copy of the 'preaders' argument.
     tails = preaders[:]
     heads = [src.read_packet() for src in tails]
+    
     queues = len(tails)
     packets = []
 
@@ -47,14 +49,14 @@ def merge(preaders, relative=True, offset=None):
             if heads[j] < min_p:
                 min_p = heads[j]
                 min_idx = j
-        packets.append(heads[min_idx])
-        heads[min_idx] = tails[min_idx].read_packet()
+                packets.append(heads[min_idx])
+                heads[min_idx] = tails[min_idx].read_packet()
                 i += 1
 
     return packets
     
 
-# Set up the argparse based commandline argument parser.
+# Set up the argument parser.
 parser = argparse.ArgumentParser(description="Generate and doctor packet captures.")
 parser.add_argument(dest="outpath", help="output file")
 parser.add_argument("-i", "--in", dest="inpaths", action="append", required=True, help="Input file")
@@ -65,6 +67,8 @@ if __name__ == "__main__":
     arguments = parser.parse_args(sys.argv)
     # Open all packet capture files.
     packetfiles = [packetfile.pf_open_read(path) for path in parser.inpaths]
+
+    packets = merge(packetfiles)
 
     pycon.interact()
     
