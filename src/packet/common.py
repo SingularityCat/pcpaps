@@ -6,6 +6,8 @@ import time
 common:
  - Definition for the 'Packet' named tuple
  - Functions for operating on the 'Packet' named tuple.
+Contains two constants, PACKET_MINAGE and PACKET_MAXAGE, two
+psuedopackets being older then or newer then all other packets, respectively.
 """
 
 class Packet(collections.namedtuple("Packet", ["unixtime", "origlen", "data"])):
@@ -42,6 +44,10 @@ The length is 'origlen', so len(a) < len(b) means a was shorter then b."""
     # len(a) < len(b) means a has an original length shorter then b.
     def __len__(self):
         return self.origlen
+
+
+PACKET_MINAGE = Packet(float("-inf"), 0, b"")
+PACKET_MAXAGE = Packet(float("+inf"), 0, b"")
 
 
 def print_packetinfo(packet):
