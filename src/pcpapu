@@ -16,7 +16,7 @@ import datetime
 import readline
 import code
 
-from packet import 
+from packet import common
 from packet.capfile import packetfile
 
 pycon = code.InteractiveConsole(locals=locals())
@@ -27,6 +27,7 @@ def merge(preaders, relative=True, offset=None):
     # Create a local copy of the 'preaders' argument.
     tails = preaders[:]
     heads = [src.read_packet() for src in tails]
+    times = [pkt.unixtime if pkt is not None else None for pkt in heads]
     
     queues = len(tails)
     packets = []
@@ -43,15 +44,13 @@ def merge(preaders, relative=True, offset=None):
             else:
                 i += 1
 
-        min_p = heads[0]
-        min_idx = 0
-        for j in range(1, queues):
+        min_p = common.PACKET_MAXAGE
+        for j in range(0, queues):
             if heads[j] < min_p:
                 min_p = heads[j]
                 min_idx = j
-                packets.append(heads[min_idx])
-                heads[min_idx] = tails[min_idx].read_packet()
-                i += 1
+        packets.append(heads[min_idx])
+        heads[min_idx] = tails[min_idx].read_packet()
 
     return packets
     
@@ -66,7 +65,7 @@ parser.add_argument("-t", "--time-offset", dest="time_offset", action="store", h
 if __name__ == "__main__":
     arguments = parser.parse_args(sys.argv)
     # Open all packet capture files.
-    packetfiles = [packetfile.pf_open_read(path) for path in parser.inpaths]
+    packetfiles = [packetfile.pf_open_read(path) for path in arguments.inpaths]
 
     packets = merge(packetfiles)
 
