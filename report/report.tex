@@ -1,15 +1,37 @@
-\documentclass[10pt,a4paper]{report}
+\documentclass[10pt,a4paper,notitlepage]{report}
 \usepackage[utf8]{inputenc}
+
+% For mathematical typesetting.
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
-\usepackage{graphicx}
+
+% Better rendition of computer modern.
 \usepackage{lmodern}
+
+% Provides an extended tabular environment.
 \usepackage{tabularx}
+
+% For images.
+\usepackage{graphicx}
 \usepackage{float}
+
+% For source code listings.
 \usepackage{listingsutf8}
+
+% For fancy captions.
+\usepackage{caption}
+
+% For hyperlinks and fancy citations.
 \usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
+
 \usepackage[left=4cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+
+% Sets spacing between paragraphs
+\setlength{\parskip}{0.8em}
+
+% Default caption form
+\captionsetup{labelfont=bf,textfont=it,justification=centering,font=footnotesize}
 
 % Shamelessly pinched from 'dbaupp'. cheers!
 % http://tex.stackexchange.com/questions/51645/x86-64-assembler-language-dialect-for-the-listings-package
@@ -23,6 +45,13 @@
                   rax,rdx,rcx,rbx,rsi,rdi,rsp,rbp, %
                   r8,r8d,r8w,r8b,r9,r9d,r9w,r9b}} % etc.
 
+% Style definition for x64 assembly snippets.
+\lstdefinestyle{x64snip}
+{
+	language=[x64]Assembler,
+	captionpos=b
+}
+
 \author{Elliot Thomas\\ University of Westminster}
 \title{Network Packet Capture Generation and Falsification}
 \date{\today}
@@ -30,51 +59,77 @@
 \begin{document}
 \maketitle
 \begin{abstract}
+\begin{center}
+A tool to assist in the crafting of network packet captures for educational purposes.
+\end{center}
 \end{abstract}
 \pagebreak
 \tableofcontents
 
 \chapter{Introduction}
-Education is important. Education is one of the underpinnings of a progessive society, along with law and order and a few other things.
+Education is important. Education is one of the underpinnings of a progressive society, along with law and order and a few other things.
 Despite this, it seems human ingenuity is educations greatest enemy. Humans are lazy - most of us will strive to do as little work as possible for the greatest gain.
 We seek to make our lives better, easier, all to spend more time on the things we enjoy. For many, this will be leisure activities, for some, socialising, the humble few may take joy in aulturism.
 But motivations are irrelevant here, just the effects.
-In academia, plagarism is problem - people are unwilling to put the time in to do their own work. They realise that if someone else has solved a problem identical to theirs, they could just reuse that.
-What these people fail to realise, is that there is no substitute for experience. This problem is relevant in all fields, academic or applied, practical or theoretical; computer security and forensics is no exeception.
+In academia, plagiarism is problem - people are unwilling to put the time in to do their own work. They realise that if someone else has solved a problem identical to theirs, they could just reuse that.
+What these people fail to realise, is that there is no substitute for experience. This problem is relevant in all fields, academic or applied, practical or theoretical; computer security and forensics is no exception.
 
-\section{The Problem}
+\section{Reader level}
+The reader is expected to be somewhat familiar with networking terminology and forensic analysis techniques.
+
+\section{The problem}
 Teaching network security and forensics is aided greatly by the presentation of example packet captures. These are used to learn and practice analytical skills, and to assess the level of understanding and knowledge that students hold.
-Creating such packet captures is not difficult, but there are few tools availible for automating the process.
+Creating such packet captures is not difficult, but there are few, if any tools available for automating the process. Changing this is the purpose of this project.
+
+\pagebreak
 
 \section{Existing Solutions}
-Suprisingly few, it would seem.
+Surprisingly few, it would seem.
+
+There are a number of tools for network packet capture, and a number of tools for analysing them. These tools do not solve the problem \emph{per se}, but do allow packet capture manipulation to a certain extent, and therefore might be a useful aid in manipulating packet captures.
 
 \subsection{editcap}
-Editcap is a program Distributed as part of wireshark.
+Editcap is a program distributed as part of Wireshark.\\
+From the manpage\cite{editcap-man}:
+\begin{quote}
+\textbf{Editcap} is a program that reads some or all of the captured packets from the \underline{infile}, optionally converts them in various ways and writes the resulting packets to the capture \underline{outfile} (or outfiles).
+\end{quote}
 
-From manpage\cite{editcap-man}:
-\indent Editcap is a program that reads some or all of the captured packets from the infile, optionally converts them in various ways and writes the resulting packets to the capture outfile (or outfiles).
+For the purposes of assisting generation, this program allows splitting a file into a series of files, according to the time they were sent; i.e., splitting every 2 seconds (where each set represents a packet capture and each number represents the time a packet arrived):\\
+\indent (1, 1, 2, 3, 5, 7, 8) $\rightarrow$ (1, 1, 2), (3), (5), (7, 8)
 
-Relevant functionality:
- - Allows splitting a file into a series of files,
-   according to the time they were sent; ie, splitting every 2 seconds:
-   (1, 1, 2, 3, 5, 7, 8) -> (1, 1, 2), (3), (5), (7, 8)
+\subsection{tshark}
+Tshark is a program distributed as part of Wireshark.\\
+From the manpage\cite{tshark-man}:
+\begin{quote}
+\textbf{TShark} is a network protocol analyzer. It lets you capture packet data from a live network, or read packets from a previously saved capture file, either printing a decoded form of those packets to the standard output or writing the packets to a file.  \textbf{TShark}'s native capture file format is \textbf{pcap} format, which is also the format used by \textbf{tcpdump} and various other tools.
+\end{quote}
+
+As stated, it acts as a network traffic capture and analysis tool. It has functionality that will identify packets by protocol (and can reconstruct TCP streams) and allows the user to filter them. This is useful functionality, as it allows you to remove packets from certain protocols making captures simpler to understand.
 
 \chapter{Research}
 \section{Programming language}
 Choosing a programming language is, obviously, a decision that needs to be made, and there is no single correct choice. There are many factors influencing such a decision, each one needs to be considered. There were three major factors considered in this decision: requirements - what does the program require? knowledge - how difficult will it be to program in and maintain? availability - on what platforms can projects using this language be used?
+
+\subsection{Requirements influence}
 At it's heart, this project is a data processing project. There are no requirements for real-time processing, no requirements for concurrency, no requirement to make use of or implement a specific API nor requirements for any kind of interactive behaviour. This project can very easily be designed and implemented as a batch program - give input, run program, get output.
 
-Given the minimalistic requirements of the program, just about any turing-complete language is serviceable. As such, the decision will have to be made predominantly on the other three factors. That's not to say entirely, some languages lend themselves quite well to generic data manipulation, while others are more specialised and geared towards specific purposes. For instance, Javascript is more suited towards web-based projects (given that it's usual interpreter is a web browser), while C, Java and Python are more general purpose. Haskell, Java and Python have good support for abstract data structures while various assembly languages barely have the notion of a data type.
+Given the minimalistic requirements of the program, just about any Turing-complete language is serviceable. As such, the decision will have to be made predominantly on the other three factors. That's not to say entirely, some languages lend themselves quite well to generic data manipulation, while others are more specialised and geared towards specific purposes. For instance, Javascript is more suited towards web-based projects (given that it's usual interpreter is a web browser), while C, Java and Python are more general purpose. Haskell, Java and Python have good support for abstract data structures while various assembly languages barely have the notion of a data type.
 
+\subsection{Knowledge influence}
 Knowledge is a subjective factor that pertains to the programmer(s) developing the project. It is a limiting factor; a programmer proficient in C is not necessarily going to be able to understand a very different language such as Haskell. Also worth mentioning is simple preference - while not a overriding factor - can help shape a choice.
 
-Availability for most languages is somewhat of a non-issue. Given that portability is a desirable outcome, only languages which have a usable and consistent enough implementation across platforms will be considered. This eliminates some languages such as C sharp, Visual Basic (or any .NET language).
-It is also worth noting portability - are there provisions for file input/output? In the case of the various assembly languages, this is left to the programmer. Even if the assembly language itself is abstract and portable, it only dictates how the processor is used. For instance, on Linux, to write data to 'stdout' (standard output),
+\subsection{Availability influence}
+Availability for most languages is somewhat of a non-issue. Given that portability is a desirable outcome, only languages which have a usable and consistent enough implementation across platforms will be considered. This eliminates some languages such as C\#, Visual Basic (or any .NET language).
 
-\begin{lstlisting}[language={[x64]Assembler}]
+It is also worth noting portability - are there provisions for file input/output? In the case of the various assembly languages, this is left to the programmer. Even if the assembly language itself is abstract and portable, it only dictates how the processor is used - assembly often leads to some \emph{very} specific code.
+
+\begin{lstlisting}[
+	style=x64snip,
+	caption={[64-bit assembly example]Written for x86-64 processors, this uses Linux's 64-bit system call convention to write data to 'stdout' (standard output)}
+	]
 mov rax, 1   ; system call constant for write on Linux64
-mov rdi, 1   ; first argument: file descriptor to write to, in this case, stdout.
+mov rdi, 1   ; first argument: file descriptor to write to, eg: stdout.
 mov rsi, msg ; second argument: buffer holding data to be written.
 mov rdx, len ; third argument: number of bytes to write.
 syscall      ; Do the system call. Similair to int 0x80.
@@ -93,6 +148,10 @@ Pcap file format.
 \bibitem{editcap-man}
     Richard Sharpe, Guy Harris, Ulf Lamping, 2014-11-12\\
     EDITCAP (1), The Wireshark Network Analyzer
+
+\bibitem{tshark-man}
+	Gerald Combs, (numerous others)\\
+	WIRESHARK (1), The Wireshark Network Analyzer
 
 \bibitem{haskfunc}
     The Haskell 98 Report, Introduction\\
