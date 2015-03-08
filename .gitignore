@@ -1,0 +1,11 @@
+# Python things
+__pycache__
+*.pyc
+
+# LaTeX build files.
+/report/*.aux
+/report/*.log
+/report/*.out
+/report/*.pdf
+/report/*.toc
+
