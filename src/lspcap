@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Simple program that lists entries in a pcap file.
+"""
+
 import sys
 from packet import common
 from packet.capfile import pcap
