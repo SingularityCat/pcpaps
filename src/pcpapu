@@ -19,41 +19,10 @@ import code
 from packet import common
 from packet.capfile import packetfile
 
+from packet.pipeline.merge import merge
+
 pycon = code.InteractiveConsole(locals=locals())
 
-
-def merge(preaders, relative=True, offset=None):
-    """Function that takes a list of PacketReaders, and returns a single list of Packets."""
-    # Create a local copy of the 'preaders' argument.
-    tails = preaders[:]
-    heads = [src.read_packet() for src in tails]
-    times = [pkt.unixtime if pkt is not None else None for pkt in heads]
-    
-    queues = len(tails)
-    packets = []
-
-    while queues > 0:
-        # Delete Nones from head/tail lists
-        i = 0
-        while i < queues:
-            if heads[i] is None:
-                del heads[i]
-                del tails[i]
-                queues -= 1
-                continue
-            else:
-                i += 1
-
-        min_p = common.PACKET_MAXAGE
-        for j in range(0, queues):
-            if heads[j] < min_p:
-                min_p = heads[j]
-                min_idx = j
-        packets.append(heads[min_idx])
-        heads[min_idx] = tails[min_idx].read_packet()
-
-    return packets
-    
 
 # Set up the argument parser.
 parser = argparse.ArgumentParser(description="Generate and doctor packet captures.")
@@ -67,7 +36,7 @@ if __name__ == "__main__":
     # Open all packet capture files.
     packetfiles = [packetfile.pf_open_read(path) for path in arguments.inpaths]
 
-    packets = merge(packetfiles)
+    packets = list(merge(packetfiles))
 
     pycon.interact()
     
