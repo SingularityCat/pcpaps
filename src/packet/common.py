@@ -46,6 +46,18 @@ The length is 'origlen', so len(a) < len(b) means a was shorter then b."""
     def __len__(self):
         return self.origlen
 
+    # Tuples are immutable, so 'modifications' are done by constructing a new
+    # tuple to replace the old one. This method creates a duplicate tuple with
+    # the option to set new fields.
+    def dup(self, unixtime=None, origlen=None, data=None):
+        """Create a duplicate Packet, with potentially different fields.
+Returns the new tuple."""
+        return Packet(
+                self.unixtime if unixtime is None else unixtime,
+                self.origlen if origlen is None else origlen,
+                self.data if data is None else data
+            )
+
 
 PACKET_MINAGE = Packet(float("-inf"), 0, b"")
 PACKET_MAXAGE = Packet(float("+inf"), 0, b"")
