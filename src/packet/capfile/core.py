@@ -3,7 +3,7 @@ import math
 import time
 
 """
-base:
+core:
  - Abstract classes for packet capture file readers/writers.
 """
 

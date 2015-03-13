@@ -1,7 +1,7 @@
 import struct
 
 from ..common import Packet
-from .base import PacketReader, PacketWriter
+from .core import PacketReader, PacketWriter
 
 """
 pcap: Contains classes for reading and writing to pcap files.
