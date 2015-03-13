@@ -66,9 +66,12 @@ A tool to assist in the crafting of network packet captures for educational purp
 \pagebreak
 \tableofcontents
 
+%%%%%%%%%%%%%%%%
+% Introduction %
+%%%%%%%%%%%%%%%%
 \chapter{Introduction}
 Education is important. Education is one of the underpinnings of a progressive society, along with law and order and a few other things.
-Despite this, it seems human ingenuity is educations greatest enemy. Humans are lazy - most of us will strive to do as little work as possible for the greatest gain.
+Despite this, it seems human ingenuity is education's greatest enemy. Humans are lazy - most of us will strive to do as little work as possible for the greatest gain.
 We seek to make our lives better, easier, all to spend more time on the things we enjoy. For many, this will be leisure activities, for some, socialising, the humble few may take joy in aulturism.
 But motivations are irrelevant here, just the effects.
 In academia, plagiarism is problem - people are unwilling to put the time in to do their own work. They realise that if someone else has solved a problem identical to theirs, they could just reuse that.
@@ -84,7 +87,7 @@ Creating such packet captures is not difficult, but there are few, if any tools 
 \pagebreak
 
 \section{Existing Solutions}
-Surprisingly few, it would seem.
+None, it would seem.
 
 There are a number of tools for network packet capture, and a number of tools for analysing them. These tools do not solve the problem \emph{per se}, but do allow packet capture manipulation to a certain extent, and therefore might be a useful aid in manipulating packet captures.
 
@@ -107,7 +110,28 @@ From the manpage\cite{tshark-man}:
 
 As stated, it acts as a network traffic capture and analysis tool. It has functionality that will identify packets by protocol (and can reconstruct TCP streams) and allows the user to filter them. This is useful functionality, as it allows you to remove packets from certain protocols making captures simpler to understand.
 
+%%%%%%%%%%%%
+% Research %
+%%%%%%%%%%%%
 \chapter{Research}
+\section{Approaches to the Problem}
+The problem `\emph{How does one generate unique packet captures for teaching analysis to students?}' is open to multiple solutions. In this project, three possible approaches were considered. These can be described as \emph{synthesis}, \emph{generation} and \emph{composition}.
+
+\subsection{Synthesis}
+This would work as a program that understands a \emph{scenario} defined in a kind of declarative language, that creates a set of unique permutations of that scenario by varying some key data (names, hosts, times etc.) and the exact sequence of events. From this, it would synthesise a complete packet capture from each scenario - carefully constructing every packet - such that all generated captures represent the same abstract event (i.e. corporate espionage) but with wildly different specifics, hindering collusion.
+
+This approach has the advantage of a flexible interface and fast implementation - at the cost of having to understand and reproduce the complexity of various networking protocols and producing a completely artificial output.
+
+\subsection{Generation}
+Much like \emph{synthesis}, this would understand a declarative language for describing a scenario, but this approach would be to program a network of computers to actually do the actions in the scenario rather then synthesise their side effects. This would then run a packet sniffer on this network, generating perfectly authentic network captures of a real network, but where the human actors in a scenario are emulated by computers.
+
+This approach has the advantage of flexibility and authenticity - at the cost of being very inefficient and fragile. It's more then likely such an approach would use a network of virtual machines running real-world operating systems and protocol implementations. This introduces a fair amount of unpredictability (which is both a good and bad thing), and would require changes if/when a used interface changes.
+
+\subsection{Composition}
+This was the first approach considered, and is perhaps the simplest. This would be a program that takes a set of existing packet captures (ideally, small purpose-built captures representing single transactions) and combines them while altering things like hosts, times and the like.
+
+This approach has the advantage that real-world scenarios can be used - an existing library of captures will still be useful to provide a data source for the program - and it retains a degree of authenticity. It has a lesser variant of the downside that \emph{synthesis} has, in that it will need to identify and modify various networking protocols, but does not need to understand how they work - which removes a great deal of complexity. It also depends on existing captures - if these aren't available, the tool cannot function.
+
 \section{Programming language}
 Choosing a programming language is, obviously, a decision that needs to be made, and there is no single correct choice. There are many factors influencing such a decision, each one needs to be considered. There were three major factors considered in this decision: requirements - what does the program require? knowledge - how difficult will it be to program in and maintain? availability - on what platforms can projects using this language be used?
 
