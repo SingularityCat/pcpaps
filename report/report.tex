@@ -36,21 +36,24 @@
 % Shamelessly pinched from 'dbaupp'. cheers!
 % http://tex.stackexchange.com/questions/51645/x86-64-assembler-language-dialect-for-the-listings-package
 \lstdefinelanguage
-   [x64]{Assembler}     % add a "x64" dialect of Assembler
-   [x86masm]{Assembler} % based on the "x86masm" dialect
-   % with these extra keywords:
-   {morekeywords={CDQE,CQO,CMPSQ,CMPXCHG16B,JRCXZ,LODSQ,MOVSXD, %
-                  POPFQ,PUSHFQ,SCASQ,STOSQ,IRETQ,RDTSCP,SWAPGS, %
-                  SYSCALL, %
-                  rax,rdx,rcx,rbx,rsi,rdi,rsp,rbp, %
-                  r8,r8d,r8w,r8b,r9,r9d,r9w,r9b}} % etc.
+    [x64]{Assembler}     % add a "x64" dialect of Assembler
+    [x86masm]{Assembler} % based on the "x86masm" dialect
+    {   % with these extra keywords:
+        morekeywords={
+            CDQE,CQO,CMPSQ,CMPXCHG16B,JRCXZ,LODSQ,MOVSXD,
+            POPFQ,PUSHFQ,SCASQ,STOSQ,IRETQ,RDTSCP,SWAPGS,
+            SYSCALL,
+            rax,rdx,rcx,rbx,rsi,rdi,rsp,rbp,
+            r8,r8d,r8w,r8b,r9,r9d,r9w,r9b
+        }
+    }
 
-% Style definition for x64 assembly snippets.
-\lstdefinestyle{x64snip}
-{
-	language=[x64]Assembler,
-	captionpos=b
-}
+\lstdefinelanguage
+    [3]{Python}
+    []{Python}
+    {
+        deletekeywords={print}
+    }
 
 \author{Elliot Thomas\\ \small Supervisor: Sean Tohill\\ \\ University of Westminster}
 \title{Network Packet Capture Generation and Falsification}
@@ -132,6 +135,9 @@ This was the first approach considered, and is perhaps the simplest. This would 
 
 This approach has the advantage that real-world scenarios can be used - an existing library of captures will still be useful to provide a data source for the program - and it retains a degree of authenticity. It has a lesser variant of the downside that \emph{synthesis} has, in that it will need to identify and modify various networking protocols, but does not need to understand how they work - which removes a great deal of complexity. It also depends on existing captures - if these aren't available, the tool cannot function.
 
+\subsection{Chosen Approach}
+\emph{Synthesis} and \emph{generation} approaches are very complex - a good implementation would take a considerable amount of time to write and test, and allow a lesser degree of control to the user. For this reason, a \emph{composition} based approach was chosen - it is comparatively simple and easy to understand; desirable qualities for any tool.
+
 \section{Programming language}
 Choosing a programming language is, obviously, a decision that needs to be made, and there is no single correct choice. There are many factors influencing such a decision, each one needs to be considered. There were three major factors considered in this decision: requirements - what does the program require? knowledge - how difficult will it be to program in and maintain? availability - on what platforms can projects using this language be used?
 
@@ -139,6 +145,9 @@ Choosing a programming language is, obviously, a decision that needs to be made,
 At it's heart, this project is a data processing project. There are no requirements for real-time processing, no requirements for concurrency, no requirement to make use of or implement a specific API nor requirements for any kind of interactive behaviour. This project can very easily be designed and implemented as a batch program - give input, run program, get output.
 
 Given the minimalistic requirements of the program, just about any Turing-complete language is serviceable. As such, the decision will have to be made predominantly on the other three factors. That's not to say entirely, some languages lend themselves quite well to generic data manipulation, while others are more specialised and geared towards specific purposes. For instance, Javascript is more suited towards web-based projects (given that it's usual interpreter is a web browser), while C, Java and Python are more general purpose. Haskell, Java and Python have good support for abstract data structures while various assembly languages barely have the notion of a data type.
+
+One important factor is for the program to be easily extended. While it is possible to write an extendible program in just about any language, it helps considerably if there is support for loading code from an external source at runtime, i.e. to allow building a plugin architecture.
+Most languages or platforms allow this in some manner (and practically all platforms depend on doing this in one way or another - this is how shared libraries work). While POSIX platforms provide functions like \lstinline$void *dlopen(const char *filename, int flag);$, this interface isn't consistently available on non-POSIX platforms, and requires code to be compiled first. Meanwhile, Python, Javascript and even Bash provide methods for loading new code programatically without the need to compile code first, allowing for a very flexible, powerful and user-friendly system to be developed.
 
 \subsection{Knowledge influence}
 Knowledge is a subjective factor that pertains to the programmer(s) developing the project. It is a limiting factor; a programmer proficient in C is not necessarily going to be able to understand a very different language such as Haskell. Also worth mentioning is simple preference - while not a overriding factor - can help shape a choice.
@@ -149,7 +158,7 @@ Availability for most languages is somewhat of a non-issue. Given that portabili
 It is also worth noting portability - are there provisions for file input/output? In the case of the various assembly languages, this is left to the programmer. Even if the assembly language itself is abstract and portable, it only dictates how the processor is used - assembly often leads to some \emph{very} specific code.
 
 \begin{lstlisting}[
-	style=x64snip,
+	language={[x64]Assembler},captionpos=b,
 	caption={[64-bit assembly example]Written for x86-64 processors, this uses Linux's 64-bit system call convention to write data to 'stdout' (standard output)}
 	]
 mov rax, 1   ; system call constant for write on Linux64
@@ -159,11 +168,68 @@ mov rdx, len ; third argument: number of bytes to write.
 syscall      ; Do the system call. Similair to int 0x80.
 \end{lstlisting}
 
-Time was the unspoken major factor in this decision, and given the liberty to choose any programming language means ones in which the programmer has experience will take precedence. This means that languages designed with unfamiliar paradigms (such as Haskell, being a functional programming language\cite{haskfunc})
+\subsection{Chosen Language}
+Time was the unspoken major factor in this decision, and given the liberty to choose any programming language means ones in which the programmer has experience will take precedence. This means that languages designed for unfamiliar paradigms (such as Haskell, being a purely functional programming language\cite{haskfunc}) or languages that leave a considerable amount of work to their user (such as Assembly) were eliminated.
+
+The choice was Python. This was driven by it's status as a multi-paradigm language that offers a different models of program abstraction.
+To illustrate this, below are two functionally equivalent and compatible prime number \emph{iterators};
+\begin{lstlisting}[
+	language={[3]Python},label={lst:ooprime},
+	caption={[Python primegen, object style]An object oriented approach to a prime generator.}
+]
+class primegen:
+    def __init__(self, start, end):
+        self.cur = start
+        self.lim = end
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        prime = False
+        while not prime:
+            if self.cur >= self.lim:
+                raise StopIteration
+            for i in range(2, self.cur/2):
+                if self.cur % i == 0:
+                    break
+            else:
+                retval = self.cur
+                prime = True
+            self.cur += 1
+        return retval
+\end{lstlisting}
+
+\begin{lstlisting}[
+	language={[3]Python},label={lst:ooimp},
+	caption={[Python primegen, imperative style]An imperative approach to a prime generator.}
+]
+def primegen(cur, lim):
+    while cur < lim:
+        for i in range(2, cur/2):
+            if cur % i == 0:
+                break
+        else:
+            yield cur
+        cur += 1
+
+\end{lstlisting}
 
 \subsection{Python 2 or Python 3?}
 
 \section{Libraries}
+
+%%%%%%%%%%%%%%%%
+% Requirements %
+%%%%%%%%%%%%%%%%
+\chapter{Requirements}
+
+%%%%%%%%%%
+% Design %
+%%%%%%%%%%
+\chapter{Design}
+
+
 \chapter{Appendix}
 \section{Formats}
 Pcap file format.
