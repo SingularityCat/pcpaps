@@ -1,13 +1,20 @@
 \documentclass[10pt,a4paper,notitlepage]{report}
-\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[utf8x]{inputenc}
+
+% Better rendition of computer modern.
+\usepackage{lmodern}
+
+% For proper quoting in the listings package.
+\usepackage{textcomp}
 
 % For mathematical typesetting.
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
 
-% Better rendition of computer modern.
-\usepackage{lmodern}
+% For formal grammar.
+\usepackage{syntax}
 
 % Provides an extended tabular environment.
 \usepackage{tabularx}
@@ -15,6 +22,9 @@
 % For images.
 \usepackage{graphicx}
 \usepackage{float}
+
+% For better enumerations.
+\usepackage{enumitem}
 
 % For source code listings.
 \usepackage{listingsutf8}
@@ -25,6 +35,7 @@
 % For hyperlinks and fancy citations.
 \usepackage[colorlinks=true,linkcolor=black,citecolor=blue,urlcolor=blue]{hyperref}
 
+% Setting page geometry.
 \usepackage[left=4cm,right=2cm,top=2cm,bottom=2cm]{geometry}
 
 % Sets spacing between paragraphs
@@ -48,12 +59,22 @@
         }
     }
 
+% Alias python [2] to python.
+\lstdefinelanguage
+    [2]{Python}
+    []{Python}
+    {}
+
+% Remove the print statement from python to make python [3].
 \lstdefinelanguage
     [3]{Python}
     []{Python}
     {
-        deletekeywords={print}
+        deletekeywords={print,exec}
     }
+
+% Straight quotes, please.
+\lstset{upquote=true}
 
 \author{Elliot Thomas\\ \small Supervisor: Sean Tohill\\ \\ University of Westminster}
 \title{Network Packet Capture Generation and Falsification}
@@ -216,13 +237,109 @@ def primegen(cur, lim):
 \end{lstlisting}
 
 \subsection{Python 2 or Python 3?}
+Like most languages, Python has versions. The Python language currently exists as two distinct versions, Python 2 and Python 3. This is not to be confused with the multiple implementations of Python - which can support the same language and standard library - but the actual grammar of the language.
 
+\subsubsection{What is wrong with Python 2?}
+As a language, Python 2 made some odd decisions. Firstly, it had a `print' statement - which sounds perfectly reasonable until you need to accommodate for edge cases and specific behaviour. Print statements have the form;
+\begin{grammar}
+<expressions> ::= <expression> | <expression> `,' <expressions>
+
+<print statement> ::= `print' <expressions>
+\alt `print' <expressions> `,'
+\end{grammar}
+
+which means that
+\begin{lstlisting}[language={[2]Python}]
+print "a", "b", "c"
+\end{lstlisting}
+
+is distinct from
+\begin{lstlisting}[language={[2]Python}]
+print "a", "b", "c",
+\end{lstlisting}
+
+The former outputting ``a b c'' followed by a newline, and the latter outputting ``a b c'' without a newline! There is no convenient way of changing what the item separator is, requiring setting a field in the `sys' module. The exec statement has similar issues.
+
+Furthermore, Python 2 has some odd semantics for it's `input' function, which will read a line of standard input, and then \emph{evaluate this input as a Python expression}. In order to read the unevaluated input, `raw_input' is needed.
+
+Python 2 evolved in such a way to have two different object orientation systems. Python 2 has \emph{old-style} classes and \emph{new-style} classes, observe:
+
+\begin{lstlisting}[language={[2]Python}]
+>>> class Foo:
+...  pass
+... 
+>>> class Bar:
+...  pass
+... 
+>>> class Quux(object):
+...  pass
+... 
+>>> f = Foo()
+>>> b = Bar()
+>>> q = Quux()
+\end{lstlisting}
+
+Here, two (empty) \emph{old-style} classes `Foo' and `Bar' are defined, along with a \emph{new-style} class `Quux'. Instantiation is identical for all of them, however...
+
+\begin{lstlisting}[language={[2]Python}]
+>>> type(f)
+<type 'instance'>
+>>> type(b)
+<type 'instance'>
+>>> type(q)
+<class '__main__.Quux'>
+\end{lstlisting}
+
+Their \emph{type} differs. All /emph{old-style} objects have a type of `instance' while \emph{new-style} objects have a type matching their class.
+
+\begin{lstlisting}[language={[2]Python}]
+>>> type(f) == type(b)
+True
+>>> type(f) == type(q)
+False
+\end{lstlisting}
+
+Python 2 also shares a limitation common to early, ``lower level'' programming languages like C in that it does not distinguish between a \emph{string of characters} and a \emph{string of bytes}. This makes handing either somewhat cumbersome. For instance,
+
+\begin{lstlisting}[language={[2]Python}]
+>>> len("£")
+2
+\end{lstlisting}
+
+The reference implementation, CPython currently exists as CPython 2.7 and CPython 3.4, with 2.7 being in maintenance mode\cite{cpy2maint}.
 \section{Libraries}
 
 %%%%%%%%%%%%%%%%
 % Requirements %
 %%%%%%%%%%%%%%%%
 \chapter{Requirements}
+\section{Functional Requirements}
+
+\begin{enumerate}[label=\bfseries FR\arabic*:]
+\item \label{fr:1} The program shall be able to read a packet capture file in at least pcap format as program input.
+\item \label{fr:2} The program shall be able to write a packet capture file in at least pcap format as program output.
+\item \label{fr:3} The program shall be able to identify protocols used in individual packets, and based off this information should...
+\item \label{fr:4} ... be able to selectively remove packets belonging to a predefined set of protocols.
+\item \label{fr:5} ... be able to alter the contents of packets based on a set of predefined substitutions.
+\item \label{fr:6} The program shall be able to accept multiple inputs, and merge them into a single output.
+\item \label{fr:7} The program shall be able to alter the timestamp metadata for individual packets.
+\item \label{fr:8} The program shall allow for externel support code (extensions) for handling new protocols to be added and used at runtime.
+\item \label{fr:9} The program shall be able to operate on streaming data in addition to static files.
+\end{enumerate}
+
+\section{Non-functional Requirements}
+
+\begin{enumerate}[label=\bfseries NFR\arabic*:]
+\item \label{nfr:1} The program shall be useable on any python implementation supporting at least Python 3.4.
+\item \label{nfr:2} The program shall be usable on any platform supported by such an implementation.
+\item \label{nfr:3} The program should scale well and have, as a worst case, a small coefficient linear memory usage growth rate in respect to input data size.
+\item \label{nfr:4} The program should scale well and have a linear time complexity in respect to input data size.
+\item \label{nfr:5} The program's source code shall be designed in a maintainable manner, such that...
+\item \label{nfr:6} ... irreleant components make no assumptions about the input file format.
+\item \label{nfr:7} ... irreleant components make no assumptions about the output file format.
+\item \label{nfr:8} ... support for identifying new protocols reqires few alterations to existing code.
+\item \label{nfr:9} ... support for new file formats requires few alterations to existing code.
+\end{enumerate}
 
 %%%%%%%%%%
 % Design %
