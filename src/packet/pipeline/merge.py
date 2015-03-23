@@ -62,5 +62,5 @@ Returns a generator that produces the next chronological packet on each iteratio
             del offsets[min_idx]
             queue_count -= 1
         else:
-            # Otherwise calculate new time for the new packet.
-            heads[min_idx] = heads[min_idx].dup(unixtime=heads[min_idx].unixtime + offsets[min_idx])
+            # Otherwise calculate new time for the packet.
+            heads[min_idx].unixtime += offsets[min_idx]

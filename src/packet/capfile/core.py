@@ -27,7 +27,7 @@ A 'self iterable' as it simply returns self."""
 
     def read_packet(self):
         """Abstract method read_packet.
-Should return the 'Packet' tuple, or None if there are no packets left."""
+Should return the 'Packet' object, or None if there are no packets left."""
         raise NotImplementedError("read_packet not implemented.")
 
     def close(self):
@@ -41,7 +41,7 @@ Implementations must provide the 'write_packet' method."""
 
     def write_packet(self, packet):
         """Abstact method write_packet
-Should take one argument, the 'Packet' tuple."""
+Should take one argument, the 'Packet' object."""
         raise NotImplementedError("write_packet not implemented.")
 
     def close(self):

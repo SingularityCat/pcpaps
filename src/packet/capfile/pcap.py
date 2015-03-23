@@ -127,7 +127,7 @@ Takes one mandatory and one optional argument,
 
     def read_packet(self):
         """Reads a packet record header and it's data from the stream.
-Returns a Packet tuple, or None on EOF"""
+Returns a Packet object, or None on EOF"""
         packet_header_data = self.stream.read(self.packet_header_struct.size)
         # Test for EOF or truncation
         if packet_header_data == b"":
