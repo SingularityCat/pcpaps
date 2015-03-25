@@ -5,6 +5,8 @@ from .. import common
 
 from . import core
 
+identifier = "eth"
+
 # Ethernet frames have a fairly consistent format.
 # A packet capture will typically contain the
 # contents of a frame between the SFD (start of frame delimiter)
@@ -63,7 +65,6 @@ def decompose(data):
     
     return dmac, smac, ethertype, payload_offset
 
-identifier = "eth"
 
 def identify(packet, offset):
     dmac, smac, ethertype, next_offset = decompose(packet.data[offset:])
@@ -77,8 +78,14 @@ def identify(packet, offset):
     if ethertype in registry:
          registry[ethertype].identify(packet, next_offset)
 
-def modify(packet):
+
+def prototype(attrstr):
     pass
+
+
+def modify(packet, prototype):
+    pass
+
 
 def register(ethertype, module):
     registry[ethertype] = module
