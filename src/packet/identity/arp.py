@@ -16,7 +16,7 @@ def prototype(attrstr):
     pass
 
 
-def modify(packet, prototype):
+def modify(packet, ididx, prototype):
     pass
 
 

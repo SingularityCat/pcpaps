@@ -9,18 +9,18 @@ identifier = "ip6"
 
 def identify(packet, offset):
     attrs = {}
-    packet.identity.append(core.ProtocolIdentity(identity, attrs, offset))
+    packet.identity.append(core.ProtocolIdentity(identifier, attrs, offset))
 
 
 def prototype(attrstr):
     pass
 
 
-def modify(packet, prototype):
+def modify(packet, ididx, prototype):
     pass
 
 
-def register(ip6proto, module):
+def register(ip6proto, offset, module):
     registry[ip6proto] = module
 
 

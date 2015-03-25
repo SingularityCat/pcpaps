@@ -19,8 +19,10 @@ modify(Packet packet, ProtocolIdentity prototype) : None
     identify function.
 
  - modify:
-    This function takes two arguments, a packet to modify, and a prototype.
-    The function should alter the packet in such a way that subsequent calls to
-    the identify function should produce a prototype that matches the one
-    provided. The function should also update the identity of the packet
-    accordingly
+    This function takes three arguments, a packet to modify, an identity index and
+    a prototype. The function should alter the packet in such a way that subsequent
+    calls to the identify function should produce a prototype that matches the
+    one provided. The function should also update the identity of the packet
+    accordingly (presumably by doing a 'dict.update') and if the size of the packet
+    has changed, update the origlen and all subsequent ProtocolIdentity offsets of
+    that packet.
