@@ -1,0 +1,26 @@
+Specification for identity protocol plugins:
+
+Each plugin is a python module defining at a minimum three different functions:
+
+identify(Packet packet, int offset) : None
+prototype(str attrstr) : ProtocolIdentity
+modify(Packet packet, ProtocolIdentity prototype) : None
+
+ - identify:
+    This function takes two arguments, a Packet object, and offset.
+    Packet is the packet that's being identified, offset is the
+    byte offset to the start of the current header (i.e. payload of transport).
+    This function should append a ProtocolIdentity to the packet's identity
+    list, then call the next appropriate, if any, identify function.
+
+ - prototype:
+    This function takes a single argument, a string; and produces from it
+    a ProtocolIdentity either similar to, or simpler than one produced by
+    identify function.
+
+ - modify:
+    This function takes two arguments, a packet to modify, and a prototype.
+    The function should alter the packet in such a way that subsequent calls to
+    the identify function should produce a prototype that matches the one
+    provided. The function should also update the identity of the packet
+    accordingly
