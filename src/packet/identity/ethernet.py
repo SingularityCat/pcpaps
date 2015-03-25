@@ -1,6 +1,9 @@
+import sys
 import struct
 
-int16 = struct.Struct("!s")
+from .. import common
+
+from . import core
 
 # Ethernet frames have a fairly consistent format.
 # A packet capture will typically contain the
@@ -36,28 +39,50 @@ ETHERTYPE_IP6 = 0x86DD
 ETHERTYPE_IEEE802_1Q = 0x8100
 ETHERTYPE_IEEE802_1AD = 0x88A8
 
+int16 = struct.Struct("!H")
 
-def identify(data):
+def decompose(data):
+    """Function that decomposes an ethernet frame."""
     # This stuff never changes.
     dmac = data[0:6]
     smac = data[6:12]
 
     # Tenative 'EtherType'
-    ethertype = int16.unpack(data[12:14])
+    ethertype = int16.unpack(data[12:14])[0]
     # Check for 1Q/1AD frames.
-    if ethertype == ETHERTYPE_IEEE8021Q:
+    if ethertype == ETHERTYPE_IEEE802_1Q:
         # skip 4 bytes to account for 1Q header.
         payload_offset = 18
-        ethertype = int16.unpack(data[16:18]
-    elif ethertype == ETHERTYPE_IEE8021AD:
+        ethertype = int16.unpack(data[16:18])[0]
+    elif ethertype == ETHERTYPE_IEEE802_1AD:
         # skip 8 bytes to account for 1AD headers.
         payload_offset = 22
-        ethertype = int16.unpack()
+        ethertype = int16.unpack(data[20:22])[0]
     else:
         payload_offset = 16
     
-    return dmac, smac, ethertype, payload
+    return dmac, smac, ethertype, payload_offset
 
+identifier = "eth"
 
-# Definition of the registry.
+def identify(packet, offset):
+    dmac, smac, ethertype, next_offset = decompose(packet.data[offset:])
+    attrs = {
+        "dmac" : dmac,
+        "smac" : smac,
+        "ethertype" : ethertype,
+    }
+    
+    packet.identity.append(core.ProtocolIdentity(identifier, attrs, offset))
+    if ethertype in registry:
+         registry[ethertype].identify(packet, next_offset)
+
+def modify(packet):
+    pass
+
+def register(ethertype, module):
+    registry[ethertype] = module
+
 registry = {}
+
+core.register(common.LINKTYPE_ETHERNET, sys.modules[__name__])
