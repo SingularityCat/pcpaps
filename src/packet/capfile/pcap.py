@@ -140,9 +140,10 @@ Returns a Packet object, or None on EOF"""
         packet_header = self.packet_header_struct.unpack(packet_header_data)
         packet_data = self.stream.read(packet_header[2])
 
-        # (unixtime, origlen, data)
+        # (unixtime, linktype, origlen, data)
         packet = Packet(
             packet_header[0] + self.thiszone + (packet_header[1] / self.timescale),
+            self.network,
             packet_header[3],
             packet_data)
 
