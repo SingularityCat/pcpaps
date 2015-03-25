@@ -6,14 +6,17 @@ import time
 common:
  - Definition for the 'Packet' class
  - Functions for operating on the 'Packet' class.
+ - Functions for handling generic user input, i.e. parse_int.
  - Functions for converting a ip4/ip6/mac address to string form and back.
 Contains two constants, PACKET_MINAGE and PACKET_MAXAGE, two
 psuedopackets being older then or newer then all other packets, respectively.
 """
 
 class Packet:
-    """Class consisting of four fields,
+    """Class consisting of five fields,
  - unixtime: Floating point number, time in seconds since 1st Jan, 1970.
+ - linktype: Integer constant representing the root format of the
+             packet as specified by the source.
  - origlen: Original length of the 'data' field.
  - data: Packet data.
  - identity: list of protocol identities.
@@ -22,10 +25,11 @@ Comparison operator methods and the length method are implemented.
 Comparisons work on the value of 'unixtime', so a < b means a is older then b.
 The length is 'origlen', so len(a) < len(b) means a was shorter then b."""
 
-    __slots__ = ["unixtime", "origlen", "data", "identity"]
+    __slots__ = ["unixtime", "linktype","origlen", "data", "identity"]
 
-    def __init__(self, ut, ol, dat):
+    def __init__(self, ut, lt, ol, dat):
         self.unixtime = ut
+        self.linktype = lt
         self.origlen = ol
         self.data = dat
         self.identity = []
@@ -55,16 +59,32 @@ The length is 'origlen', so len(a) < len(b) means a was shorter then b."""
     def __len__(self):
         return self.origlen
 
-PACKET_MINAGE = Packet(float("-inf"), 0, b"")
-PACKET_MAXAGE = Packet(float("+inf"), 0, b"")
-
 
 def print_packetinfo(packet):
     """Prints information in a Packet tuple to stdout."""
-    print("{0} Identity: {1}, Original length: {2}, Captured length: {3}".format(
+    print("{0} Linktype: {1}, Identity: {2},\
+ Original length: {3}, Captured length: {4}".format(
         time.ctime(packet.unixtime),
+        packet.linktype,
         "/".join(i.name for i in packet.identity),
         packet.origlen, len(packet.data)))
+
+
+def parse_int(s):
+    """Simple string -> integer parsing/guessing function.
+Uses 'int' to do actual conversion, returns None on error."""
+    try:
+        if s.startswith("0x"):
+            return int(s[2:], 16)
+        if s.startswith("0o"):
+            return int(s[2:], 8)
+        if s.startswith("0b"):
+            return int(s[2:], 2)
+
+        return int(s)
+    except ValueError:
+        return None
+
 
 
 def mac_str2bin(macs):
@@ -261,3 +281,7 @@ LINKTYPE_IPMI_HPM_2 = 260
 LINKTYPE_ZWAVE_R1_R2 = 261
 LINKTYPE_ZWAVE_R3 = 262
 LINKTYPE_WATTSTOPPER_DLM = 263
+
+# Definitions for the psuedopackets, for comparison purposes.
+PACKET_MINAGE = Packet(float("-inf"), LINKTYPE_NULL, 0, b"")
+PACKET_MAXAGE = Packet(float("+inf"), LINKTYPE_NULL, 0, b"")
