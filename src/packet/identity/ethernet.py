@@ -21,8 +21,10 @@ identifier = "eth"
 # frames are almost the same, IEEE 802.1Q -adds- a field.
 # They have the form:
 # <sfd> <src mac> <dst mac> [<802.1Q hdr>] <ethertype/size> <payload> <crc>, or
-# 6 bytes, 6 bytes, [4 bytes], 2 bytes, n bytes, 4 bytes.
-# 
+# 1 byte, 6 bytes, 6 bytes, [4 bytes], 2 bytes, n bytes, 4 bytes.
+#
+# It seems that packet captures generally omit the sfd and crc.
+#
 # The 4 byte field 1Q adds, consists of a 2-byte '0x8100' used to distinguish 1Q
 # frames from Ethernet II/802.3 frames, and 2 bytes of information relating to VLANs.
 #
@@ -43,30 +45,44 @@ ETHERTYPE_IEEE802_1AD = 0x88A8
 
 int16 = struct.Struct("!H")
 
-def decompose(data):
-    """Function that decomposes an ethernet frame."""
-    # This stuff never changes.
-    dmac = data[0:6]
-    smac = data[6:12]
 
+def find_ethertype_offset(data):
+    """Finds the offset of the true ethertype of a frame."""
     # Tenative 'EtherType'
     ethertype = int16.unpack(data[12:14])[0]
     # Check for 1Q/1AD frames.
     if ethertype == ETHERTYPE_IEEE802_1Q:
         # skip 4 bytes to account for 1Q header.
-        payload_offset = 18
-        ethertype = int16.unpack(data[16:18])[0]
+        offset = 16
     elif ethertype == ETHERTYPE_IEEE802_1AD:
         # skip 8 bytes to account for 1AD headers.
-        payload_offset = 22
-        ethertype = int16.unpack(data[20:22])[0]
+        offset = 20
     else:
-        payload_offset = 16
-    
-    return dmac, smac, ethertype, payload_offset
+        offset = 12
+
+    return offset
+
+def decompose(data):
+    """Function that decomposes an ethernet frame.
+Returns the destination mac, source mac, ethertype and the payload offset."""
+    # This stuff never changes.
+    dmac = data[0:6]
+    smac = data[6:12]
+
+    # EtherType Offset and PayLoad Offset
+    eto = find_ethertype_offset(data)
+    plo = eto + 2
+
+    ethertype = int16.unpack(data[eto:plo])[0]
+
+    return dmac, smac, ethertype, plo
 
 
 def identify(packet, offset):
+    """Extracts 'attributes' (source/destination MAC address etc...)
+from an ethernet frame header at a given offset in a Packet,
+creates an appropriate ProtocolIdentity label and adds it to
+the Packet's identity."""
     dmac, smac, ethertype, next_offset = decompose(packet.data[offset:])
     attrs = {
         "dmac" : dmac,
@@ -74,18 +90,83 @@ def identify(packet, offset):
         "ethertype" : ethertype,
     }
     
+    # Create and add identity label.
     packet.identity.append(core.ProtocolIdentity(identifier, attrs, offset))
+
+    # Call next identify function with the payload offset.
     if ethertype in registry:
          registry[ethertype].identify(packet, next_offset)
 
 
+# Ethernet prototype attribute string format:
+# <attr> = <key> ":" <value>
+# <attrstr> = <attr> | <attr> ";" <attrstr>
+#
+# Attributes are seperated by semicolons, which contain colon-seperated key-value pairs.
+# Valid keys are "dmac", "smac" and "ethertype" (or "len")
 def prototype(attrstr):
-    pass
+    """Creates a ProtocolIdentity label from an 'attribute string'."""
+    attrdict = {}
+
+    attrs = attrstr.split(";")
+    for attr in attrs:
+        try:
+            # Split into kvp.
+            k, v = attr.split(":")
+
+            if k == "dmac" or k == "smac":
+                mac = common.mac_str2bin(v)
+                # Check if mac is valid.
+                if mac is not None:
+                    attrdict[k] = mac
+            elif k == "ethertype" or k == "len":
+                etype = common.parse_int(v)
+                # Check if etype is valid
+                if ethertype is not None:
+                    attrdict["ethertype"] = ethertype
+        except ValueError:
+            # Skip malformed attributes.
+            pass
+            
+    return core.ProtocolIdentity(identifier, attrdict, None)
 
 
-def modify(packet, prototype):
-    pass
+def modify(packet, ididx, prototype):
+    """Alter an ethernet frame header to match a prototype."""
+    try:
+        # Get the current ProtocolIdentity.
+        identity = packet.identity[ididx]
+        # Simple sanity check:
+        assert identity.name == prototype.name
+    except (IndexError, AssertionError):
+        # Something is wrong.
+        return
+    
+    dmac, smac, ethertype, payload_offset = \
+        decompose(packet.data[identity.offset:])
 
+    # Get updated values
+    if "dmac" in prototype.attributes:
+        dmac = prototype.attributes["dmac"]
+
+    if "smac" in prototype.attributes:
+        dmac = prototype.attributes["smac"]
+
+    identity.attributes.update(prototype.attributes)
+
+    if "ethertype" in prototype.attributes:
+        new_ethertype = prototype.attributes["ethertype"]
+        # We don't support adding 1Q/1AD headers at the moment.
+        if new_ethertype != ETHERTYPE_IEEE802_1Q and \
+            new_ethertype != ETHERTYPE_IEEE802_1AD:
+            ethertype = new_ethertype
+            identity.attributes["ethertype"] = new_ethertype
+
+    # Extract existing 1Q/1AD headers, if any.
+    opt = packet.data[12:payload_offset - 2]
+    # Rebuild the header:
+    hdr = dmac + smac + opt + ethertype
+    packet.data = packet.data[:identity.offset] + hdr + packet.data[payload_offset:]
 
 def register(ethertype, module):
     registry[ethertype] = module
