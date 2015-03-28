@@ -99,7 +99,7 @@ the Packet's identity."""
 
 
 # Ethernet prototype attribute string format:
-# <attr> = <key> ":" <value>
+# <attr> = <key> "=" <value>
 # <attrstr> = <attr> | <attr> ";" <attrstr>
 #
 # Attributes are seperated by semicolons, which contain colon-seperated key-value pairs.
@@ -112,7 +112,7 @@ def prototype(attrstr):
     for attr in attrs:
         try:
             # Split into kvp.
-            k, v = attr.split(":")
+            k, v = attr.split("=")
 
             if k == "dmac" or k == "smac":
                 mac = common.mac_str2bin(v)
@@ -120,7 +120,7 @@ def prototype(attrstr):
                 if mac is not None:
                     attrdict[k] = mac
             elif k == "ethertype" or k == "len":
-                etype = common.parse_int(v)
+                ethertype = common.parse_int(v)
                 # Check if etype is valid
                 if ethertype is not None:
                     attrdict["ethertype"] = ethertype
