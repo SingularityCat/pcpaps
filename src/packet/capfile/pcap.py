@@ -186,6 +186,7 @@ class PcapWriter(PacketWriter):
 
         self.stream.write(packet_header)
         self.stream.write(packet.data[:maxlen])
+        self.stream.flush()
 
     def close(self):
         """Closes the stream."""
