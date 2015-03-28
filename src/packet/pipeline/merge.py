@@ -39,6 +39,10 @@ Returns a generator that produces the next chronological packet on each iteratio
     # Create a list of computed offsets.
     offsets = [(-st if relative else 0) + offset for st in times]
 
+    # Add all the computed offsets to the initial packets.
+    for i in range(0, queue_count):
+        heads[i].unixtime += offsets[i]
+
     # While there are packet queues left...
     while queue_count > 0:
         min_p = common.PACKET_MAXAGE
