@@ -11,33 +11,52 @@ it can be imported and extended programatically.
 import sys
 import argparse
 
-import datetime
+import time
 
 import readline
 import code
 
 from packet import common
-from packet.capfile import packetfile
+from packet.capfile import pcap
 
 from packet.pipeline.merge import merge
 
-pycon = code.InteractiveConsole(locals=locals())
 
 
-# Set up the argument parser.
-parser = argparse.ArgumentParser(description="Generate and doctor packet captures.")
-parser.add_argument(dest="outpath", help="output file")
-parser.add_argument("-i", "--in", dest="inpaths", action="append", required=True, help="Input file")
-parser.add_argument("-t", "--time-offset", dest="time_offset", action="store", help="Time offset, in Y/M/D H:M:S format.")
 
+def merge_prog(argv):
+    # Set up the argument parser.
+    parser = argparse.ArgumentParser(prog="{0} {1}".format(argv[0], argv[1]), description="Merge packet captures and adjust their times.")
+    parser.add_argument("-i", "--in", type=argparse.FileType("rb"), dest="inpaths", action="append", help="Input files")
+    parser.add_argument("-o", "--out", type=argparse.FileType("wb"), dest="outpath", action="store", help="Output file")
+    parser.add_argument("-r", "--relative", dest="relative", action="store_const", const=True, default=True, help="Use relative times. (Default)")
+    parser.add_argument("-a", "--absolute", dest="relative", action="store_const", const=False, default=True, help="Do not use relative times.")
+    parser.add_argument("-t", "--time-offset", type=(lambda d: time.mktime(time.strptime(d, "%Y/%m/%d %H:%M:%S"))), dest="time_offset", action="store", default=None, help="Time offset, in Y/M/D H:M:S format.")
+    # Y/M/D H:M:S == "%Y/%m/%d %H:%M:%S"
+
+    arguments = parser.parse_args(argv[2:])
+
+    if arguments.inpaths == None:
+        arguments.inpaths = [sys.stdin.buffer]
+    if arguments.outpath == None:
+        arguments.outpath = sys.stdout.buffer
+
+    sources = [pcap.PcapReader(src) for src in arguments.inpaths]
+    destination = pcap.PcapWriter(arguments.outpath)
+
+    for packet in merge(sources, arguments.relative, arguments.time_offset):
+        destination.write_packet(packet)
+
+    #pycon = code.InteractiveConsole(locals=locals())
+    #pycon.interact()
 # Logical program entry point.
 if __name__ == "__main__":
-    arguments = parser.parse_args(sys.argv)
-    # Open all packet capture files.
-    packetfiles = [packetfile.pf_open_read(path) for path in arguments.inpaths]
+    progs = {
+        "merge" : merge_prog,
+    }
 
-    packets = list(merge(packetfiles))
+    if len(sys.argv) < 2 or sys.argv[1] not in progs:
+        exit(1)
 
-    pycon.interact()
-    
-    
+    progs[sys.argv[1]](sys.argv)
+
