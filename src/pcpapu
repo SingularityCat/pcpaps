@@ -19,9 +19,28 @@ import code
 from packet import common
 from packet.capfile import pcap
 
+from packet.identity import core as identity_core
+
 from packet.pipeline.merge import merge
+from packet.pipeline.identify import identify
+from packet.pipeline.filter import filter
 
 
+def build_prototype_list(attrdefstrs):
+    attrlist = []
+    for attrdefstr in attrdefstrs.split("/"):
+        protoname, _, attrstr = attrdefstr.partition(":")
+        protocol = identity_core.lookup_protocol(protoname)
+        attrlist.append((protocol.name, protocol.build_attributes(attrstr)))
+    return attrlist
+
+
+def help_prog(argv):
+    helptext = """{0}: Packet Caputre Processor And Publishing Utility.
+Usage: {0} [subcommand] [arguments]
+Valid subcommands are: help, merge, filter.
+Use "{0} [subcommand] --help" for help with a subcommand."""
+    print(helptext.format(argv[0]))
 
 
 def merge_prog(argv):
@@ -47,15 +66,39 @@ def merge_prog(argv):
     for packet in merge(sources, arguments.relative, arguments.time_offset):
         destination.write_packet(packet)
 
-    #pycon = code.InteractiveConsole(locals=locals())
-    #pycon.interact()
+
+def filter_prog(argv):
+    parser = argparse.ArgumentParser(prog="{0} {1}".format(argv[0], argv[1]), description="Filter packets from a capture.")
+    parser.add_argument("-i", "--in", type=argparse.FileType("rb"), dest="infile", action="store", help="Input file")
+    parser.add_argument("-o", "--out", type=argparse.FileType("wb"), dest="outfile", action="store", help="Output file")
+    parser.add_argument("-p", "--permit", type=build_prototype_list, dest="permit_set", action="append", help="")
+    parser.add_argument("-d", "--discard", type=build_prototype_list, dest="discard_set", action="append", help="")
+
+    arguments = parser.parse_args(argv[2:])
+
+    if arguments.infile == None:
+        arguments.infile = sys.stdin.buffer
+    if arguments.outfile == None:
+        arguments.outfile = sys.stdout.buffer
+
+    source = pcap.PcapReader(arguments.infile)
+    destination = pcap.PcapWriter(arguments.outfile)
+
+    for packet in filter(identify(source), permit=arguments.permit_set, discard=arguments.discard_set):
+        destination.write_packet(packet)
+
+    destination.close()
+
+
 # Logical program entry point.
 if __name__ == "__main__":
     progs = {
         "merge" : merge_prog,
+        "filter" : filter_prog
     }
 
     if len(sys.argv) < 2 or sys.argv[1] not in progs:
+        help_prog(sys.argv)
         exit(1)
 
     progs[sys.argv[1]](sys.argv)
