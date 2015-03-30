@@ -1,13 +1,15 @@
 PERMIT=True
 DISCARD=False
 
-def identity_match(packet_ident, proto_ident):
-    """Compares two identity lists to see if they match.
-Every protocol identity in proto_ident must match those
-in packet_ident sufficiently."""
+def identity_match(protocol_instances, prototypes):
+    """Compares a packet's identity list (protocol instances) to a list of
+'prototypes'. Every prototype must match it's corresponding protocol instance.
+Prototypes are a (name, attrs) tuple."""
     match = False
-    for i in range(0, len(proto_ident)):
-        if packet_ident[i] != proto_ident[i]
+    idx_range = min(len(protocol_instances), len(prototypes))
+    for i in range(0, idx_range):
+        if not protocol_instances[i].name is prototypes[i][0] or \
+            not  protocol_instances[i].match_attributes(prototypes[i][1]):
             break
     else:
         match = True
@@ -20,17 +22,17 @@ in packet_ident sufficiently."""
 def filter(source, permit=None, discard=None, policy=PERMIT):
     if permit is None:
         permit = set()
-    if deny is None:
-        deny = set()
+    if discard is None:
+        discard = set()
 
     for packet in source:
-        permit = policy
-        for proto_ident in permit:
-            if identity_match(packet.identity, ident):
-                permit = True
+        yield_packet = policy
+        for prototypes in permit:
+            if identity_match(packet.identity, prototypes):
+                yield_packet = True
         else:
-            for proto_ident in discard:
-                if identity_match(packet.identity, proto_ident):
-                    permit = False
-        if permit:
+            for prototypes in discard:
+                if identity_match(packet.identity, prototypes):
+                    yield_packet = False
+        if yield_packet:
             yield packet
