@@ -18,7 +18,7 @@ class Packet:
  - linktype: Integer constant representing the root format of the
              packet as specified by the source.
  - origlen: Original length of the 'data' field.
- - data: Packet data.
+ - data: Packet data as a bytearray.
  - identity: list of protocol identities.
 
 Comparison operator methods and the length method are implemented.
@@ -31,7 +31,7 @@ The length is 'origlen', so len(a) < len(b) means a was shorter then b."""
         self.unixtime = ut
         self.linktype = lt
         self.origlen = ol
-        self.data = dat
+        self.data = bytearray(dat)
         self.identity = []
 
     # Implement comprison operations based on 'unixtime', such that:

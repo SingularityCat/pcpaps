@@ -2,7 +2,7 @@ import sys
 import struct
 
 from . import core
-from . import ethernet
+from . import eth
 
 identifier = "ip4"
 
@@ -24,4 +24,4 @@ def register(ip4proto, module):
 
 registry = {}
 
-ethernet.register(ethernet.ETHERTYPE_IP4, sys.modules[__name__])
+eth.register(eth.ETHERTYPE_IP4, sys.modules[__name__])

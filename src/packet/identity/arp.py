@@ -2,7 +2,7 @@ import sys
 import struct
 
 from . import core
-from . import ethernet
+from . import eth
 
 identifier = "arp"
 
@@ -21,4 +21,4 @@ def modify(packet, ididx, prototype):
 
 
 identity = "ip4"
-ethernet.register(ethernet.ETHERTYPE_ARP, sys.modules[__name__])
+eth.register(eth.ETHERTYPE_ARP, sys.modules[__name__])

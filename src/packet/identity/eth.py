@@ -31,6 +31,7 @@ identifier = "eth"
 # Additionally, there is a 802.1ad standard, which contains two 1Q headers.
 # This one has '0x88A8' as it's identifier, and '0x8100' as it's next identifier.
 
+# This means the aximum size of an ethernet frame header: 6 + [4] + [4] + 2 = 8 .. 16
 
 # Definitions for a handful of ethertypes.
 # These are the interesting ones, there are many more.
@@ -55,15 +56,15 @@ def find_ethertype_offset(data):
         # skip 4 bytes to account for 1Q header.
         offset = 16
     elif ethertype == ETHERTYPE_IEEE802_1AD:
-        # skip 8 bytes to account for 1AD headers.
+        # skip 8 bytes to account for 1A/D headers.
         offset = 20
     else:
         offset = 12
 
     return offset
 
-def decompose(data):
-    """Function that decomposes an ethernet frame.
+def decompose_ethernet_header(data):
+    """Function that decomposes an ethernet frame header.
 Returns the destination mac, source mac, ethertype and the payload offset."""
     # This stuff never changes.
     dmac = data[0:6]
@@ -83,7 +84,8 @@ def identify(packet, offset):
 from an ethernet frame header at a given offset in a Packet,
 creates an appropriate ProtocolIdentity label and adds it to
 the Packet's identity."""
-    dmac, smac, ethertype, next_offset = decompose(packet.data[offset:])
+    dmac, smac, ethertype, next_offset = \
+        decompose_ethernet_header(packet.data[offset:offset+16])
     attrs = {
         "dmac" : dmac,
         "smac" : smac,
@@ -136,21 +138,22 @@ def modify(packet, ididx, prototype):
     try:
         # Get the current ProtocolIdentity.
         identity = packet.identity[ididx]
+        ido = identity.offset
         # Simple sanity check:
         assert identity.name == prototype.name
     except (IndexError, AssertionError):
         # Something is wrong.
         return
     
-    dmac, smac, ethertype, payload_offset = \
-        decompose(packet.data[identity.offset:])
 
     # Get updated values
     if "dmac" in prototype.attributes:
         dmac = prototype.attributes["dmac"]
+        packet.data[ido+0:ido+6] = dmac
 
     if "smac" in prototype.attributes:
         dmac = prototype.attributes["smac"]
+        packet.data[ido+6:ido+12] = smac
 
     identity.attributes.update(prototype.attributes)
 

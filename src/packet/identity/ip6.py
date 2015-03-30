@@ -26,4 +26,4 @@ def register(ip6proto, offset, module):
 
 registry = {}
 
-ethernet.register(ethernet.ETHERTYPE_IP6, sys.modules[__name__])
+eth.register(eth.ETHERTYPE_IP6, sys.modules[__name__])
