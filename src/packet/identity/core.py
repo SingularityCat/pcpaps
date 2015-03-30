@@ -1,66 +1,118 @@
 """
 core: root module of identification system
-Contains class definition for ProtocolIdentity.
+Contains abstract class definition for Protocol and CarrierProtocol.
 """
 
 ATTRIBUTE_WILDCARD = None
 
-class ProtocolIdentity:
-    """A 'protocol identity'.
-This class represents a piece of data conforming to a protocol.
-An example of a protocol identitiy would be a IP header.
-It stores these identities in terms of 'attributes' in a dictionary.
-An attribute is a smaller piece of variable data in a protocol, for
-instance, an sender's IP address is a attribute of an IP header.
-It also stores a field called 'offset', which is how far into the
-packet the header of this protocol is. This field does not make sense
-for all protocols, or prototypes."""
-    __slots__ = {"name", "attributes", "offset"}
-    def __init__(self, name, attrs, offset):
-        """Constructor for 'protocol identities'. """
-        self.name = name
-        self.attributes = attrs
+
+class Protocol:
+    """This class represents a protocol.
+An instance of a protocol has a set of 'attributes', such as
+fields in the header of a packet. An attribute is a smaller piece
+of variable data in a protocol, for instance, a sender's IP address
+is an attribute of an IP header. It also stores a field called
+'offset', which is how far into the packet the header of this
+protocol is. This field does not make sense
+for all protocols."""
+
+    name = None
+    __slots__ = {"packet", "offset"}
+
+
+    def __init__(self, packet, offset):
+        """Constructor for protocol instances. """
+        self.packet = packet
         self.offset = offset
 
-    def match_protocol(self, target):
-        """Returns true if two protocol identities share the
-same protocol identifier."""
-        assert isinstance(target, ProtocolIdentity)
-        return self.name == target.name
 
-    def match(self, target):
-        """Tests wether this ProtocolIdentity matches another.
+    def get_attributes(self):
+        """Abstract method get_attributes.
+Should return a dict of useful attributes."""
+        raise NotImplementedError("get_attributes not implemented.")
+
+
+    def set_attributes(self, attrs):
+        """Abstract method set_attributes.
+Should accept a dict of attributes and update data accordingly."""
+        raise NotImplementedError("set_attributes not implemented.")
+
+
+    def match_attributes(self, tattrs):
+        """Tests wether this ProtocolIdentity matches a set of attributes.
+This is the default implementation and compares attributes of this
+instance (from get_attributes) to the provided attributes (tattrs).
 This is not commutative - all of the target keys MUST be in
 this ProtocolIdentity's keys. Additionally, if the target's key is
 equal to None, it is treated as a wildcard and matches."""
-        assert isinstance(target, ProtocolIdentity)
         if target.name == self.name:
-            # More convienient names.
-            tattrs = target.attributes
-            sattrs = self.attributes
+            # Retrieve attributes.
+            sattrs = self.get_attributes()
             
             tkeys = set(tattrs.keys())
             skeys = set(sattrs.keys())
+
+            # Check if tkeys is a weak subset of skeys.
             if tkeys <= skeys:
                 for key in tkeys & skeys:
+                    # Check for mismatch.
                     if sattrs[key] != tattrs[key] and \
                         tattrs[key] is not ATTRIBUTE_WILDCARD:
                         break
                 else:
+                    # If loop did not find mismatches...
                     return True
+        # In all other cases...
         return False
 
+
+    @staticmethod
+    def interpret_packet(packet, offset):
+        """Abstract static method interpret_packet.
+This should modify it's argument, packet, adding an instance
+of it's class and determining the next (if any) protocol to interpret."""
+        # Example:
+        # instance = Protocol(packet, offset)
+        # packet.identity.append(instance)
+        # attrs = instance.get_attributes()
+        # ...
+        # OtherProtocol.intepret_packet(packet, next_offset)
+        raise NotImplementedError("interpret_packet not implemented.")
+
+
+    @staticmethod
+    def build_attributes(attrstr):
+        """Abstract static method build_attributes.
+Should return a dict of attributes based on a human-readable expression string."""
+        raise NotImplementedError("build_attributes not implemented.")
+
+
     def __eq__(self, target):
-        return self.match(target)
+        return self.match_attributes(target)
+
 
     def __ne__(self, target):
-        return not self.match(target)
+        return not self.match_attributes(target)
 
-def root_identify(packet, linktype):
-    if linktype in registry:
-        registry[linktype].identify(packet, 0)
 
-def register(linktype, idfunc):
-    registry[linktype] = idfunc
+def root_identify(packet):
+    """"""
+    if packet.linktype in linktype_registry:
+        protocol = linktype_registry[linktype]
+        protocol_registry[protocol].interpret_packet(packet, 0)
 
-registry = {}
+
+def register_linktype(protocol, linktype):
+    """This function adds a protocol to the linktype registry.
+The linktype registry determines what protocol to first interpret a packet as.
+Protocols in this registry would correspond to the linktypes defined in packet.common"""
+    linktype_registry[linktype] = protocol.name
+
+
+def register_protocol(protocol):
+    """This function adds a protocol to the protocol registry.
+The protocol registry maps a protocol's name to it's class."""
+    protocol_registry[protocol.name] = protocol
+
+linktype_registry = {}
+protocol_registry = {}
