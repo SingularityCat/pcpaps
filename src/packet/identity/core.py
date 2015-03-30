@@ -47,23 +47,22 @@ instance (from get_attributes) to the provided attributes (tattrs).
 This is not commutative - all of the target keys MUST be in
 this ProtocolIdentity's keys. Additionally, if the target's key is
 equal to None, it is treated as a wildcard and matches."""
-        if target.name == self.name:
-            # Retrieve attributes.
-            sattrs = self.get_attributes()
+        # Retrieve attributes.
+        sattrs = self.get_attributes()
             
-            tkeys = set(tattrs.keys())
-            skeys = set(sattrs.keys())
+        tkeys = set(tattrs.keys())
+        skeys = set(sattrs.keys())
 
-            # Check if tkeys is a weak subset of skeys.
-            if tkeys <= skeys:
-                for key in tkeys & skeys:
-                    # Check for mismatch.
-                    if sattrs[key] != tattrs[key] and \
-                        tattrs[key] is not ATTRIBUTE_WILDCARD:
-                        break
-                else:
-                    # If loop did not find mismatches...
-                    return True
+        # Check if tkeys is a weak subset of skeys.
+        if tkeys <= skeys:
+            for key in tkeys & skeys:
+                # Check for mismatch.
+                if sattrs[key] != tattrs[key] and \
+                    tattrs[key] is not ATTRIBUTE_WILDCARD:
+                    break
+            else:
+                # If loop did not find mismatches...
+                return True
         # In all other cases...
         return False
 
@@ -96,7 +95,7 @@ Should return a dict of attributes based on a human-readable expression string."
         return not self.match_attributes(target)
 
 
-class Unknwon(Protocol):
+class Unknown(Protocol):
     name = "unknown"
 
 
@@ -125,7 +124,7 @@ class Unknwon(Protocol):
 def root_identify(packet):
     """"""
     if packet.linktype in linktype_registry:
-        protocol = linktype_registry[linktype]
+        protocol = linktype_registry[packet.linktype]
         protocol_registry[protocol].interpret_packet(packet, 0)
 
 
