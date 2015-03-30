@@ -1,4 +1,3 @@
-import sys
 import struct
 
 from .. import common
@@ -62,7 +61,7 @@ def find_ethertype_offset(data):
     return offset
 
 
-class Ethernet(Protocol):
+class Ethernet(core.Protocol):
     """"""
     name = "eth"
     __slots__ = {"_dmac", "_smac", "_ethertype", "payload_offset"}
@@ -70,7 +69,7 @@ class Ethernet(Protocol):
     
     def __init__(self, packet, offset):
         """"""
-        super(packet, offset)
+        super().__init__(packet, offset)
         self._calculate_offsets()
 
 
