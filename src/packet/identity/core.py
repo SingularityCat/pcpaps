@@ -25,6 +25,8 @@ for all protocols."""
         self.packet = packet
         self.offset = offset
 
+        self.packet.identity.append(self)
+
 
     def get_attributes(self):
         """Abstract method get_attributes.
@@ -73,7 +75,6 @@ This should modify it's argument, packet, adding an instance
 of it's class and determining the next (if any) protocol to interpret."""
         # Example:
         # instance = Protocol(packet, offset)
-        # packet.identity.append(instance)
         # attrs = instance.get_attributes()
         # ...
         # OtherProtocol.intepret_packet(packet, next_offset)
@@ -95,6 +96,32 @@ Should return a dict of attributes based on a human-readable expression string."
         return not self.match_attributes(target)
 
 
+class Unknwon(Protocol):
+    name = "unknown"
+
+
+    def get_attributes(self):
+        return {}
+
+
+    def set_attributes(self):
+        return    
+
+
+    def match_attributes(self, attrs):
+        return False
+
+
+    @staticmethod
+    def interpret_packet(packet, offset):
+        instance = Unknown(packet, offset)
+
+
+    @staticmethod
+    def build_attributes(attrstr):
+        return {}
+
+
 def root_identify(packet):
     """"""
     if packet.linktype in linktype_registry:
@@ -102,17 +129,25 @@ def root_identify(packet):
         protocol_registry[protocol].interpret_packet(packet, 0)
 
 
-def register_linktype(protocol, linktype):
+def register_linktype(protoname, linktype):
     """This function adds a protocol to the linktype registry.
 The linktype registry determines what protocol to first interpret a packet as.
 Protocols in this registry would correspond to the linktypes defined in packet.common"""
-    linktype_registry[linktype] = protocol.name
+    linktype_registry[linktype] = protoname
 
 
 def register_protocol(protocol):
     """This function adds a protocol to the protocol registry.
 The protocol registry maps a protocol's name to it's class."""
     protocol_registry[protocol.name] = protocol
+
+
+def lookup_protocol(protoname):
+    if protoname in protocol_registry:
+        protocol = protocol_registry[protoname]
+    else:
+        protocol = Unknown
+    return protocol
 
 linktype_registry = {}
 protocol_registry = {}
