@@ -1,8 +1,7 @@
-import struct
-
 from .. import common
 
 from . import core
+from .core import uint16pack, uint16unpack
 
 # Ethernet frames have a fairly consistent format.
 # A packet capture will typically contain the
@@ -41,13 +40,11 @@ ETHERTYPE_IP6 = 0x86DD
 ETHERTYPE_IEEE802_1Q = 0x8100
 ETHERTYPE_IEEE802_1AD = 0x88A8
 
-int16 = struct.Struct("!H")
-
 
 def find_ethertype_offset(data):
     """Finds the offset of the true ethertype of a frame."""
     # Tenative 'EtherType'
-    ethertype = int16.unpack(data[12:14])[0]
+    ethertype = uint16unpack(data[12:14])
     # Check for 1Q/1AD frames.
     if ethertype == ETHERTYPE_IEEE802_1Q:
         # skip 4 bytes to account for 1Q header.
@@ -90,7 +87,7 @@ class Ethernet(core.Protocol):
         """"""
         dmac = self.packet.data[self._dmac]
         smac = self.packet.data[self._smac]
-        ethertype = int16.unpack(self.packet.data[self._ethertype])[0]
+        ethertype = uint16unpack(self.packet.data[self._ethertype])
         return {
             "dmac" : dmac,
             "smac" : smac,
@@ -104,7 +101,7 @@ class Ethernet(core.Protocol):
         if "dmac" in attrs:
             self.packet.data[self._dmac] = attrs["dmac"]
 
-        if "smac" in prototype.attributes:
+        if "smac" in attrs:
             self.packet.data[self._smac] = attrs["smac"]
 
         if "ethertype" in attrs:
@@ -112,7 +109,7 @@ class Ethernet(core.Protocol):
             # We don't support adding 1Q/1AD headers at the moment.
             if new_ethertype != ETHERTYPE_IEEE802_1Q and \
                 new_ethertype != ETHERTYPE_IEEE802_1AD:
-                self.packet.data[self._ethertype] = int16.pack(new_ethertype)
+                self.packet.data[self._ethertype] = uint16pack(new_ethertype)
 
     @staticmethod
     def interpret_packet(packet, offset):
