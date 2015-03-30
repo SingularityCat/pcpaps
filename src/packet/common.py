@@ -2,6 +2,8 @@ import collections
 import math
 import time
 
+import binascii
+
 """
 common:
  - Definition for the 'Packet' class
@@ -85,6 +87,14 @@ Uses 'int' to do actual conversion, returns None on error."""
     except ValueError:
         return None
 
+
+def parse_hexbytes(s):
+    """Simple hex string -> bytes parsing function.
+Uses binascii to do actual conversion, returns None on error."""
+    try:
+        return binascii.unhexlify(s)
+    except binascii.Error:
+        return None
 
 
 def mac_str2bin(macs):
