@@ -1,3 +1,5 @@
+import struct
+
 """
 core: root module of identification system
 Contains abstract class definition for Protocol and CarrierProtocol.
@@ -119,6 +121,21 @@ class Unknown(Protocol):
     @staticmethod
     def build_attributes(attrstr):
         return {}
+
+
+# Utility functions useful for protocol classes.
+
+uint16 = struct.Struct("!H")
+
+
+def uint16pack(i):
+    """Converts a 16-bit int into bytes (big endian)"""
+    return int16.pack(i)
+
+
+def uint16unpack(b):
+    """Converts bytes into a 16-bit int (big endian)"""
+    return int16.unpack(b)[0]
 
 
 def root_identify(packet):
