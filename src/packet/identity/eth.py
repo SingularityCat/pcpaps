@@ -63,117 +63,96 @@ def find_ethertype_offset(data):
 
     return offset
 
-def decompose_ethernet_header(data):
-    """Function that decomposes an ethernet frame header.
-Returns the destination mac, source mac, ethertype and the payload offset."""
-    # This stuff never changes.
-    dmac = data[0:6]
-    smac = data[6:12]
 
-    # EtherType Offset and PayLoad Offset
-    eto = find_ethertype_offset(data)
-    plo = eto + 2
+class Ethernet(Protocol):
+    """"""
+    name = "eth"
+    __slots__ = {"_dmac", "_smac", "_ethertype"}
 
-    ethertype = int16.unpack(data[eto:plo])[0]
-
-    return dmac, smac, ethertype, plo
-
-
-def identify(packet, offset):
-    """Extracts 'attributes' (source/destination MAC address etc...)
-from an ethernet frame header at a given offset in a Packet,
-creates an appropriate ProtocolIdentity label and adds it to
-the Packet's identity."""
-    dmac, smac, ethertype, next_offset = \
-        decompose_ethernet_header(packet.data[offset:offset+16])
-    attrs = {
-        "dmac" : dmac,
-        "smac" : smac,
-        "ethertype" : ethertype,
-    }
     
-    # Create and add identity label.
-    packet.identity.append(core.ProtocolIdentity(identifier, attrs, offset))
-
-    # Call next identify function with the payload offset.
-    if ethertype in registry:
-         registry[ethertype].identify(packet, next_offset)
+    def __init__(self, packet, offset):
+        """"""
+        super(packet, offset)
+        self._calculate_offsets()
 
 
-# Ethernet prototype attribute string format:
-# <attr> = <key> "=" <value>
-# <attrstr> = <attr> | <attr> ";" <attrstr>
-#
-# Attributes are seperated by semicolons, which contain colon-seperated key-value pairs.
-# Valid keys are "dmac", "smac" and "ethertype" (or "len")
-def prototype(attrstr):
-    """Creates a ProtocolIdentity label from an 'attribute string'."""
-    attrdict = {}
+    def _calculate_offsets(self):
+        """"""
+        self._dmac = slice(self.offset+0, self.offset+6)
+        self._smac = slice(self.offset+6, self.offset+12)
 
-    attrs = attrstr.split(";")
-    for attr in attrs:
-        try:
-            # Split into kvp.
-            k, v = attr.split("=")
-
-            if k == "dmac" or k == "smac":
-                mac = common.mac_str2bin(v)
-                # Check if mac is valid.
-                if mac is not None:
-                    attrdict[k] = mac
-            elif k == "ethertype" or k == "len":
-                ethertype = common.parse_int(v)
-                # Check if etype is valid
-                if ethertype is not None:
-                    attrdict["ethertype"] = ethertype
-        except ValueError:
-            # Skip malformed attributes.
-            pass
-            
-    return core.ProtocolIdentity(identifier, attrdict, None)
+        etype_offset = find_ethertype_offset(
+            self.packet.data[self.offset:self.offset+16]
+            )
+        self._ethertype = slice(etype_offset, etype_offset+2)
 
 
-def modify(packet, ididx, prototype):
-    """Alter an ethernet frame header to match a prototype."""
-    try:
-        # Get the current ProtocolIdentity.
-        identity = packet.identity[ididx]
-        ido = identity.offset
-        # Simple sanity check:
-        assert identity.name == prototype.name
-    except (IndexError, AssertionError):
-        # Something is wrong.
-        return
-    
+    def get_attributes(self):
+        """"""
+        dmac = self.packet.data[self._dmac]
+        smac = self.packet.data[self._smac]
+        ethertype = int16.unpack(self.packet.data[self._ethertype])[0]
+        return {
+            "dmac" : dmac,
+            "smac" : smac,
+            "ethertype" : ethertype,
+        }
 
-    # Get updated values
-    if "dmac" in prototype.attributes:
-        dmac = prototype.attributes["dmac"]
-        packet.data[ido+0:ido+6] = dmac
 
-    if "smac" in prototype.attributes:
-        dmac = prototype.attributes["smac"]
-        packet.data[ido+6:ido+12] = smac
+    def set_attributes(self, attrs):
+        """"""
+        # Get updated values
+        if "dmac" in attrs:
+            self.packet.data[self._dmac] = attrs["dmac"]
 
-    identity.attributes.update(prototype.attributes)
+        if "smac" in prototype.attributes:
+            self.packet.data[self._smac] = attrs["smac"]
 
-    if "ethertype" in prototype.attributes:
-        new_ethertype = prototype.attributes["ethertype"]
-        # We don't support adding 1Q/1AD headers at the moment.
-        if new_ethertype != ETHERTYPE_IEEE802_1Q and \
-            new_ethertype != ETHERTYPE_IEEE802_1AD:
-            ethertype = new_ethertype
-            identity.attributes["ethertype"] = new_ethertype
+        if "ethertype" in attrs:
+            new_ethertype = attrs["ethertype"]
+            # We don't support adding 1Q/1AD headers at the moment.
+            if new_ethertype != ETHERTYPE_IEEE802_1Q and \
+                new_ethertype != ETHERTYPE_IEEE802_1AD:
+                self.packet.data[self._ethertype] = int16.pack(new_ethertype)
 
-    # Extract existing 1Q/1AD headers, if any.
-    opt = packet.data[12:payload_offset - 2]
-    # Rebuild the header:
-    hdr = dmac + smac + opt + ethertype
-    packet.data = packet.data[:identity.offset] + hdr + packet.data[payload_offset:]
+    # Ethernet prototype attribute string format:
+    # <attr> = <key> "=" <value>
+    # <attrstr> = <attr> | <attr> ";" <attrstr>
+    #
+    # Attributes are seperated by semicolons, which contain colon-seperated key-value pairs.
+    # Valid keys are "dmac", "smac" and "ethertype" (or "len")
+    @staticmethod
+    def build_attributes(attrstr):
+        """Creates a set of attributes from an attribute string."""
+        attrdict = {}
 
-def register(ethertype, module):
-    registry[ethertype] = module
+        attrs = attrstr.split(";")
+        for attr in attrs:
+            try:
+                # Split into kvp.
+                k, v = attr.split("=")
 
-registry = {}
+                if k == "dmac" or k == "smac":
+                    mac = common.mac_str2bin(v)
+                    # Check if mac is valid.
+                    if mac is not None:
+                        attrdict[k] = mac
+                elif k == "ethertype" or k == "len":
+                    ethertype = common.parse_int(v)
+                    # Check if etype is valid
+                    if ethertype is not None:
+                        attrdict["ethertype"] = ethertype
+            except ValueError:
+                # Skip malformed attributes.
+                pass
 
-core.register(common.LINKTYPE_ETHERNET, sys.modules[__name__])
+        return attrdict
+
+
+def register_ethertype(protocol, ethertype):
+    ethertype_registry[ethertype] = protocol
+
+ethertype_registry = {}
+
+core.register_protocol(Ethernet)
+core.register_linktype(Ethernet, common.LINKTYPE_ETHERNET)
