@@ -15,5 +15,5 @@ f = open(sys.argv[1], "rb")
 reader = pcap.PcapReader(f)
 
 for pkt in reader:
-    packet.identity.core.root_identify(pkt, 1)
+    packet.identity.core.root_identify(pkt)
     common.print_packetinfo(pkt)
