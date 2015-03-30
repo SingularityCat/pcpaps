@@ -5,8 +5,6 @@ from .. import common
 
 from . import core
 
-identifier = "eth"
-
 # Ethernet frames have a fairly consistent format.
 # A packet capture will typically contain the
 # contents of a frame between the SFD (start of frame delimiter)
@@ -67,7 +65,7 @@ def find_ethertype_offset(data):
 class Ethernet(Protocol):
     """"""
     name = "eth"
-    __slots__ = {"_dmac", "_smac", "_ethertype"}
+    __slots__ = {"_dmac", "_smac", "_ethertype", "payload_offset"}
 
     
     def __init__(self, packet, offset):
@@ -85,6 +83,8 @@ class Ethernet(Protocol):
             self.packet.data[self.offset:self.offset+16]
             )
         self._ethertype = slice(etype_offset, etype_offset+2)
+
+        self.payload_offset = etype_offset + 2
 
 
     def get_attributes(self):
@@ -114,6 +114,19 @@ class Ethernet(Protocol):
             if new_ethertype != ETHERTYPE_IEEE802_1Q and \
                 new_ethertype != ETHERTYPE_IEEE802_1AD:
                 self.packet.data[self._ethertype] = int16.pack(new_ethertype)
+
+    @staticmethod
+    def interpret_packet(packet, offset):
+        """"""
+        instance = Ethernet(packet, offset)
+        attrs = instance.get_attributes()
+        ethertype = attrs["ethertype"]
+        if ethertype in ethertype_registry:
+            protoname = ethertype_registry[ethertype]
+            protocol = core.lookup_protocol(protoname)
+
+            protocol.interpret_packet(packet, instance.payload_offset)
+
 
     # Ethernet prototype attribute string format:
     # <attr> = <key> "=" <value>
@@ -155,4 +168,4 @@ def register_ethertype(protocol, ethertype):
 ethertype_registry = {}
 
 core.register_protocol(Ethernet)
-core.register_linktype(Ethernet, common.LINKTYPE_ETHERNET)
+core.register_linktype(Ethernet.name, common.LINKTYPE_ETHERNET)
