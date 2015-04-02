@@ -62,7 +62,7 @@ def find_ethertype_offset(data):
 class Ethernet(core.CarrierProtocol):
     """Class representing the Ethernet II (IEEE 802.3/1Q/1AD) protocol."""
     name = "eth"
-    __slots__ = {"_dmac", "_smac", "_ethertype", "payload_offset"}
+    __slots__ = {"_dmac", "_smac", "_ethertype"}
 
     
     def __init__(self, packet, offset):

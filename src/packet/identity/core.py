@@ -102,6 +102,7 @@ class CarrierProtocol(Protocol):
 In addition to the Protocol methods, a CarrierProtocol needs to implement
 the get_route and get_route_reciprocal methods."""
 
+    __slots__ = {"payload_offset"}
     
     def get_route():
         """Abstract method returning a hashable object that represents
