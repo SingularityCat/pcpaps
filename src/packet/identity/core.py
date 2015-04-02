@@ -97,6 +97,26 @@ Should return a dict of attributes based on a human-readable expression string."
         return not self.match_attributes(target)
 
 
+class CarrierProtocol(Protocol):
+    """This class represents a protocol that carries other protocols.
+In addition to the Protocol methods, a CarrierProtocol needs to implement
+the get_route and get_route_reciprocal methods."""
+
+    
+    def get_route():
+        """Abstract method returning a hashable object that represents
+the 'route' (the destination, source and direction) a carrier protocol would
+direct a packet."""
+        raise NotImplementedError("get_route not implemented.")
+
+
+    def get_route_reciprocal():
+        """Abstract method returning a hashable object not unlike the above,
+that returns the opposite route.
+E.g. if get_route returned A -> B, this should return B -> A."""
+        raise NotImplementedError("get_route_reciprocal not implemented.")
+
+
 class Unknown(Protocol):
     name = "unknown"
 
@@ -130,12 +150,12 @@ uint16 = struct.Struct("!H")
 
 def uint16pack(i):
     """Converts a 16-bit int into bytes (big endian)"""
-    return int16.pack(i)
+    return uint16.pack(i)
 
 
 def uint16unpack(b):
     """Converts bytes into a 16-bit int (big endian)"""
-    return int16.unpack(b)[0]
+    return uint16.unpack(b)[0]
 
 
 def root_identify(packet):
