@@ -47,7 +47,7 @@ def ip4_checksum(hdr):
 
     for word in words:
         acc = ocsum + word
-        carry = acc & ~0xFFFF) >> 16
+        carry = (acc & ~0xFFFF) >> 16
         ocsum = acc + carry
 
     return bytes(divmod(ocsum, 256))
@@ -70,21 +70,21 @@ class IPv4(core.CarrierProtocol):
 
 
     def _calculate_offsets(self):
-        self._ver_ihl = offset+0
-        self._tos = offset+1
-        self._len = slice(offset+2, offset+4)
-        self._id = slice(offset+4, offset+6)
-        self._flags_fragoff = slice(offset+6, offset+8)
-        self._ttl = offset+8
-        self._proto = offset+9
-        self._chksum = slice(offset+10, offset+12)
-        self._saddr = slice(offset+12, offset+16)
-        self._daddr = slice(offset+16, offset+20)
+        self._ver_ihl = self.offset+0
+        self._tos = self.offset+1
+        self._len = slice(self.offset+2, self.offset+4)
+        self._id = slice(self.offset+4, self.offset+6)
+        self._flags_fragoff = slice(self.offset+6, self.offset+8)
+        self._ttl = self.offset+8
+        self._proto = self.offset+9
+        self._chksum = slice(self.offset+10, self.offset+12)
+        self._saddr = slice(self.offset+12, self.offset+16)
+        self._daddr = slice(self.offset+16, self.offset+20)
 
         # Get header length.
         ihl = self.packet.data[self._ver_ihl] & 0x0F
 
-        self.payload_offset = offset+ihl
+        self.payload_offset = self.offset+ihl
 
 
     def get_route(self):
