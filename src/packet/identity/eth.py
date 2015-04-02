@@ -21,13 +21,14 @@ from .core import uint16pack, uint16unpack
 #
 # It seems that packet captures generally omit the sfd and crc.
 #
-# The 4 byte field 1Q adds, consists of a 2-byte '0x8100' used to distinguish 1Q
-# frames from Ethernet II/802.3 frames, and 2 bytes of information relating to VLANs.
-#
-# Additionally, there is a 802.1ad standard, which contains two 1Q headers.
-# This one has '0x88A8' as it's identifier, and '0x8100' as it's next identifier.
+# The 4 byte field 1Q adds, consists of a 2-byte '0x8100' used to distinguish
+# 1Q frames from Ethernet II/802.3 frames, and 2 bytes of information relating
+# to VLANs. Additionally, there is a 802.1ad standard, which contains two 1Q
+# headers. This one has '0x88A8' as it's identifier, and '0x8100' as it's next
+# identifier.
 
-# This means the aximum size of an ethernet frame header: 6 + [4] + [4] + 2 = 8 .. 16
+# This means the size of an ethernet frame header:
+#   6 + [4] + [4] + 2 = 8 .. 16
 
 # Definitions for a handful of ethertypes.
 # These are the interesting ones, there are many more.
@@ -58,20 +59,21 @@ def find_ethertype_offset(data):
     return offset
 
 
-class Ethernet(core.Protocol):
-    """"""
+class Ethernet(core.CarrierProtocol):
+    """Class representing the Ethernet II (IEEE 802.3/1Q/1AD) protocol."""
     name = "eth"
     __slots__ = {"_dmac", "_smac", "_ethertype", "payload_offset"}
 
     
     def __init__(self, packet, offset):
-        """"""
+        """Constructor. Takes the packet and offset arguments.
+Calculates offsets as it's only real action."""
         super().__init__(packet, offset)
         self._calculate_offsets()
 
 
     def _calculate_offsets(self):
-        """"""
+        """Calculates offsets of all the fields and the payload."""
         self._dmac = slice(self.offset+0, self.offset+6)
         self._smac = slice(self.offset+6, self.offset+12)
 
@@ -83,8 +85,22 @@ class Ethernet(core.Protocol):
         self.payload_offset = etype_offset + 2
 
 
+    def get_route(self):
+        """Returns the route of this ethernet header, as a 12-byte string."""
+        return bytes(
+            self.packet.data[self._dmac] + self.packet.data[self._smac]
+        )
+
+
+    def get_route_reciprocal(self):
+        """Returns the reciprocal route of this ethernet header."""
+        return bytes(
+            self.packet.data[self._smac] + self.packet.data[self._dmac]
+        )
+
+
     def get_attributes(self):
-        """"""
+        """Returns the fields in this packet as a attribute dict."""
         dmac = self.packet.data[self._dmac]
         smac = self.packet.data[self._smac]
         ethertype = uint16unpack(self.packet.data[self._ethertype])
@@ -96,7 +112,8 @@ class Ethernet(core.Protocol):
 
 
     def set_attributes(self, attrs):
-        """"""
+        """Updates the fields in this header to represent the contents
+of an attribute dict."""
         # Get updated values
         if "dmac" in attrs:
             self.packet.data[self._dmac] = attrs["dmac"]
@@ -113,7 +130,9 @@ class Ethernet(core.Protocol):
 
     @staticmethod
     def interpret_packet(packet, offset):
-        """"""
+        """Creates a protocol instance and determines the next protocol to use.
+This makes use of a registry of ethertype -> protocol names, updated with
+the 'register_ethertype' function in this module."""
         instance = Ethernet(packet, offset)
         attrs = instance.get_attributes()
         ethertype = attrs["ethertype"]
@@ -128,7 +147,8 @@ class Ethernet(core.Protocol):
     # <attr> = <key> "=" <value>
     # <attrstr> = <attr> | <attr> ";" <attrstr>
     #
-    # Attributes are seperated by semicolons, which contain colon-seperated key-value pairs.
+    # Attributes are seperated by semicolons,
+    # which contain colon-seperated key-value pairs.
     # Valid keys are "dmac", "smac" and "ethertype" (or "len")
     @staticmethod
     def build_attributes(attrstr):
@@ -159,9 +179,11 @@ class Ethernet(core.Protocol):
 
 
 def register_ethertype(protocol, ethertype):
+    """Associates a protocol name with an ethertype."""
     ethertype_registry[ethertype] = protocol
 
 ethertype_registry = {}
 
+# Register the protocol, and as a linktype handler.
 core.register_protocol(Ethernet)
 core.register_linktype(Ethernet.name, common.LINKTYPE_ETHERNET)
