@@ -7,13 +7,12 @@ Simple program that lists entries in a pcap file.
 import sys
 from packet import common
 from packet.capfile import pcap
-import packet.identity
-import packet.identity.core
+
+from packet.pipeline.identify import identify
 
 f = open(sys.argv[1], "rb")
 
 reader = pcap.PcapReader(f)
 
-for pkt in reader:
-    packet.identity.core.root_identify(pkt)
+for pkt in identify(reader):
     common.print_packetinfo(pkt)
