@@ -6,10 +6,9 @@ def identity_match(protocol_instances, prototypes):
 'prototypes'. Every prototype must match it's corresponding protocol instance.
 Prototypes are a (name, attrs) tuple."""
     match = False
-    idx_range = min(len(protocol_instances), len(prototypes))
-    for i in range(0, idx_range):
-        if not protocol_instances[i].name is prototypes[i][0] or \
-            not  protocol_instances[i].match_attributes(prototypes[i][1]):
+    for protocol_instance, prototype in zip(protocol_instances, prototypes):
+        if not protocol_instance.name is prototype[0] or \
+            not  protocol_instance.match_attributes(prototype[1]):
             break
     else:
         match = True
