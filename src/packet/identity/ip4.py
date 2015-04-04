@@ -1,7 +1,13 @@
 import struct
+import bisect
+
+from .. import common
+from .. import memorymap
 
 from . import core
 from . import eth
+from .core import uint16pack, uint16unpack
+
 
 
 # RFC 791
@@ -22,6 +28,15 @@ from . import eth
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 # |                    Options                    |    Padding    |
 # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+#
+# IHL is the header size in terms of 4 bytes.
+# Total Length is the size of the whole packet in bytes.
+# Fragment Offset is measured in terms of 8 bytes.
+
+# IPv4 flags
+IP4_FLAG_MORE_FRAGMENTS = 0b001
+IP4_FLAG_DONT_FRAGMENT = 0b010
+IP4_FLAG_EVIL_BIT = 0b100 # RFC 3514 :)
 
 # The checksum algorithm is:
 #      The checksum field is the 16 bit one's complement of the one's
@@ -33,7 +48,7 @@ def ip4_checksum(hdr):
 
     # header must be a multiple of 4 bytes large,
     # and must contain at least 5 of these.
-    if rem != 0 or nwords > 5:
+    if rem != 0 or n32words < 5:
         # !!?
         return None
 
@@ -46,55 +61,139 @@ def ip4_checksum(hdr):
     ocsum = 0
 
     for word in words:
+        # One's complement addition of 16-bit words.
         acc = ocsum + word
-        carry = (acc & ~0xFFFF) >> 16
-        ocsum = acc + carry
+        carry = acc >> 16
+        ocsum = (acc & 0xFFFF) + carry
 
-    return bytes(divmod(ocsum, 256))
+    b1, b2 = divmod(ocsum, 256)
+    return bytes((~b1 & 0xFF, ~b2 & 0xFF))
 
+
+def ip4_extract_fragment_info(fragdat):
+    frag_flags = (fragdat[0] & 0xE0) >> 5
+    frag_offset = (fragdat[0] & 0x1F) * 16 + fragdat[1]
+    return frag_flags, frag_offset
+
+# Support for fragmented IP packets.
+fragment_trackers = {}
+
+class FragmentTracker:
+    """Used to track fragmented IP packets."""
+    __slots__ = {"frags", "deferred_frags", "next_offset"}
+
+    def __init__(self):
+        self.frags = []
+        self.deferred_frags = []
+        self.next_offset = 0
+
+    def add_fragment(self, frag):
+        """Returns True if packet is complete, False if otherwise."""
+        ir = self.try_insert(frag)
+        if ir is None:
+            # Tracking complete!
+            return True
+        elif ir is True:
+
+            # Tracking incomplete, but we've advanced.
+            # We can try and redo any deferred packets here.
+            try_again = True
+            while try_again:
+                try_again = False
+                # copy deferred list.
+                current_deferred = self.deferred_frags[:]
+                # clear main list.
+                self.deferred_frags.clear()
+
+                # Iterate over deferred list.
+                for frag in current_deferred:
+                    tr = try_insert(frag)
+
+                    if tr is None:
+                        # Tracking complete!
+                        return True
+
+                    elif tr is True:
+                        try_again = True
+
+        return False
+
+    def try_insert(self, frag):
+        """Try to add a fragment to the frags list.
+Tristate return:
+ - None  = last fragment added.
+ - True  = fragment added, more needed.
+ - False = fragment deferred."""
+        frag_flags, frag_offset, _ = frag.get_fraginfo()
+        if frag_offset == self.next_offset:
+            self.frags.append(frag)
+            self.next_offset += frag.payload_length
+            if (frag_flags & IP4_FLAG_MORE_FRAGMENTS) == 0:
+                # Fragment tracking finished!
+                return None
+            # Successfully inserted.
+            return True
+        else:
+            self.deferred_frags.append(frag)
+            # Added to deferred pool.
+            return False
 
 class IPv4(core.CarrierProtocol):
     name = "ip4"
 
-    __slots__ = {"_ver_ihl", "_tos", "_len",
+    __slots__ = {"payload_offset", "payload_length"
+                 "_ver_ihl", "_tos", "_len",
                  "_id", "_flags_fragoff",
                  "_ttl", "_proto", "_chksum",
                  "_saddr",
                  "_daddr"}
 
 
-    def __init__(self, packet, offset):
+    def __init__(self, data, prev):
         """"""
-        super().__init__(packet, offset)
+        super().__init__(data, prev)
         self._calculate_offsets()
 
 
     def _calculate_offsets(self):
-        self._ver_ihl = self.offset+0
-        self._tos = self.offset+1
-        self._len = slice(self.offset+2, self.offset+4)
-        self._id = slice(self.offset+4, self.offset+6)
-        self._flags_fragoff = slice(self.offset+6, self.offset+8)
-        self._ttl = self.offset+8
-        self._proto = self.offset+9
-        self._chksum = slice(self.offset+10, self.offset+12)
-        self._saddr = slice(self.offset+12, self.offset+16)
-        self._daddr = slice(self.offset+16, self.offset+20)
+        """"""
+        # Fixed offsets
+        self._ver_ihl = 0
+        self._tos = 1
+        self._len = slice(2, 4)
+        self._id = slice(4, 6)
+        self._flags_fragoff = slice(6, 8)
+        self._ttl = 8
+        self._proto = 9
+        self._chksum = slice(10, 12)
+        self._saddr = slice(12, 16)
+        self._daddr = slice(16, 20)
 
         # Get header length.
-        ihl = self.packet.data[self._ver_ihl] & 0x0F
+        ihl = self.data[self._ver_ihl] & 0x0F
 
-        self.payload_offset = self.offset+ihl
+        self.payload_offset = (ihl * 4) # IHL is in terms of 4 bytes.
+        self.payload_length = \
+            uint16unpack(self.data[self._len]) - self.payload_offset
+
+
+    # Used by the interpreter/fragment tracker.
+    def get_fraginfo(self):
+        """Returns the flags, fragment offset and fragment ident."""
+        fragdat = self.data[self._flags_fragoff]
+        frag_flags, frag_offset = ip4_extract_fragment_info(fragdat)
+        frag_id = self.get_route() + bytes(self.data[self._id]) + bytes(self.data[self._proto],)
+        return frag_flags, frag_offset*8, frag_id
 
 
     def get_route(self):
         """Returns the route defined by this IP header."""
-        return bytes()
+        return bytes(self.data[self._saddr]) + bytes(self.data[self._daddr])
 
 
     def get_route_reciprocal(self):
         """Returns the reciprocal route of this IP header."""
-        return bytes()
+        return bytes(self.data[self._daddr]) + bytes(self.data[self._saddr])
 
 
     def get_attributes(self):
@@ -114,9 +213,60 @@ class IPv4(core.CarrierProtocol):
 
 
     @staticmethod
-    def interpret_packet(packet, offset):
+    def interpret_packet(data, parent):
         """Interpret packet data for this protocol."""
-        instance = IPv4(packet, offset)
+        instance = IPv4(data, parent)
+        # Get protocol number for packet.
+        protonum = instance.data[instance._proto]
+        # Get the fragment flags / fragment offset.
+        frag_flags, frag_offset, frag_id = instance.get_fraginfo()
+
+        if frag_offset > 0 or \
+            (frag_flags & IP4_FLAG_MORE_FRAGMENTS) != 0:
+            # Packet is fragmented!
+            instance.completed = False
+
+            if frag_id not in fragment_trackers:
+                fragment_trackers[frag_id] = FragmentTracker()
+
+            # Get the fragment tracker.
+            ft = fragment_trackers[frag_id]
+
+            # Add this fragment to the tracker.
+            ft_complete = ft.add_fragment(instance)
+
+            if ft_complete:
+                # Fragmented packet is complete!
+                del fragment_trackers[frag_id]
+                views = []
+
+                for frag in ft.frags:
+                    frag.completed = True
+                    # Add payload memoryview to views list.
+                    views.append(
+                        frag.data[frag.payload_offset:frag.payload_length]
+                    )
+                # Determine protocol (based off protocol number of last packet)
+                if protonum in registry:
+                    protocol = core.lookup_protocol(registry[protonum])
+                    # Define payload view.
+                    mapped_data = memorymap.memorymap(views)
+                    # Interpret payload.
+                    next = protocol.interpret_packet(mapped_data, instance)
+                    # Assign child to next of all fragments.
+                    for frag in ft.frags:
+                        frag.next = next
+        else:
+            # No fragmentation!
+            # Determine protocol.
+            if protonum in registry:
+                # Get protocol class.
+                protocol = core.lookup_protocol(registry[protonum])
+                # Define payload view.
+                payload = instance.data[instance.payload_offset:instance.payload_length]
+                # Interpret payload.
+                instance.next = protocol.interpret_packet(payload, instance)
+        return instance
 
 
 def register_ip_protocol(protocol, protonum):
