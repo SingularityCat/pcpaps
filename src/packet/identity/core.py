@@ -1,9 +1,17 @@
+import enum
 import struct
 
 """
 core: root module of identification system
+Contains class definition for a 'Stream'.
 Contains abstract class definition for Protocol and CarrierProtocol.
 """
+
+
+class Stream:
+    """This class represents a 'stream'. """
+    pass
+
 
 ATTRIBUTE_WILDCARD = None
 
@@ -13,21 +21,39 @@ class Protocol:
 An instance of a protocol has a set of 'attributes', such as
 fields in the header of a packet. An attribute is a smaller piece
 of variable data in a protocol, for instance, a sender's IP address
-is an attribute of an IP header. It also stores a field called
-'offset', which is how far into the packet the header of this
-protocol is. This field does not make sense
-for all protocols."""
+is an attribute of an IP header. A protocol also has a 'next' and 'prev' - 
+child and parent protocols, respectively.
+All protocol instances have a 'completed' flag."""
 
     name = None
-    __slots__ = {"packet", "offset"}
+    __slots__ = {"data", "next", "prev", "completed"}
 
 
-    def __init__(self, packet, offset):
+    def __init__(self, data, prev):
         """Constructor for protocol instances. """
-        self.packet = packet
-        self.offset = offset
+        self.data = data
+        self.next = None
+        self.prev = prev
+        self.completed = True
 
-        self.packet.identity.append(self)
+
+    def __iter__(self):
+        """Generator method for accessing this/child protocol instances."""
+        current = self
+        while current is not None:
+            yield current
+            current = current.next
+
+
+    def is_complete(self):
+        """Returns True if this and all child protocols are complete."""
+        if not self.completed:
+            return False
+
+        if self.next is not None:
+            return self.next.is_complete()
+
+        return True
 
 
     def get_attributes(self):
@@ -69,16 +95,37 @@ equal to None, it is treated as a wildcard and matches."""
         return False
 
 
+    def replace_hosts(self, hostmap):
+        """Method for replacing instances of host identification,
+Namely IP addresses and MAC addresses."""
+        return
+
+
+    def recalculate_checksums(self):
+        return
+
+
     @staticmethod
-    def interpret_packet(packet, offset):
+    def interpret_packet(data, parent):
         """Abstract static method interpret_packet.
-This should modify it's argument, packet, adding an instance
-of it's class and determining the next (if any) protocol to interpret."""
+This takes two arguments, a 'parent' protocol instance (which can be none) and data.
+This should create an instance of it's class, determine the next (if any)
+protocol to interpret (setting the next field), then return said instance."""
         # Example:
-        # instance = Protocol(packet, offset)
-        # attrs = instance.get_attributes()
+        # instance = Protocol(data, parent)
         # ...
-        # OtherProtocol.intepret_packet(packet, next_offset)
+        # other_protocol.intepret_packet(data[next_offset:], instance)
+        # return instance
+        raise NotImplementedError("interpret_packet not implemented.")
+
+
+    @staticmethod
+    def interpret_stream(stream, parent):
+        """Abstract static method interpret_stream.
+Like interpret_packet, this takes two arguments, a 'parent' protocol instance
+(which can be none) and a 'stream' object. This method should create an
+instance of it's class, determine the next (if any) protocol to interpret,
+(setting the next field), then return said instance."""
         raise NotImplementedError("interpret_packet not implemented.")
 
 
@@ -89,21 +136,12 @@ Should return a dict of attributes based on a human-readable expression string."
         raise NotImplementedError("build_attributes not implemented.")
 
 
-    def __eq__(self, target):
-        return self.match_attributes(target)
-
-
-    def __ne__(self, target):
-        return not self.match_attributes(target)
-
-
 class CarrierProtocol(Protocol):
     """This class represents a protocol that carries other protocols.
 In addition to the Protocol methods, a CarrierProtocol needs to implement
 the get_route and get_route_reciprocal methods."""
 
-    __slots__ = {"payload_offset"}
-    
+
     def get_route():
         """Abstract method returning a hashable object that represents
 the 'route' (the destination, source and direction) a carrier protocol would
@@ -127,16 +165,21 @@ class Unknown(Protocol):
 
 
     def set_attributes(self):
-        return    
+        return
 
 
     def match_attributes(self, attrs):
-        return False
+        return True
 
 
     @staticmethod
-    def interpret_packet(packet, offset):
-        instance = Unknown(packet, offset)
+    def interpret_packet(data, parent):
+        return Unknown(data, parent)
+
+
+    @staticmethod
+    def interpret_stream(stream, parent):
+        return Unknown(stream, parent)
 
 
     @staticmethod
@@ -160,10 +203,15 @@ def uint16unpack(b):
 
 
 def root_identify(packet):
-    """"""
+    """Identify a packet.
+This function may have side effects.
+This function will set the packet.identity field to a protocol instance, or None.
+This function will return packets with an incomplete identity. Packets with an
+incomplete identity can and will have their identities updated whenever a protocol
+class deems suitable."""
     if packet.linktype in linktype_registry:
-        protocol = linktype_registry[packet.linktype]
-        protocol_registry[protocol].interpret_packet(packet, 0)
+        protocol = lookup_protocol(linktype_registry[packet.linktype])
+        packet.identity = protocol.interpret_packet(memoryview(packet.data), None)
 
 
 def register_linktype(protoname, linktype):
