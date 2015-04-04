@@ -62,24 +62,23 @@ def find_ethertype_offset(data):
 class Ethernet(core.CarrierProtocol):
     """Class representing the Ethernet II (IEEE 802.3/1Q/1AD) protocol."""
     name = "eth"
-    __slots__ = {"_dmac", "_smac", "_ethertype"}
+    __slots__ = {"payload_offset", "_dmac", "_smac", "_ethertype"}
 
-    
-    def __init__(self, packet, offset):
-        """Constructor. Takes the packet and offset arguments.
-Calculates offsets as it's only real action."""
-        super().__init__(packet, offset)
+
+    def __init__(self, data, prev):
+        """Constructor."""
+        super().__init__(data, prev)
         self._calculate_offsets()
 
 
     def _calculate_offsets(self):
         """Calculates offsets of all the fields and the payload."""
-        self._dmac = slice(self.offset+0, self.offset+6)
-        self._smac = slice(self.offset+6, self.offset+12)
+        self._dmac = slice(0, 6)
+        self._smac = slice(6, 12)
 
         etype_offset = find_ethertype_offset(
-            self.packet.data[self.offset:self.offset+16]
-            )
+            self.data[0:16]
+        )
         self._ethertype = slice(etype_offset, etype_offset+2)
 
         self.payload_offset = etype_offset + 2
@@ -87,23 +86,19 @@ Calculates offsets as it's only real action."""
 
     def get_route(self):
         """Returns the route of this ethernet header, as a 12-byte string."""
-        return bytes(
-            self.packet.data[self._dmac] + self.packet.data[self._smac]
-        )
+        return bytes(self.data[self._dmac]) + bytes(self.data[self._smac])
 
 
     def get_route_reciprocal(self):
         """Returns the reciprocal route of this ethernet header."""
-        return bytes(
-            self.packet.data[self._smac] + self.packet.data[self._dmac]
-        )
+        return bytes(self.data[self._smac]) + bytes(self.data[self._dmac])
 
 
     def get_attributes(self):
         """Returns the fields in this packet as a attribute dict."""
-        dmac = self.packet.data[self._dmac]
-        smac = self.packet.data[self._smac]
-        ethertype = uint16unpack(self.packet.data[self._ethertype])
+        dmac = bytes(self.data[self._dmac])
+        smac = bytes(self.data[self._smac])
+        ethertype = uint16unpack(self.data[self._ethertype])
         return {
             "dmac" : dmac,
             "smac" : smac,
@@ -116,31 +111,36 @@ Calculates offsets as it's only real action."""
 of an attribute dict."""
         # Get updated values
         if "dmac" in attrs:
-            self.packet.data[self._dmac] = attrs["dmac"]
+            self.data[self._dmac] = attrs["dmac"]
 
         if "smac" in attrs:
-            self.packet.data[self._smac] = attrs["smac"]
+            self.data[self._smac] = attrs["smac"]
 
         if "ethertype" in attrs:
             new_ethertype = attrs["ethertype"]
             # We don't support adding 1Q/1AD headers at the moment.
             if new_ethertype != ETHERTYPE_IEEE802_1Q and \
                 new_ethertype != ETHERTYPE_IEEE802_1AD:
-                self.packet.data[self._ethertype] = uint16pack(new_ethertype)
+                self.data[self._ethertype] = uint16pack(new_ethertype)
 
     @staticmethod
-    def interpret_packet(packet, offset):
+    def interpret_packet(data, parent):
         """Creates a protocol instance and determines the next protocol to use.
 This makes use of a registry of ethertype -> protocol names, updated with
 the 'register_ethertype' function in this module."""
-        instance = Ethernet(packet, offset)
-        attrs = instance.get_attributes()
-        ethertype = attrs["ethertype"]
+        instance = Ethernet(data, parent)
+
+        ethertype = uint16unpack(instance.data[instance._ethertype])
+
         if ethertype in ethertype_registry:
             protoname = ethertype_registry[ethertype]
             protocol = core.lookup_protocol(protoname)
 
-            protocol.interpret_packet(packet, instance.payload_offset)
+            instance.next = protocol.interpret_packet(
+                data[instance.payload_offset:], instance
+            )
+
+        return instance
 
 
     # Ethernet prototype attribute string format:

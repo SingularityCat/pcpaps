@@ -7,8 +7,8 @@ from . import eth
 class IPv6(core.Protocol):
     name = "ip6"
 
-    def __init__(self, packet, offset):
-        super().__init__(packet, offset)
+    def __init__(self, data, prev):
+        super().__init__(data, prev)
 
     def get_attributes(self):
         """Retrieve a set of attributes describing fields in this protocol."""
@@ -25,9 +25,10 @@ class IPv6(core.Protocol):
         return attrs
 
     @staticmethod
-    def interpret_packet(packet, offset):
+    def interpret_packet(data, parent):
         """Interpret packet data for this protocol."""
-        instance = IPv6(packet, offset)
+        instance = IPv6(data, parent)
+        return instance
 
 core.register_protocol(IPv6)
 eth.register_ethertype(IPv6.name, eth.ETHERTYPE_IP6)

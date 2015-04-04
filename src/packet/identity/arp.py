@@ -42,41 +42,41 @@ class ARP(core.Protocol):
     __slots__ = {"_htype", "_ptype", "_hlen", "_plen", "_opcode",
         "_sha", "_spa", "_tha", "_tpa"}
 
-    def __init__(self, packet, offset):
-        super().__init__(packet, offset)
+    def __init__(self, data, prev):
+        super().__init__(data, prev)
         self._calculate_offsets()
 
     def _calculate_offsets(self):
         # Fixed offsets.
-        self._htype = slice(self.offset+0, self.offset+2)
-        self._ptype = slice(self.offset+2, self.offset+4)
-        self._hlen = self.offset+4
-        self._plen = self.offset+5
-        self._opcode = slice(self.offset+6, self.offset+8)
+        self._htype = slice(0, 2)
+        self._ptype = slice(2, 4)
+        self._hlen = 4
+        self._plen = 5
+        self._opcode = slice(6, 8)
 
         # Variable offsets.
-        hlen = self.packet.data[self._hlen]
-        plen = self.packet.data[self._plen]
+        hlen = self.data[self._hlen]
+        plen = self.data[self._plen]
 
-        varoff = self.offset+8
+        addrbase = 8
 
-        self._sha = slice(varoff, varoff+hlen)
-        self._spa = slice(varoff+hlen, varoff+hlen+plen)
-        self._tpa = slice(varoff+hlen+plen, varoff+2*hlen+plen)
-        self._tha = slice(varoff+2*hlen+plen, varoff+2*hlen+2*plen)
+        self._sha = slice(addrbase, addrbase+hlen)
+        self._spa = slice(addrbase+hlen, addrbase+hlen+plen)
+        self._tpa = slice(addrbase+hlen+plen, addrbase+2*hlen+plen)
+        self._tha = slice(addrbase+2*hlen+plen, addrbase+2*hlen+2*plen)
 
     def get_attributes(self):
         """Retrieve a set of attributes describing fields in this protocol."""
         return {
-            "htype": uint16unpack(self.packet.data[self._htype]),
-            "ptype": uint16unpack(self.packet.data[self._ptype]),
-            "hlen": self.packet.data[self._hlen],
-            "plen": self.packet.data[self._plen],
-            "opcode": uint16unpack(self.packet.data[self._opcode]),
-            "sha": self.packet.data[self._sha],
-            "spa": self.packet.data[self._spa],
-            "tha": self.packet.data[self._tha],
-            "tpa": self.packet.data[self._tpa]
+            "htype": uint16unpack(self.data[self._htype]),
+            "ptype": uint16unpack(self.data[self._ptype]),
+            "hlen": bytes(self.data[self._hlen]),
+            "plen": bytes(self.data[self._plen]),
+            "opcode": uint16unpack(self.data[self._opcode]),
+            "sha": bytes(self.data[self._sha]),
+            "spa": bytes(self.data[self._spa]),
+            "tha": bytes(self.data[self._tha]),
+            "tpa": bytes(self.data[self._tpa])
         }
 
     def set_attributes(self, attrs):
@@ -136,9 +136,10 @@ class ARP(core.Protocol):
         return attrdict
 
     @staticmethod
-    def interpret_packet(packet, offset):
+    def interpret_packet(data, parent):
         """Interpret packet data for this protocol."""
-        instance = ARP(packet, offset)
+        instance = ARP(data, parent)
+        return instance
 
 core.register_protocol(ARP)
 eth.register_ethertype(ARP.name, eth.ETHERTYPE_ARP)
