@@ -21,8 +21,8 @@ A 'self iterable' as it simply returns self."""
         """Iterator protocol interface."""
         pkt = self.read_packet()
         if pkt is None:
-            raise StopIteration
-        
+            raise StopIteration()
+
         return pkt
 
     def read_packet(self):
