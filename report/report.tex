@@ -1,17 +1,16 @@
+% !Mode:: "TeX:UTF-8"
 \documentclass[10pt,a4paper,notitlepage]{report}
-\usepackage[T1]{fontenc}
-\usepackage[utf8x]{inputenc}
+\usepackage{ifxetex,ifluatex}
 
 % Better rendition of computer modern.
 \usepackage{lmodern}
 
-% For proper quoting in the listings package.
-\usepackage{textcomp}
+\usepackage{fontspec}
+%\usepackage[utf8]{luainputenc}
+\usepackage[utf8]{inputenc}
 
 % For mathematical typesetting.
-\usepackage{amsmath}
-\usepackage{amsfonts}
-\usepackage{amssymb}
+\usepackage{amsfonts,amsmath,amsfonts,amssymb}
 
 % For formal grammar.
 \usepackage{syntax}
@@ -27,7 +26,7 @@
 \usepackage{enumitem}
 
 % For source code listings.
-\usepackage{listingsutf8}
+\usepackage{listings}
 
 % For fancy captions.
 \usepackage{caption}
@@ -59,22 +58,26 @@
         }
     }
 
-% Alias python [2] to python.
+% Alias python [2] to python. Add missing yield
 \lstdefinelanguage
     [2]{Python}
     []{Python}
-    {}
+    {
+        morekeywords={yield}
+    }
 
-% Remove the print statement from python to make python [3].
+% Remove the print and exec statements from python to make python [3].
 \lstdefinelanguage
     [3]{Python}
     []{Python}
     {
+        morekeywords={yield},
         deletekeywords={print,exec}
     }
 
 % Straight quotes, please.
-\lstset{upquote=true}
+%\lstset{upquote=true}
+\lstset{basicstyle=\ttfamily}
 
 \author{Elliot Thomas\\ \small Supervisor: Sean Tohill\\ \\ University of Westminster}
 \title{Network Packet Capture Generation and Falsification}
@@ -134,6 +137,24 @@ From the manpage\cite{tshark-man}:
 
 As stated, it acts as a network traffic capture and analysis tool. It has functionality that will identify packets by protocol (and can reconstruct TCP streams) and allows the user to filter them. This is useful functionality, as it allows you to remove packets from certain protocols making captures simpler to understand.
 
+\subsection{Bit-Twist}
+Bit-Twist is a tool suite containing a packet capture 'generator' (a traffic replay program, not unlike tcpreplay\cite{tcpreplay-web}) and a pcap editor.
+From the website\cite{bittwist-web}:
+
+\begin{quote}
+With Bit-Twist, you can now regenerate your captured traffic onto a live network! Packets are generated from tcpdump trace file (.pcap file). Bit-Twist also comes with a comprehensive trace file editor to allow you to change the contents of a trace file.
+\end{quote}
+
+This tool is \emph{very} close to the desired utility. It permits editing a packet capture in a handful of ways, specifically:
+\begin{itemize}
+\item Appending a `payload' (arbitrary bytes) to the end of every packet.
+\item Removing a range of bytes from every packet.
+\item Recalculating checksums for (non-fragmented) IP, TCP, UDP and ICMP packets.
+\item Saving a specific range of packets either by their occurance (i.e. The fourth packet to the seventh packet) or by their timeframe (i.e. all packets between 2006/10/1 00:00:00 and 2006/10/31 10:30:00).
+\item Truncating packets to a specific 'layer' - where 2 is the link layer, 3 is the network layer and 4 is the application layer.
+\item Restricting edits to a specific 'header'- Ethernet, ARP, IP, ICMP, TCP and UDP are supported in this case.
+\end{itemize}
+
 %%%%%%%%%%%%
 % Research %
 %%%%%%%%%%%%
@@ -159,7 +180,8 @@ This approach has the advantage that real-world scenarios can be used - an exist
 \subsection{Chosen Approach}
 \emph{Synthesis} and \emph{generation} approaches are very complex - a good implementation would take a considerable amount of time to write and test, and allow a lesser degree of control to the user. For this reason, a \emph{composition} based approach was chosen - it is comparatively simple and easy to understand; desirable qualities for any tool.
 
-\section{Programming language}
+%Programming language criteria
+\section{Programming language: Criteria}
 Choosing a programming language is, obviously, a decision that needs to be made, and there is no single correct choice. There are many factors influencing such a decision, each one needs to be considered. There were three major factors considered in this decision: requirements - what does the program require? knowledge - how difficult will it be to program in and maintain? availability - on what platforms can projects using this language be used?
 
 \subsection{Requirements influence}
@@ -189,6 +211,10 @@ mov rdx, len ; third argument: number of bytes to write.
 syscall      ; Do the system call. Similair to int 0x80.
 \end{lstlisting}
 
+\section{Programming Language: Assessment}
+It should be noted that many languages were discarded based on the author's knowledge.
+
+\subsection{}
 \subsection{Chosen Language}
 Time was the unspoken major factor in this decision, and given the liberty to choose any programming language means ones in which the programmer has experience will take precedence. This means that languages designed for unfamiliar paradigms (such as Haskell, being a purely functional programming language\cite{haskfunc}) or languages that leave a considerable amount of work to their user (such as Assembly) were eliminated.
 
@@ -210,7 +236,7 @@ class primegen:
         prime = False
         while not prime:
             if self.cur >= self.lim:
-                raise StopIteration
+                raise StopIteration()
             for i in range(2, self.cur/2):
                 if self.cur % i == 0:
                     break
@@ -299,15 +325,40 @@ True
 False
 \end{lstlisting}
 
-Python 2 also shares a limitation common to early, ``lower level'' programming languages like C in that it does not distinguish between a \emph{string of characters} and a \emph{string of bytes}. This makes handing either somewhat cumbersome. For instance,
+Python 2 also shares a limitation common to early, ``lower level'' programming languages like C in that it does not distinguish between a \emph{string of characters} and a \emph{string of bytes}.
+This makes handing either somewhat cumbersome. For instance,
 
-\begin{lstlisting}[language={[2]Python}]
->>> len("")
+\begin{lstlisting}[
+    language={[2]Python},
+    caption={[Python 2 character length] The pound sign, with a length of two characters.}
+]
+>>> len("£")
 2
 \end{lstlisting}
 
-The reference implementation, CPython currently exists as CPython 2.7 and CPython 3.4, with 2.7 being in maintenance mode\cite{cpy2maint}.
+Which makes sense only when considered as a UTF-8 encoded characer, which exists as $(194, 163)$ representing codepoint $163$ in unicode.
+Python 3 provides a better abstraction - strings are arrays of characters, `bytes' are arrays of integers in the range $0 \rightarrow 255$, and strings can be encoded to bytes using a variety of different encodings.
+
+\begin{lstlisting}[
+    language={[3]Python},
+    caption={[Python 3 character length] The pound sign, with a length of one character.}
+]
+>>> len("£")
+1
+\end{lstlisting}
+
+This is a rather important and useful distinction when dealing with predominantly binary data such as captured packets.
+
+Perhaps the most compelling reason is that the reference implementation, CPython, currently exists as CPython 2.7 and CPython 3.4, with 2.7 being in maintenance mode\cite{cpy2maint} - that is, bug fixes only.
+
 \section{Libraries}
+The use of external libraries was considered for understanding file formats - namely libpcap, a C library, which supports the ubiquitous pcap file format.
+
+Python supports a FFI (Foreign Function Interface) module for C libraries under the name `ctypes' and supports understanding C-like data structures using the `struct' module, so this itself isn't a limiting factor.
+However, existing bindings are outdated or are for Python 2, so a new set of bindings would have to be written. Libpcap does not have a very complex interface, but a lot of the functionality of libpcap is irrelevant - functionality related to querying network devices and capturing their output is not needed. The effort required to make a proper set of library bindings exceeds the effort to reimplement the desired functionality in pure python.
+
+Instead, the documentation for libpcap's file format was used. This will be discussed later.
+
 
 %%%%%%%%%%%%%%%%
 % Requirements %
@@ -339,13 +390,15 @@ The reference implementation, CPython currently exists as CPython 2.7 and CPytho
 \item \label{nfr:7} ... irreleant components make no assumptions about the output file format.
 \item \label{nfr:8} ... support for identifying new protocols reqires few alterations to existing code.
 \item \label{nfr:9} ... support for new file formats requires few alterations to existing code.
+\item \label{nfr:10} The program should be resilient - it should handle invalid data gracefully.
+\item \label{nfr:11} The program should be secure - it should handle malicious data in a safe way.
 \end{enumerate}
 
 %%%%%%%%%%
 % Design %
 %%%%%%%%%%
 \chapter{Design}
-
+\section{Architecture}
 
 \chapter{Appendix}
 \section{Formats}
@@ -353,17 +406,31 @@ Pcap file format.
 
 \begin{thebibliography}{99}
 \bibitem{editcap-man}
-    Richard Sharpe, Guy Harris, Ulf Lamping, 2014-11-12\\
-    EDITCAP (1), The Wireshark Network Analyzer
+    Richard Sharpe, Guy Harris, Ulf Lamping\\
+    EDITCAP (1), The Wireshark Network Analyzer (4th of March, 2015)
 
 \bibitem{tshark-man}
-	Gerald Combs, (numerous others)\\
-	WIRESHARK (1), The Wireshark Network Analyzer
+    Gerald Combs, (numerous others)\\
+    WIRESHARK (1), The Wireshark Network Analyzer (4th of March, 2015)
+
+\bibitem{tcpreplay-web}
+    Aaron Turner, Fred Klassen\\
+    tcpeplay home page(s).
+    \url{http://tcpreplay.appneta.com}\\
+    (see also: \url{http://tcpreplay.synfin.net/})
+
+\bibitem{bittwist-web}
+    Addy Yeow Chin Heng\\
+    libpcap-based Ethernet packet generator.\\
+    \url{http://bittwist.sourceforge.net/}
 
 \bibitem{haskfunc}
     The Haskell 98 Report, Introduction\\
-    
     \url{https://www.haskell.org/onlinereport/intro.html} (December, 2014)
+
+\bibitem{cpy2maint}
+    Various authors, Should I use Python 2 or Python 3 for my development activity?, \\
+    \url{https://wiki.python.org/moin/Python2orPython3} (13th of April, 2014)
 
 \end{thebibliography}
 \end{document}
