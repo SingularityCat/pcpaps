@@ -20,6 +20,12 @@ import collections.abc
 # 2|_|
 #
 
+def clamp_start(idx, length):
+    return max(0, min(length - 1, idx))
+
+def clamp_end(idx, length):
+    return None if idx < 0 else min(length, idx)
+
 # simple 'segment' namedtuple.
 segment = collections.namedtuple("segment", ["start", "end", "mem"])
 
@@ -27,30 +33,68 @@ class memorymap(collections.abc.MutableSequence):
     """Maps a series of memoryview objects (or 'segments') into a single
 logical address space."""
 
-    __slots__ = {"_segtype", "segments", "_len"}
+    __slots__ = {"segments", "_len"}
 
 
-    def __init__(self, memviews, segtype=bytes):
-        """Takes a list of memorymaps, memoryviews or objects supporting the
-buffer interface, and creates a logical combination of their buffers.
-The optional argument segtype defaults to 'bytes' and is used
-for concatenating the values obtained using slices."""
-        self._segtype = segtype
+    def __init__(self, obj, slc=slice(None,None,None)):
+        # Initialise empty segment list.
         self.segments = []
-        offset = 0
+        self._len = 0
 
-        for memview in memviews:
-            # If an object isn't a memorymap or memoryview,
-            # try creating a memoryview object from it.
-            if not isinstance(memview, memorymap) and\
-                not isinstance(memview, memoryview):
-                memview = memoryview(memview)
+        if isinstance(obj, memorymap):
+            # Calculate index range.
+            start, end, step = slc.indices(len(obj))
 
-            orig_offset = offset
-            offset += len(memview)
-            self.segments.append(segment(orig_offset, offset, memview))
+            # Find out if indices go forwards or backwards.
+            backwards = start > end
 
-        self._len = self.segments[-1].end # Last segment's end
+            if backwards:
+                # Copy segment list from parent.
+                segs = obj.segments[::-1]
+            else:
+                # Copy segment list from parent in reverse.
+                segs = obj.segments[:]
+
+            # Iterate over segments.
+            for seg in segs:
+                # Test if there's any indices left in the slice.
+                # If start > end and not backwards, then none left.
+                # If start < end and backwards, then none left.
+                # Else, some left.
+                if (start < end) == backwards:
+                    break
+
+                seglen = seg.end - seg.start
+                lstart = clamp_start(start - seg.start, seglen)
+                lend = clamp_end(end - seg.start, seglen)
+
+                if lend is None and not backwards:
+                    continue
+
+                sliced_seg = seg.mem[lstart:lend:step]
+
+                # Add slice and increment start, if necessary.
+                covered = len(sliced_seg) * step
+                if covered != 0:
+                    start += covered
+                    self.add_segment(sliced_seg)
+
+        elif isinstance(obj, collections.abc.Sequence):
+            for seg in obj:
+                self.add_segment(seg)
+
+    def add_segment(self, memview):
+        """Takes a memorymap, memoryview or object supporting the
+buffer interface, and adds it to a logical combination of buffers."""
+        # If an object isn't a memorymap or memoryview,
+        # try creating a memoryview object from it.
+        if not isinstance(memview, memorymap) and\
+            not isinstance(memview, memoryview):
+            memview = memoryview(memview)
+
+        orig_len = self._len
+        self._len += len(memview)
+        self.segments.append(segment(orig_len, self._len, memview))
 
 
     def _map_idx(self, idx):
@@ -97,14 +141,11 @@ for a given virtual index. Has a complexity of O(log n)"""
 
 
     def __getitem__(self, idx):
-        """Returns the item(s) at the specified index or slice."""
+        """Returns the item(s) at the specified index,
+or returns a memorymap in the given range."""
         # If idx is a slice...
         if isinstance(idx, slice):
-            # Return an instance of _segtype, with a list of all covered elements.
-            return self._segtype(
-                [self[i] for i in range(*idx.indices(len(self)))]
-            )
-
+            return memorymap(self, slc=idx)
         else:
             # Get indexes.
             segidx, locidx = self._map_idx(idx)
@@ -149,3 +190,11 @@ for a given virtual index. Has a complexity of O(log n)"""
     def insert(self, idx, val):
         """Inserting items is not allowed."""
         raise TypeError("Cannot create item.")
+
+
+a = memoryview(bytearray(b"01234"))
+b = memoryview(bytearray(b"56789"))
+ab = memorymap([a, b])
+ab_03 = ab[0:3]
+print(bytes(ab_03))
+
