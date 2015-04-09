@@ -94,6 +94,24 @@ class Ethernet(core.CarrierProtocol):
         return bytes(self.data[self._smac]) + bytes(self.data[self._dmac])
 
 
+    def replace_hosts(self, hostmap):
+        """Replaces the source and destination mac addresses with the
+corresponding value in the MAC section of the hostmap argument (if present)."""
+
+        macmap = hostmap[core.AddrType.MAC.value]
+        dmac = bytes(self.data[self._dmac])
+        smac = bytes(self.data[self._smac])
+
+        if dmac in macmap:
+            self.data[self._dmac] = macmap[dmac]
+
+        if smac in macmap:
+            self.data[self._smac] = macmap[smac]
+
+        if self.next is not None:
+            self.next.replace_hosts(hostmap)
+
+
     def get_attributes(self):
         """Returns the fields in this packet as a attribute dict."""
         dmac = bytes(self.data[self._dmac])
@@ -186,4 +204,4 @@ ethertype_registry = {}
 
 # Register the protocol, and as a linktype handler.
 core.register_protocol(Ethernet)
-core.register_linktype(Ethernet.name, common.LINKTYPE_ETHERNET)
+core.register_linktype(Ethernet.name, common.LinkType.ETHERNET.value)
