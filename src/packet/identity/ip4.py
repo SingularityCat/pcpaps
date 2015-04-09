@@ -1,5 +1,4 @@
 import struct
-import bisect
 
 from .. import common
 from .. import memorymap
@@ -198,7 +197,12 @@ class IPv4(core.CarrierProtocol):
 
     def get_attributes(self):
         """Retrieve a set of attributes describing fields in this protocol."""
-        return {}
+        return {
+            "protocol": self.data[self._proto],
+            "saddr": bytes(self.data[self._saddr]),
+            "daddr": bytes(self.data[self._daddr])
+        }
+
 
     def set_attributes(self, attrs):
         """Alter packet data to match a set of protocol attributes."""
@@ -275,6 +279,7 @@ def register_ip_protocol(protocol, protonum):
 
 registry = {}
 
-# Register protocol, and as an ethertype handler.
+# Register protocol, as a ethertype handler and as a linktype handler.
 core.register_protocol(IPv4)
+core.register_linktype(IPv4.name, common.LinkType.IPV4.value)
 eth.register_ethertype(IPv4.name, eth.ETHERTYPE_IP4)
