@@ -40,7 +40,8 @@ class ARP(core.Protocol):
     name = "arp"
 
     __slots__ = {"_htype", "_ptype", "_hlen", "_plen", "_opcode",
-        "_sha", "_spa", "_tha", "_tpa"}
+        "_sha", "_spa", "_tha", "_tpa",
+        "hardware_is_ethernet", "protocol_is_ipv4"}
 
     def __init__(self, data, prev):
         super().__init__(data, prev)
@@ -62,16 +63,51 @@ class ARP(core.Protocol):
 
         self._sha = slice(addrbase, addrbase+hlen)
         self._spa = slice(addrbase+hlen, addrbase+hlen+plen)
-        self._tpa = slice(addrbase+hlen+plen, addrbase+2*hlen+plen)
-        self._tha = slice(addrbase+2*hlen+plen, addrbase+2*hlen+2*plen)
+        self._tha = slice(addrbase+hlen+plen, addrbase+2*hlen+plen)
+        self._tpa = slice(addrbase+2*hlen+plen, addrbase+2*hlen+2*plen)
+
+        htype = uint16unpack(self.data[self._htype])
+        ptype = uint16unpack(self.data[self._ptype])
+
+        # These values are used by replace_hosts.
+        self.hardware_is_ethernet = (htype == ARP_HARDWARE_ETHERNET) and\
+            (hlen == 6)
+
+        self.protocol_is_ipv4 = (ptype == ARP_PROTOCOL_IPV4) and\
+            (plen == 4)
+
+
+    def replace_hosts(self, hostmap):
+        """This method replaces MAC and IP addresses of both the sender and
+target based on the given mapping."""
+        if self.hardware_is_ethernet:
+            macmap = hostmap[core.AddrType.MAC.value]
+
+            # Replace MAC addresses, if appropriate.
+            smac = bytes(self.data[self._sha])
+            tmac = bytes(self.data[self._tha])
+            if smac in macmap:
+                self.data[self._sha] = macmap[smac]
+            if tmac in macmap:
+                self.data[self._tha] = macmap[tmac]
+
+        if self.protocol_is_ipv4:
+            ipmap = hostmap[core.AddrType.IP4.value]
+
+            # Replace IPv4 addresses, if appropriate.
+            sip = bytes(self.data[self._spa])
+            tip = bytes(self.data[self._tpa])
+            if sip in ipmap:
+                self.data[self._spa] = ipmap[sip]
+            if tip in ipmap:
+                self.data[self._tpa] = ipmap[tip]
+
 
     def get_attributes(self):
         """Retrieve a set of attributes describing fields in this protocol."""
         return {
             "htype": uint16unpack(self.data[self._htype]),
             "ptype": uint16unpack(self.data[self._ptype]),
-            "hlen": bytes(self.data[self._hlen]),
-            "plen": bytes(self.data[self._plen]),
             "opcode": uint16unpack(self.data[self._opcode]),
             "sha": bytes(self.data[self._sha]),
             "spa": bytes(self.data[self._spa]),
@@ -81,7 +117,26 @@ class ARP(core.Protocol):
 
     def set_attributes(self, attrs):
         """Alter packet data to match a set of protocol attributes."""
-        pass
+        hlen = self.data[self._hlen]
+        plen = self.data[self._plen]
+        if "htype" in attrs:
+            self.data[self._htype] = uint16pack(attrs["htype"])
+        if "ptype" in attrs:
+            self.data[self._htype] = uint16pack(attrs["ptype"])
+        if "opcode" in attrs:
+            self.data[self._opcode] = uint16pack(attrs["opcode"])
+
+        # For these replacements, we check to see if we're replacing things of
+        # the correct length.
+        if "sha" in attrs and len(attrs["sha"]) == hlen:
+            self.data[self._sha] = attrs["sha"]
+        if "spa" in attrs and len(attrs["spa"]) == plen:
+            self.data[self._spa] = attrs["spa"]
+        if "tha" in attrs and len(attrs["tha"]) == hlen:
+            self.data[self._tha] = attrs["tha"]
+        if "tpa" in attrs and len(attrs["tpa"]) == plen:
+            self.data[self._tpa] = attrs["tpa"]
+
 
     # ARP prototype attribute string format:
     # <attr> = <key> "=" <value>
