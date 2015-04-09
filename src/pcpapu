@@ -19,7 +19,7 @@ import code
 from packet import common
 from packet.capfile import pcap
 
-from packet.identity import core as identity_core
+from packet.identity.core import AddrType
 
 from packet.pipeline.merge import merge
 from packet.pipeline.identify import identify
@@ -90,11 +90,56 @@ def filter_prog(argv):
     destination.close()
 
 
+def maphosts_prog(argv):
+
+    def build_ip4_pair(rep):
+        a, b = rep.split("=")
+        return common.ip4_str2bin(a), common.ip4_str2bin(b)
+
+    def build_ip6_pair(rep):
+        a, b = rep.split("=")
+        return common.ip6_str2bin(a), common.ip6_str2bin(b)
+
+    def build_mac_pair(rep):
+        a, b = rep.split("=")
+        return common.mac_str2bin(a), common.mac_str2bin(b)
+
+    parser = argparse.ArgumentParser(prog="{0} {1}".format(argv[0], argv[1]), description="Replace host identities inside packets from a capture.")
+    parser.add_argument("-i", "--in", type=argparse.FileType("rb"), dest="infile", action="store", help="Input file")
+    parser.add_argument("-o", "--out", type=argparse.FileType("wb"), dest="outfile", action="store", help="Output file")
+    parser.add_argument("-4", "--ip4", type=build_ip4_pair, dest="ip4_pairs", action="append", default=[], help="")
+    parser.add_argument("-6", "--ip6", type=build_ip6_pair, dest="ip6_pairs", action="append", default=[], help="")
+    parser.add_argument("-m", "--mac", type=build_mac_pair, dest="mac_pairs", action="append", default=[],help="")
+
+    arguments = parser.parse_args(argv[2:])
+
+    if arguments.infile == None:
+        arguments.infile = sys.stdin.buffer
+    if arguments.outfile == None:
+        arguments.outfile = sys.stdout.buffer
+
+    source = pcap.PcapReader(arguments.infile)
+    destination = pcap.PcapWriter(arguments.outfile)
+
+    hostmap = {
+        AddrType.IP4.value : dict(pair for pair in arguments.ip4_pairs if pair[0] is not None and pair[1] is not None),
+        AddrType.IP6.value : dict(pair for pair in arguments.ip6_pairs if pair[0] is not None and pair[1] is not None),
+        AddrType.MAC.value : dict(pair for pair in arguments.mac_pairs if pair[0] is not None and pair[1] is not None)
+    }
+
+    for packet in identify(source):
+        if packet.identity is not None:
+            packet.identity.replace_hosts(hostmap)
+            packet.identity.recalculate_checksums()
+
+        destination.write_packet(packet)
+
 # Logical program entry point.
 if __name__ == "__main__":
     progs = {
         "merge" : merge_prog,
-        "filter" : filter_prog
+        "filter" : filter_prog,
+        "maphosts" : maphosts_prog
     }
 
     if len(sys.argv) < 2 or sys.argv[1] not in progs:
