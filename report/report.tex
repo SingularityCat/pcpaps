@@ -180,7 +180,7 @@ This approach has the advantage that real-world scenarios can be used - an exist
 \subsection{Chosen Approach}
 \emph{Synthesis} and \emph{generation} approaches are very complex - a good implementation would take a considerable amount of time to write and test, and allow a lesser degree of control to the user. For this reason, a \emph{composition} based approach was chosen - it is comparatively simple and easy to understand; desirable qualities for any tool.
 
-%Programming language criteria
+% Programming language criteria
 \section{Programming language: Criteria}
 Choosing a programming language is, obviously, a decision that needs to be made, and there is no single correct choice. There are many factors influencing such a decision, each one needs to be considered. There were three major factors considered in this decision: requirements - what does the program require? knowledge - how difficult will it be to program in and maintain? availability - on what platforms can projects using this language be used?
 
@@ -212,9 +212,8 @@ syscall      ; Do the system call. Similair to int 0x80.
 \end{lstlisting}
 
 \section{Programming Language: Assessment}
-It should be noted that many languages were discarded based on the author's knowledge.
+It should be noted that many languages were discarded based on the author's knowledge. % TODO
 
-\subsection{}
 \subsection{Chosen Language}
 Time was the unspoken major factor in this decision, and given the liberty to choose any programming language means ones in which the programmer has experience will take precedence. This means that languages designed for unfamiliar paradigms (such as Haskell, being a purely functional programming language\cite{haskfunc}) or languages that leave a considerable amount of work to their user (such as Assembly) were eliminated.
 
@@ -351,6 +350,29 @@ This is a rather important and useful distinction when dealing with predominantl
 
 Perhaps the most compelling reason is that the reference implementation, CPython, currently exists as CPython 2.7 and CPython 3.4, with 2.7 being in maintenance mode\cite{cpy2maint} - that is, bug fixes only.
 
+\section{Architecture}
+There are many different ways of categorising programs, but most programs have a important, distinctive piece of behaviour that can place a program in one of two mutually exclusive categories. That is, are they \emph{interactive} or not.
+
+In the context of program design, an interactive program is one that accepts and alters it's behaviour based on human input.
+A prime example of an interactive program is a text editor - it accepts input in the form of a series of keyboard presses and interprets each of these as a command to write a corresponding character.
+
+Conversely, a non-interactive program is one that does \emph{not} accept user input. For instance, a compiler is generally non-interactive - it takes input in the form of source code, and produces output in the form of compiled code.
+
+The author, being a Linux aficionado, is particularly fond of following the \emph{UNIX philosophy} where appropriate. This philosophy has no formal definition, but was once summarised, in the words of Peter H. Salus\cite{qcou},
+\begin{quote}
+This is the Unix philosophy: Write programs that do one thing and do it well. Write programs to work together. Write programs to handle text streams, because that is a universal interface.
+\end{quote}
+
+To this end, a system based around multiple small utilities that can be strung together to produce the desired output seems an appropriate architecture.
+
+\section{Development Methodology}
+The widely known `waterfall model' of software development was, in it's current form, presented as a flawed model that lacked development stage feedback\cite{wwr-waterfall-notes}. It represents an idealised scenario where all requirements are specific, well understood and concrete, and that there are no unforeseen problems in implementation. Unfortunately, this is not how things work in practice.
+
+As the project will consist of lots of small components, with a tree-like dependency graph, it is possible to design, build and test sets of components, without having designed a complete system. This is called \emph{prototyping}, and is a practical approach to designing small systems.
+Doing this repeatedly to build a larger system is known as \emph{incremental development}, and is essentially concurrent application of the waterfall model. Doing any design methodology repeatedly is called \emph{iterative development}.
+
+Ultimately, a prototype driven iterative and incremental development model seems like the most appropriate approach.
+
 \section{Libraries}
 The use of external libraries was considered for understanding file formats - namely libpcap, a C library, which supports the ubiquitous pcap file format.
 
@@ -358,7 +380,6 @@ Python supports a FFI (Foreign Function Interface) module for C libraries under 
 However, existing bindings are outdated or are for Python 2, so a new set of bindings would have to be written. Libpcap does not have a very complex interface, but a lot of the functionality of libpcap is irrelevant - functionality related to querying network devices and capturing their output is not needed. The effort required to make a proper set of library bindings exceeds the effort to reimplement the desired functionality in pure python.
 
 Instead, the documentation for libpcap's file format was used. This will be discussed later.
-
 
 %%%%%%%%%%%%%%%%
 % Requirements %
@@ -388,10 +409,11 @@ Instead, the documentation for libpcap's file format was used. This will be disc
 \item \label{nfr:5} The program's source code shall be designed in a maintainable manner, such that...
 \item \label{nfr:6} ... irreleant components make no assumptions about the input file format.
 \item \label{nfr:7} ... irreleant components make no assumptions about the output file format.
-\item \label{nfr:8} ... support for identifying new protocols reqires few alterations to existing code.
+\item \label{nfr:8} ... support for identifying new protocols requires few, if any alterations to existing code.
 \item \label{nfr:9} ... support for new file formats requires few alterations to existing code.
-\item \label{nfr:10} The program should be resilient - it should handle invalid data gracefully.
-\item \label{nfr:11} The program should be secure - it should handle malicious data in a safe way.
+\item \label{nfr:10} The program (and it's source code) should be structured and reusable with-well defined interfaces.
+\item \label{nfr:11} The program should be resilient - it should handle invalid data gracefully.
+\item \label{nfr:12} The program should be secure - it should handle malicious data in a safe way.
 \end{enumerate}
 
 %%%%%%%%%%
@@ -404,14 +426,19 @@ Instead, the documentation for libpcap's file format was used. This will be disc
 \section{Formats}
 Pcap file format.
 
+
+%%%%%%%%%%%%%%%%
+% Bibliography %
+%%%%%%%%%%%%%%%%
+
 \begin{thebibliography}{99}
 \bibitem{editcap-man}
-    Richard Sharpe, Guy Harris, Ulf Lamping\\
-    EDITCAP (1), The Wireshark Network Analyzer (4th of March, 2015)
+    Richard Sharpe, Guy Harris, Ulf Lamping (4th of March, 2015)\\
+    EDITCAP (1), The Wireshark Network Analyzer
 
 \bibitem{tshark-man}
-    Gerald Combs, (numerous others)\\
-    WIRESHARK (1), The Wireshark Network Analyzer (4th of March, 2015)
+    Gerald Combs, numerous others (4th of March, 2015)\\
+    WIRESHARK (1), The Wireshark Network Analyzer
 
 \bibitem{tcpreplay-web}
     Aaron Turner, Fred Klassen\\
@@ -425,12 +452,22 @@ Pcap file format.
     \url{http://bittwist.sourceforge.net/}
 
 \bibitem{haskfunc}
-    The Haskell 98 Report, Introduction\\
-    \url{https://www.haskell.org/onlinereport/intro.html} (December, 2014)
+    Simon Peyton Jones (December, 2014)\\
+    The Haskell 98 Report\\
+    \url{https://www.haskell.org/onlinereport/intro.html}
 
 \bibitem{cpy2maint}
-    Various authors, Should I use Python 2 or Python 3 for my development activity?, \\
-    \url{https://wiki.python.org/moin/Python2orPython3} (13th of April, 2014)
+    Various authors (13th of April, 2014)\\
+    Should I use Python 2 or Python 3 for my development activity?\\
+    \url{https://wiki.python.org/moin/Python2orPython3}
 
+\bibitem{qcou}
+    Peter H. Salus. (1st of June, 1994)\\
+    A Quarter-Century of Unix
+
+\bibitem{wwr-waterfall-notes}
+    Dr. Winston W. Royce (26th August, 1970)\\
+    MANAGING THE DEVELOPMENT OF LARGE SOFTWARE SYSTEMS\\
+    \url{http://www.cs.umd.edu/class/spring2003/cmsc838p/Process/waterfall.pdf}
 \end{thebibliography}
 \end{document}
