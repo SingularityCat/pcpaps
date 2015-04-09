@@ -7,6 +7,11 @@ Contains class definition for a 'Stream'.
 Contains abstract class definition for Protocol and CarrierProtocol.
 """
 
+class AddrType(enum.Enum):
+    IP4 = "ip4"
+    IP6 = "ip6"
+    MAC = "mac"
+
 
 class Stream:
     """This class represents a 'stream'. """
@@ -96,12 +101,31 @@ equal to None, it is treated as a wildcard and matches."""
 
 
     def replace_hosts(self, hostmap):
-        """Method for replacing instances of host identification,
-Namely IP addresses and MAC addresses."""
-        return
+        """This method should replace instances of host identification,
+Namely IP addresses and MAC addresses. This operation should propagate to child
+protocols. The default implementation does nothing other then this propogation
+and should suffice for protocols without any kind of host identification."""
+        if self.next is not None:
+            self.next.replace_hosts(hostmap)
 
 
     def recalculate_checksums(self):
+        """This method should recalculate any kind of checksum used by this
+protocol, after any 'child' checksums have been recomputed.
+That is to say, the recalculation should propagate up, from the highest-level
+protocol to the lowest. The default implementation does nothing other then
+this propogation and should suffice for protocols without validation."""
+        if self.next is not None:
+            self.next.recalculate_checksums()
+
+
+    @staticmethod
+    def reset_state():
+        """This static method should restore the initial state to any kind of
+state tracker this class uses. This means, any data held by the class
+to associate multiple bits of data (think IP fragmentation or TCP) should be
+forgotten. The default implementation does nothing and should suffice for simple
+protocols."""
         return
 
 
@@ -126,7 +150,7 @@ Like interpret_packet, this takes two arguments, a 'parent' protocol instance
 (which can be none) and a 'stream' object. This method should create an
 instance of it's class, determine the next (if any) protocol to interpret,
 (setting the next field), then return said instance."""
-        raise NotImplementedError("interpret_packet not implemented.")
+        raise NotImplementedError("interpret_stream not implemented.")
 
 
     @staticmethod
@@ -202,6 +226,9 @@ def uint16unpack(b):
     return uint16.unpack(b)[0]
 
 
+# Functions dealing with identification,
+# protocol registration and linktype registration.
+
 def root_identify(packet):
     """Identify a packet.
 This function may have side effects.
@@ -217,7 +244,8 @@ class deems suitable."""
 def register_linktype(protoname, linktype):
     """This function adds a protocol to the linktype registry.
 The linktype registry determines what protocol to first interpret a packet as.
-Protocols in this registry would correspond to the linktypes defined in packet.common"""
+Protocols in this registry would correspond to the valus of linktypes defined in
+packet.common.LinkType"""
     linktype_registry[linktype] = protoname
 
 
@@ -228,6 +256,9 @@ The protocol registry maps a protocol's name to it's class."""
 
 
 def lookup_protocol(protoname):
+    """This finds a protocol class by it's name.
+All protocol classes should be referred to by name. This allows them to be
+overridden by simply registering a different class with the same name."""
     if protoname in protocol_registry:
         protocol = protocol_registry[protoname]
     else:
