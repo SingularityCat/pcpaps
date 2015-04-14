@@ -15,6 +15,12 @@
 % For formal grammar.
 \usepackage{syntax}
 
+% For diagrams
+\usepackage{bytefield}
+\usepackage{tikz}
+\usepackage{dot2texi}
+\usetikzlibrary{shapes,arrows}
+
 % Provides an extended tabular environment.
 \usepackage{tabularx}
 
@@ -100,6 +106,7 @@ A document describing the design and development of a tool to assist in the craf
 Education is important. Education is one of the underpinnings of a progressive society, along with law and order and a few other things.
 Despite this, it seems human ingenuity is education's greatest enemy. Humans are lazy - most of us will strive to do as little work as possible for the greatest gain.
 We seek to make our lives better, easier, all to spend more time on the things we enjoy. For many, this will be leisure activities, for some, socialising, the humble few may take joy in aulturism.
+
 But motivations are irrelevant here, just the effects.
 In academia, plagiarism is problem - people are unwilling to put the time in to do their own work. They realise that if someone else has solved a problem identical to theirs, they could just reuse that.
 What these people fail to realise, is that there is no substitute for experience. This problem is relevant in all fields, academic or applied, practical or theoretical; computer security and forensics is no exception.
@@ -154,6 +161,9 @@ This tool is \emph{very} close to the desired utility. It permits editing a pack
 \item Truncating packets to a specific 'layer' - where 2 is the link layer, 3 is the network layer and 4 is the application layer.
 \item Restricting edits to a specific 'header'- Ethernet, ARP, IP, ICMP, TCP and UDP are supported in this case.
 \end{itemize}
+
+\section{Conclusions}
+There are tools that can help, but nothing that appears geared towards the problem. Most existing tools present a kind of `read-only' interface toward existing captures, or allow modifying them while preserving packet integrity. Bit-Twist's pcap editor allows arbitrary modification, but is somewhat cumbersome to use, applying the same changes on all packets.
 
 %%%%%%%%%%%%
 % Research %
@@ -381,6 +391,126 @@ However, existing bindings are outdated or are for Python 2, so a new set of bin
 
 Instead, the documentation for libpcap's file format was used. This will be discussed later.
 
+\section{Protocols}
+The project needs to deal with real network captures. Therefore, knowledge of protocols that occur on real networks is essential. Dissecting packets to extract and replace information is a task that requires specific knowledge. Fortunately, obtaining this is a fairly straightforward task.
+
+The first problem is finding out \emph{what} protocols are used. This is almost trivial, and can be determined in numerous ways; an empirical method would be simply to examining a live network, this will tell you not only what protocols are in use, but how often they are used.
+Another method would be to simply gather some background knowledge - how networks operate and what they are used for. Internet access is almost ubiquitous, and the world wide web has become a prominent part of modern society, and it turns out these kind of statistics are well-studied. %TODO
+
+Local area networks typically have a homogeneous medium, the most common of which is Ethernet. From a data analysis point of view, this is one of the basic `carrier protocols' that all other protocols are encapsulated within.
+
+Things to mention:
+
+Carriers, Most LANs use Ethernet.
+
+Routers and modems may change the carrier.
+
+Ideally, Internet Protocol packets remain the same.
+
+Forward thinking and IPv6
+
+The next problem, is understanding these protocols enough to identify them. This is also a straightforward task, most of these protocols are standardised by the IETF (Internet Engineering Task Force), and are publicly available as RFCs (Request For Comments).
+
+As this project is about manipulating packet captures, it is essential to know what bits of data are important, and which are not. The three most important types of data are:
+\begin{itemize}
+\item Things that identify the payload - essential for further dissection.
+\item Things that identify hosts - these may need to be replaced for various reasons.
+\item Things that maintain data integrity - checksums and the like, which require updating if packet contents is modified.
+\end{itemize}
+
+There are other types of data with some significance. 
+\subsection{Ethernet II/IEEE 802.3}
+Ethernet is the common name for the IEEE 802.3 standards family, which is part of the broader family known as IEEE 802, covering technology used in Local/Metropolitan Area Networks.
+
+Unlike the family of Internet Standards, Ethernet is a \emph{physical} to \emph{link-layer} specification maintained by IEEE-SA (Institute of Electrical and Electronics Engineers Standards Association), an organisation part of IEEE.
+
+
+\begin{figure}[H]
+\begin{bytefield}[bitwidth=0.3em]{142}
+\bitheader{0, 48, 96, 112}\\
+\bitbox{48}{Destination MAC address} &
+\bitbox{48}{Source MAC address} &
+\bitbox{16}{Ethertype} &
+\bitbox[ltb]{30}{Payload ...}\\
+\end{bytefield}
+\caption{Simplified diagram of the Ethernet frame format.}
+\label{fig:ethfmt}
+\end{figure}
+
+The Ethernet \emph{packet} format is specified in IEEE 802.3 Section 3.1.1\cite{ieee802.3}, and consists of:
+\begin{enumerate}
+\item Preamble: 7 octets (8-bit bytes), with the pattern $10101010$.
+\item Start Frame Delimiter: 1 octet, with the pattern $10101011$.
+\item Destination Address: 6 octets. This is where the frame starts.
+\item Source Address: 6 octets.
+\item Ethertype/Length: 2 octets. This identifies what the payload contains, or how long it is (if less than 1500).
+\item Payload: 46 to 1500 octets
+\item Frame Check Sequence: 4 octets, this is a CRC (Cyclic Redundancy Check) of the above frame data. This is where the frame ends.
+\end{enumerate}
+
+These details are transmitted most significant bit first, most significant byte first (big-endian ordering).
+
+The frame format is extended by IEEE 802.1Q and further extended by IEEE 802.1AD. 802.1Q adds support for VLANs (Virtual Local Area Networks) and 802.1AD adds support for an additional layer of VLANs.
+Logically, the information these extensions add is placed before the Ethertype, and consist of a 2 octet differentiating identifier ($0x8100$ for 1Q, $0x88A8$ for 1AD) in place of the Ethertype, and a 2 octet `VLAN tag'. This identifier is used to determine if the frame has any such extensions. 802.1Q adds a single VLAN tag, 802.1AD adds an additional identifier and VLAN tag preceding the 802.1Q field.
+
+This all means that an Ethernet \emph{frame} has a variadic size, with a range of $64$ to $1564$ octets ($+4$ or $+8$ octets, for 802.1Q and 802.1AD respectively).
+
+The source and destination address fields are fairly self-explanatory, the Ethertype describes either the contents of the payload, or its length. The former seems to be the typical case, and is invaluable to interpreting Ethernet frames carrying multiple protocols.
+
+\subsection{Address Resolution Protocol}
+The Address Resolution Protocol, commonly known as ARP, was first proposed and standardised as RFC 826\cite{rfc826}.
+
+ARP's primary purpose is to map \emph{hardware} host addresses to \emph{protocol} addresses, originally proposed for mapping MAC addresses to IPv4 addresses.
+
+ARP packets consist of two 16 bit type identifiers, two 6 bit lengh fields and a 16 bit opcode field, followed by four variable length address fields.
+
+\begin{figure}[H]
+\center
+\begin{bytefield}[bitwidth=1.5em]{16}
+\bitheader{0,7,15}\\
+\bitbox{16}{Hardware Type}\\
+\bitbox{16}{Protocol Type}\\
+\bitbox{8}{Hardware Address Length} & \bitbox{8}{Protocol Address Length}\\
+\bitbox{16}{Opcode}\\
+\bitbox[lrt]{16}{Sender Hardware Address}\\
+\bitbox[lr]{16}{}\\
+\bitbox[lrb]{16}{}\\
+\bitbox[lrt]{16}{Sender Protocol Address}\\
+\bitbox[lrb]{16}{}\\
+\bitbox[lrt]{16}{Target Hardware Address}\\
+\bitbox[lr]{16}{}\\
+\bitbox[lrb]{16}{}\\
+\bitbox[lrt]{16}{Target Protocol Address}\\
+\bitbox[lrb]{16}{}
+\end{bytefield}
+\caption{Typical ARP packet, with 6 octet hardware addresses and 4 octet protocol addresses.}
+\label{fig:arpfmt}
+\end{figure}
+
+As far as dissection goes, ARP is a terminal protocol and is also quite boring - it does not encapsulate anything, and is rarely interesting in terms of forensics, but it does contains four \emph{host identities}.
+
+\subsection{Internet Protocol (version 4)}
+The Internet Protocol, commonly known as IP or IPv4, is specified and explained in RFC 791\cite{rfc791}.
+
+\begin{figure}[H]
+\center
+\begin{bytefield}[bitwidth=1.3em]{32}
+\bitheader{0-31}\\
+\bitbox{4}{Version} & \bitbox{4}{IHL} & \bitbox{8}{Type of Service} & \bitbox{16}{Total Length}\\
+\bitbox{16}{Identification} & \bitbox{3}{Flags} & \bitbox{13}{Fragment Offset}\\
+\bitbox{8}{Time to Live} & \bitbox{8}{Protocol} & \bitbox{16}{Header Checksum}\\
+\wordbox{1}{Source Address}\\
+\wordbox{1}{Destination Address}
+\end{bytefield}
+\caption{Typical IPv4 packet format, without any optional sections}
+\label{fig:ip4fmt}
+\end{figure}
+
+\subsection{Internet Protocol (version 6)}
+
+\subsection{User Datagram Protocol}
+\subsection{Transmission Control Protocol}
+
 %%%%%%%%%%%%%%%%
 % Requirements %
 %%%%%%%%%%%%%%%%
@@ -469,5 +599,21 @@ Pcap file format.
     Dr. Winston W. Royce (26th August, 1970)\\
     MANAGING THE DEVELOPMENT OF LARGE SOFTWARE SYSTEMS\\
     \url{http://www.cs.umd.edu/class/spring2003/cmsc838p/Process/waterfall.pdf}
+    
+\bibitem{ieee802.3}
+	IEEE Computer Society (28th December, 2012)
+	IEEE Standard for Ethernet (IEEE Std 802.3-2012)
+	\url{http://standards.ieee.org/getieee802/download/802.3-2012_section1.pdf}
+	
+\bibitem{rfc826}
+	David C. Plummer (November, 1982)\\
+	An Ethernet Address Resolution Protocol, or\\
+	Converting Network Protocol Addresses\\
+	\url{https://tools.ietf.org/html/rfc826}
+	
+\bibitem{rfc791}
+	Information Sciences Institute, University of Southern California (September, 1981)\\
+	INTERNET PROTOCOL\\
+	\url{https://tools.ietf.org/html/rfc791}
 \end{thebibliography}
 \end{document}
