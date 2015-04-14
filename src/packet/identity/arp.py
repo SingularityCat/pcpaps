@@ -5,7 +5,7 @@ from . import eth
 
 from .core import uint16pack, uint16unpack
 
-# RFC 826:
+# RFC 826: An Ethernet Address Resolution Protocol
 #
 #    ARP Ethernet packet data:
 #        16.bit: (ar$hrd) Hardware address space (e.g., Ethernet,

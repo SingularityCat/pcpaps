@@ -9,7 +9,7 @@ from .core import uint16pack, uint16unpack
 
 
 
-# RFC 791
+# RFC 791: INTERNET PROTOCOL
 #
 # Internet Header Format
 #  0                   1                   2                   3
@@ -75,7 +75,9 @@ def ip4_extract_fragment_info(fragdat):
     return frag_flags, frag_offset
 
 # Support for fragmented IP packets.
+#
 fragment_trackers = {}
+
 
 class FragmentTracker:
     """Used to track fragmented IP packets."""
@@ -172,8 +174,8 @@ class IPv4(core.CarrierProtocol):
         ihl = self.data[self._ver_ihl] & 0x0F
 
         self.payload_offset = (ihl * 4) # IHL is in terms of 4 bytes.
-        self.payload_length = \
-            uint16unpack(self.data[self._len]) - self.payload_offset
+        self.payload_end = uint16unpack(self.data[self._len])
+        self.payload_length = self.payload_end - self.payload_offset
 
 
     # Used by the interpreter/fragment tracker.
@@ -209,11 +211,60 @@ class IPv4(core.CarrierProtocol):
         pass
 
 
+    def replace_hosts(self, hostmap):
+        """Replace source/destination addresses."""
+        ipmap = hostmap[core.AddrType.IP4.value]
+
+        saddr = bytes(self.data[self._saddr])
+        daddr = bytes(self.data[self._daddr])
+
+        if saddr in ipmap:
+            self.data[self._saddr] = ipmap[saddr]
+
+        if daddr in ipmap:
+            self.data[self._daddr] = ipmap[daddr]
+
+        if self.next is not None:
+            self.next.replace_hosts(hostmap)
+
+
+    def recalculate_checksums(self):
+        if self.next is not None:
+            self.next.reecalculate_checksums()
+
+
+    @staticmethod
+    def reset_state():
+        """Resets the fragment_trackers dict."""
+        fragment_trackers = {}
+
+
+    # IPv4 attrstr format.
+    # <attr> = <key> "=" <value>
+    # <attrstr> = <attr> | <attr> ";" <attrstr>
+    #
+    # Attributes are seperated by semicolons, which contain colon-seperated key-value pairs.
+    # Valid keys are 
     @staticmethod
     def build_attributes(attrstr):
-        """Build attribute dict from string."""
-        attrs = {}
-        return attrs
+        """Creates a set of attributes from an attribute string."""
+        attrdict = {}
+
+        attrs = attrstr.split(";")
+        for attr in attrs:
+            try:
+                # Split into kvp.
+                k, v = attr.split("=")
+
+                if k == "saddr" or k == "daddr":
+                    attrdict[k] = common.ip4_str2bin(v)
+                elif k == "protocol":
+                    attrdict["protocol"] = common.parse_int(v)
+            except ValueError:
+                # Skip malformed attribute.
+                pass
+
+        return attrdict
 
 
     @staticmethod
@@ -248,7 +299,7 @@ class IPv4(core.CarrierProtocol):
                     frag.completed = True
                     # Add payload memoryview to views list.
                     views.append(
-                        frag.data[frag.payload_offset:frag.payload_length]
+                        frag.data[frag.payload_offset:frag.payload_end]
                     )
                 # Determine protocol (based off protocol number of last packet)
                 if protonum in registry:
@@ -267,7 +318,7 @@ class IPv4(core.CarrierProtocol):
                 # Get protocol class.
                 protocol = core.lookup_protocol(registry[protonum])
                 # Define payload view.
-                payload = instance.data[instance.payload_offset:instance.payload_length]
+                payload = instance.data[instance.payload_offset:instance.payload_end]
                 # Interpret payload.
                 instance.next = protocol.interpret_packet(payload, instance)
         return instance
