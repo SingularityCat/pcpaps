@@ -3,8 +3,10 @@ import struct
 from .. import common
 from .. import memorymap
 
+from . import ip
 from . import core
 from . import eth
+
 from .core import uint16pack, uint16unpack
 
 
@@ -302,8 +304,8 @@ class IPv4(core.CarrierProtocol):
                         frag.data[frag.payload_offset:frag.payload_end]
                     )
                 # Determine protocol (based off protocol number of last packet)
-                if protonum in registry:
-                    protocol = core.lookup_protocol(registry[protonum])
+                protocol = ip.lookup_ip_protocol(protonum)
+                if protocol is not None:
                     # Define payload view.
                     mapped_data = memorymap.memorymap(views)
                     # Interpret payload.
@@ -314,21 +316,14 @@ class IPv4(core.CarrierProtocol):
         else:
             # No fragmentation!
             # Determine protocol.
-            if protonum in registry:
-                # Get protocol class.
-                protocol = core.lookup_protocol(registry[protonum])
+            protocol = ip.lookup_ip_protocol(protonum)
+            if protocol is not None:
                 # Define payload view.
                 payload = instance.data[instance.payload_offset:instance.payload_end]
                 # Interpret payload.
                 instance.next = protocol.interpret_packet(payload, instance)
         return instance
 
-
-def register_ip_protocol(protocol, protonum):
-    """Associate a protocl name with a IP protocol number."""
-    registry[protonum] = protocol
-
-registry = {}
 
 # Register protocol, as a ethertype handler and as a linktype handler.
 core.register_protocol(IPv4)
