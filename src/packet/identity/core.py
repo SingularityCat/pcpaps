@@ -1,11 +1,11 @@
-import enum
-import struct
-
 """
 core: root module of identification system
 Contains class definition for a 'Stream'.
 Contains abstract class definition for Protocol and CarrierProtocol.
 """
+
+import enum
+import struct
 
 class AddrType(enum.Enum):
     IP4 = "ip4"
@@ -166,14 +166,14 @@ In addition to the Protocol methods, a CarrierProtocol needs to implement
 the get_route and get_route_reciprocal methods."""
 
 
-    def get_route():
+    def get_route(self):
         """Abstract method returning a hashable object that represents
 the 'route' (the destination, source and direction) a carrier protocol would
 direct a packet."""
         raise NotImplementedError("get_route not implemented.")
 
 
-    def get_route_reciprocal():
+    def get_route_reciprocal(self):
         """Abstract method returning a hashable object not unlike the above,
 that returns the opposite route.
 E.g. if get_route returned A -> B, this should return B -> A."""
