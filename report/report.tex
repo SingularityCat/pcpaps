@@ -233,9 +233,9 @@ Many languages were assessed for use in this project using the criteria above, w
 \end{itemize}
 
 \subsection{C}
-For a while, C was the \emph{lingua franca} of the programming world. C is a fairly old language, dating back to 1972 and was used to write many of the UNIX utilities. %TODO REFS!
+For a while, C was the \emph{lingua franca} of the programming world. C is a fairly old language, dating back to 1972 and was used to write many parts of the UNIX operating system. %TODO REFS!
 
-C is technically considered a high-level programming language, in that it gives you automatic variable allocation and permits arbitrarily complex expressions without explicitly storing intermediary results - the detail of a register is seldom expressed in C code; variables always have an address in memory (unless the register keyword is used in variable declaration).
+C is technically considered a high-level programming language, in that it gives you automatic variable allocation and permits arbitrarily complex arithmetic and logical expressions without explicitly storing intermediary results. The detail of a register (memory that is part of the CPU) is seldom expressed in C code; variables have an addressable place in main memory unless the register keyword is used in variable declaration\footnote{Although, an optimising compiler \emph{can} do this for you.}.
 
 C has the advantage of very little overhead - there is no garbage collector; all memory management is done manually. Given that networking protocols, particularly the ones relevant to this project, are often implemented in C; C seems like a fair choice despite its shortcomings.
 
@@ -250,10 +250,12 @@ C++ adds classes, namespaces, `references' and templates to the C language. For 
 C++ resolves some of the issues with using C for this project. However, the remaining issues make C/C++ difficult to choose.
 
 \subsection{Java}
-
-\subsection{Bash}
+Java is a language usually compiled to \emph{bytecode} and then interpreted by a virtual machine, the JVM.
 
 \subsection{Python}
+Python is an interpreted, multi-paradigm, fully object oriented language. Python also has it's own philosophy - solutions are often deemed to be \emph{pythonic} based on various factors such as elegance and being obvious. However, in Python, mechanism is separate from policy; the various Python conventions are exactly that - conventions.
+
+Python code is usually distributed in source form, but can be compiled to a bytecode not unlike Java. Python as a language does not enforce any kind of information hiding or encapsulation, and does \emph{not} require nor support typed variables\footnote{Note that this does not mean python is weakly typed -  Python has strong typing that requires explicit conversion.}. This is in contrast to Java, which provides these kind of access qualifiers. Instead of these, a convention is used - private and protected access qualifiers are signified by a single underscore before member names, and API documentation is generally used to specify argument and return types for functions and methods.
 
 \subsection{Chosen Language: Python}
 Time was the unspoken major factor in this decision, and given the liberty to choose any programming language means ones in which the programmer has experience will take precedence. This means that languages designed for unfamiliar paradigms (such as Haskell, being a purely functional programming language\cite{haskfunc}) or languages that leave a considerable amount of work to their user (such as Assembly) were eliminated.
@@ -677,6 +679,10 @@ Logically speaking, instances of communication over a network have a linear hier
 
 \chapter{Implementation}
 
+\chapter{Testing}
+
+\chapter{Critical Evaluation}
+
 \chapter{Appendix}
 \section{Formats}
 Pcap file format.
@@ -745,5 +751,11 @@ Pcap file format.
 	Information Sciences Institute, University of Southern California (September, 1981)\\
 	INTERNET PROTOCOL\\
 	\url{https://tools.ietf.org/html/rfc791}
+	
+\bibitem{rfc2460}
+	S. Deering, R. Hinden, The Internet Society (December 1998)\\
+	Internet Protocol, Version 6 (IPv6)\\
+	\url{https://tools.ietf.org/html/rfc2460}
+
 \end{thebibliography}
 \end{document}
