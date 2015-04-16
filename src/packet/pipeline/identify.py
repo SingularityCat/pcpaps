@@ -1,4 +1,7 @@
+
+
 from .. identity import core as identity_core
+
 def identify(source):
     # Deferred packets go here.
     buf = []
@@ -17,4 +20,4 @@ def identify(source):
             yield packet
 
     for leftover in buf:
-        yield buf
+        yield leftover
