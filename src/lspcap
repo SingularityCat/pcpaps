@@ -5,7 +5,6 @@ Simple program that lists entries in a pcap file.
 """
 
 import sys
-from packet import common
 from packet.capfile import pcap
 
 from packet.pipeline.identify import identify
@@ -15,4 +14,4 @@ f = open(sys.argv[1], "rb")
 reader = pcap.PcapReader(f)
 
 for pkt in identify(reader):
-    common.print_packetinfo(pkt)
+    print(pkt)
