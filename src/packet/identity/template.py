@@ -18,9 +18,11 @@ class Template(core.Protocol):
 
     def _calculate_offsets(self):
         # Fixed offsets.
+        pass
 
 
     def replace_hosts(self, hostmap):
+        pass
 
 
     def get_attributes(self):
