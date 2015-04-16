@@ -1,6 +1,6 @@
-import collections.abc
-
 """memorymap: Providing a logically contiguous mapping of several memoryviews"""
+
+import collections.abc
 
 # Maps multiple memoryviews into a single logical block.
 #
@@ -16,18 +16,24 @@ import collections.abc
 # 2|_|  6|C|
 #   _   7| |
 # 0|C|  8|_|
-# 1| | 
+# 1| |
 # 2|_|
 #
 
+
 def clamp_start(idx, length):
+    """Clamps an index from 0 to length (exclusive)."""
     return max(0, min(length - 1, idx))
 
+
 def clamp_end(idx, length):
+    """Clamps an index from None/negative to length (inclusive)."""
     return None if idx < 0 else min(length, idx)
+
 
 # simple 'segment' namedtuple.
 segment = collections.namedtuple("segment", ["start", "end", "mem"])
+
 
 class memorymap(collections.abc.MutableSequence):
     """Maps a series of memoryview objects (or 'segments') into a single
@@ -36,7 +42,7 @@ logical address space."""
     __slots__ = {"segments", "_len"}
 
 
-    def __init__(self, obj, slc=slice(None,None,None)):
+    def __init__(self, obj, slc=slice(None, None, None)):
         # Initialise empty segment list.
         self.segments = []
         self._len = 0
@@ -190,11 +196,4 @@ or returns a memorymap in the given range."""
     def insert(self, idx, val):
         """Inserting items is not allowed."""
         raise TypeError("Cannot create item.")
-
-
-a = memoryview(bytearray(b"01234"))
-b = memoryview(bytearray(b"56789"))
-ab = memorymap([a, b])
-ab_03 = ab[0:3]
-print(bytes(ab_03))
 
