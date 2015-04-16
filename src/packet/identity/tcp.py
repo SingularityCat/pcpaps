@@ -9,7 +9,7 @@ from .core import uint16pack, uint16unpack
 class TCP(core.CarrierProtocol):
     name = "tcp"
 
-        __slots__ = {}
+    __slots__ = {}
 
     def __init__(self, data, prev):
         super().__init__(data, prev)
@@ -62,4 +62,4 @@ class TCP(core.CarrierProtocol):
         return instance
 
 core.register_protocol(TCP)
-ip.regsiter_ip_protocol(TCP.name, ip.PROTO_TCP)
+ip.register_ip_protocol(TCP.name, ip.PROTO_TCP)
