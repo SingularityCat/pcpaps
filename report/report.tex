@@ -15,11 +15,9 @@
 % For formal grammar.
 \usepackage{syntax}
 
-% For diagrams
+% For typeset diagrams
 \usepackage{bytefield}
-\usepackage{tikz}
-\usepackage{dot2texi}
-\usetikzlibrary{shapes,arrows}
+\usepackage{dirtree}
 
 % Provides an extended tabular environment.
 \usepackage{tabularx}
@@ -121,6 +119,7 @@ Creating such packet captures is not difficult, but there are few, if any tools 
 \pagebreak
 
 \section{Existing Solutions}
+\label{sec:existing}
 None, it would seem.
 
 There are a number of tools for network packet capture, and a number of tools for analysing them. These tools do not solve the problem \emph{per se}, but do allow packet capture manipulation to a certain extent, and therefore might be a useful aid in manipulating packet captures.
@@ -222,9 +221,41 @@ syscall      ; Do the system call. Similair to int 0x80.
 \end{lstlisting}
 
 \section{Programming Language: Assessment}
-It should be noted that many languages were discarded based on the author's knowledge. % TODO
+(work in progress, needs finishing and refs)
 
-\subsection{Chosen Language}
+Many languages were assessed for use in this project using the criteria above, with some being discarded on a singular fatal flaw. These are:
+\begin{itemize}
+\item C\#, Visual Basic, other .NET languages: These are fairly portable with the advent of Mono\cite{mono}, but the author still has reservations about this.
+\item Haskell: An interesting language, but requires a substantially different approach to program design then what the author is familiar with.
+\item PHP, Javascript: Languages that are perfectly serviceable for the task at hand, but have a heavy focus on web development rather then packet capture processing. A more neutral choice would be better.
+\item Assembly: These languages are very low level and require a great deal of effort to accomplish simple tasks. Additionally, they tend not to be portable.
+\item COBOL: An affront to language design, this is on the list purely as humour.
+\end{itemize}
+
+\subsection{C}
+For a while, C was the \emph{lingua franca} of the programming world. C is a fairly old language, dating back to 1972 and was used to write many of the UNIX utilities. %TODO REFS!
+
+C is technically considered a high-level programming language, in that it gives you automatic variable allocation and permits arbitrarily complex expressions without explicitly storing intermediary results - the detail of a register is seldom expressed in C code; variables always have an address in memory (unless the register keyword is used in variable declaration).
+
+C has the advantage of very little overhead - there is no garbage collector; all memory management is done manually. Given that networking protocols, particularly the ones relevant to this project, are often implemented in C; C seems like a fair choice despite its shortcomings.
+
+Perhaps the biggest issue with using C is work to functionality ratio. Data structures available in other languages like linked lists and hash tables require implementing, and code generally has to be quite explicit. There are no abstractions such as `iterate over every element in this array' provided by default (although this is possible to some extent with preprocessor macros), and C is not an object oriented language - there is no real notion of classes, which are (if used correctly) a useful abstraction.
+
+C is a compiled language, which means the project requires compilation to a platform specific executable. While the code in itself is no less portable for this, it does require testing on compliers for all supported platforms - most of which are not completely compatible with each other.
+
+\subsubsection{C++}
+Originally called and often described as `C with classes', C++ is a derivative of the C programming language. %TODO REFS!
+C++ adds classes, namespaces, `references' and templates to the C language. For the most part, it retains compatibility with the C language and can be freely mixed with C code.
+
+C++ resolves some of the issues with using C for this project. However, the remaining issues make C/C++ difficult to choose.
+
+\subsection{Java}
+
+\subsection{Bash}
+
+\subsection{Python}
+
+\subsection{Chosen Language: Python}
 Time was the unspoken major factor in this decision, and given the liberty to choose any programming language means ones in which the programmer has experience will take precedence. This means that languages designed for unfamiliar paradigms (such as Haskell, being a purely functional programming language\cite{haskfunc}) or languages that leave a considerable amount of work to their user (such as Assembly) were eliminated.
 
 The choice was Python. This was driven by it's status as a multi-paradigm language that offers a different models of program abstraction.
@@ -373,7 +404,7 @@ The author, being a Linux aficionado, is particularly fond of following the \emp
 This is the Unix philosophy: Write programs that do one thing and do it well. Write programs to work together. Write programs to handle text streams, because that is a universal interface.
 \end{quote}
 
-To this end, a system based around multiple small utilities that can be strung together to produce the desired output seems an appropriate architecture.
+To this end, a system based around multiple small utilities that can be strung together to produce the desired output seems an appropriate architecture. Out of necessity, \emph{text} will not be used as a model for data, but a ubiquitous packet capture format will be used. It is evident from the programs listed in section \ref{sec:existing} that this format is \emph{pcap}.
 
 \section{Development Methodology}
 The widely known `waterfall model' of software development was, in it's current form, presented as a flawed model that lacked development stage feedback\cite{wwr-waterfall-notes}. It represents an idealised scenario where all requirements are specific, well understood and concrete, and that there are no unforeseen problems in implementation. Unfortunately, this is not how things work in practice.
@@ -418,8 +449,9 @@ As this project is about manipulating packet captures, it is essential to know w
 \item Things that maintain data integrity - checksums and the like, which require updating if packet contents is modified.
 \end{itemize}
 
-There are other types of data with some significance. 
+There are other types of data with some significance. Protocols which split their payload over multiple packets (e.g. fragmented IP packets or TCP) will have some kind of identification in order to permit reassembly or to identify parts of a stream. This is important if reconstructing the whole transmission.
 \subsection{Ethernet II/IEEE 802.3}
+\label{sec:eth}
 Ethernet is the common name for the IEEE 802.3 standards family, which is part of the broader family known as IEEE 802, covering technology used in Local/Metropolitan Area Networks.
 
 Unlike the family of Internet Standards, Ethernet is a \emph{physical} to \emph{link-layer} specification maintained by IEEE-SA (Institute of Electrical and Electronics Engineers Standards Association), an organisation part of IEEE.
@@ -458,11 +490,12 @@ This all means that an Ethernet \emph{frame} has a variadic size, with a range o
 The source and destination address fields are fairly self-explanatory, the Ethertype describes either the contents of the payload, or its length. The former seems to be the typical case, and is invaluable to interpreting Ethernet frames carrying multiple protocols.
 
 \subsection{Address Resolution Protocol}
+\label{sec:arp}
 The Address Resolution Protocol, commonly known as ARP, was first proposed and standardised as RFC 826\cite{rfc826}.
 
 ARP's primary purpose is to map \emph{hardware} host addresses to \emph{protocol} addresses, originally proposed for mapping MAC addresses to IPv4 addresses.
 
-ARP packets consist of two 16 bit type identifiers, two 6 bit lengh fields and a 16 bit opcode field, followed by four variable length address fields.
+ARP packets consist of two 16 bit type identifiers, two 6 bit lengh fields and a 16 bit opcode field, followed by four variable length address fields.\footnote{It is interesting to note that in principle, ARP can work with any hardware or protocol address up to 255 bytes in length - it's design allowing for arbitrary sizes for either, however in practice it is only ever used for MAC/IPv4 resolution. For IPv6, the same problem was solved with a new protocol, NDP (see \ref{sec:ndp})}
 
 \begin{figure}[H]
 \center
@@ -490,7 +523,8 @@ ARP packets consist of two 16 bit type identifiers, two 6 bit lengh fields and a
 As far as dissection goes, ARP is a terminal protocol and is also quite boring - it does not encapsulate anything, and is rarely interesting in terms of forensics, but it does contains four \emph{host identities}.
 
 \subsection{Internet Protocol (version 4)}
-The Internet Protocol, commonly known as IP or IPv4, is specified and explained in RFC 791\cite{rfc791}.
+\label{sec:ip4}
+The Internet Protocol, commonly known as IPv4 or just IP, is specified and explained in RFC 791\cite{rfc791}.
 
 \begin{figure}[H]
 \center
@@ -507,50 +541,141 @@ The Internet Protocol, commonly known as IP or IPv4, is specified and explained 
 \end{figure}
 
 \subsection{Internet Protocol (version 6)}
+\label{sec:ip6}
+
+\subsection{Neighbour Discovery Protocol}
+\label{sec:ndp}
 
 \subsection{User Datagram Protocol}
+\label{sec:udp}
+
 \subsection{Transmission Control Protocol}
+\label{sec:tcp}
+
+\subsection{Domain Name System}
+\label{sec:dns}
 
 %%%%%%%%%%%%%%%%
 % Requirements %
 %%%%%%%%%%%%%%%%
 \chapter{Requirements}
+Ultimately, specifics of the project were left to the author. Sean Tohill proposed the following workflow:
+
+\begin{quote}
+You run small captures of individual sessions e.g. email.
+
+You sanitise by removing some packets e.g. arp, proxy.
+
+You change ip addresses of the host to something else.
+
+You put them together to make a larger capture, you need to alter times and stuff here.
+
+\end{quote}
+
 \section{Functional Requirements}
 
 \begin{enumerate}[label=\bfseries FR\arabic*:]
-\item \label{fr:1} The program shall be able to read a packet capture file in at least pcap format as program input.
-\item \label{fr:2} The program shall be able to write a packet capture file in at least pcap format as program output.
-\item \label{fr:3} The program shall be able to identify protocols used in individual packets, and based off this information should...
+\item \label{fr:1} The programs shall be able to read a packet capture file in at least pcap format as program input.
+\item \label{fr:2} The programs shall be able to write a packet capture file in at least pcap format as program output.
+\item \label{fr:3} The programs shall be able to identify protocols used in individual packets, and based off this information should...
 \item \label{fr:4} ... be able to selectively remove packets belonging to a predefined set of protocols.
 \item \label{fr:5} ... be able to alter the contents of packets based on a set of predefined substitutions.
-\item \label{fr:6} The program shall be able to accept multiple inputs, and merge them into a single output.
-\item \label{fr:7} The program shall be able to alter the timestamp metadata for individual packets.
-\item \label{fr:8} The program shall allow for externel support code (extensions) for handling new protocols to be added and used at runtime.
-\item \label{fr:9} The program shall be able to operate on streaming data in addition to static files.
+\item \label{fr:6} There shall be a program that accepts multiple inputs, and merge them into a single output.
+\item \label{fr:7} There shall be a program that alters the timestamp metadata for individual packets.
+\item \label{fr:8} Programs shall support loading external support code (extensions) for handling new protocols at runtime.
+\item \label{fr:9} The programs shall be able to operate on streaming data in addition to static files.
 \end{enumerate}
 
 \section{Non-functional Requirements}
-
 \begin{enumerate}[label=\bfseries NFR\arabic*:]
-\item \label{nfr:1} The program shall be useable on any python implementation supporting at least Python 3.4.
-\item \label{nfr:2} The program shall be usable on any platform supported by such an implementation.
-\item \label{nfr:3} The program should scale well and have, as a worst case, a small coefficient linear memory usage growth rate in respect to input data size.
+\item \label{nfr:1} The programs shall be usable on any python implementation supporting at least Python 3.4.
+\item \label{nfr:2} The programs shall be usable on any platform supported by such an implementation.
+\item \label{nfr:3} The programs should scale well and have, as a worst case, a small coefficient linear memory usage growth rate in respect to input data size.
 \item \label{nfr:4} The program should scale well and have a linear time complexity in respect to input data size.
-\item \label{nfr:5} The program's source code shall be designed in a maintainable manner, such that...
+\item \label{nfr:5} The source code shall be designed in a maintainable manner, such that...
 \item \label{nfr:6} ... irreleant components make no assumptions about the input file format.
 \item \label{nfr:7} ... irreleant components make no assumptions about the output file format.
 \item \label{nfr:8} ... support for identifying new protocols requires few, if any alterations to existing code.
 \item \label{nfr:9} ... support for new file formats requires few alterations to existing code.
-\item \label{nfr:10} The program (and it's source code) should be structured and reusable with-well defined interfaces.
-\item \label{nfr:11} The program should be resilient - it should handle invalid data gracefully.
-\item \label{nfr:12} The program should be secure - it should handle malicious data in a safe way.
+\item \label{nfr:10} The programs (and their source code) should be structured and reusable with-well defined interfaces.
+\item \label{nfr:11} The programs should be resilient - they should handle invalid data gracefully.
+\item \label{nfr:12} The programs should be secure - they should handle malicious data in a safe way.
 \end{enumerate}
 
 %%%%%%%%%%
 % Design %
 %%%%%%%%%%
 \chapter{Design}
-\section{Architecture}
+\section{Structure}
+Ultimately, code maintainability relies on a logical layout. Firstly, a clear distinction between \emph{application code} and \emph{library code} was decided. All \emph{library code} is to be contained in it's own Python package.
+
+Much like the programs, this code has several well differentiated tasks - \emph{reading and understanding packet captures}, \emph{dissecting and altering packets} and \emph{processing streams of packets}. Code that handles these abstract tasks are contained as their own \emph{subpackage}, \emph{capfile}, \emph{identity} and \emph{pipeline} respectively.
+
+\begin{figure}[H]
+\dirtree{%
+.1 src.
+.2 packet.
+.3 capfile.
+.4 core.py.
+.4 pcap.py.
+.3 identity.
+.4 arp.py.
+.4 core.py.
+.4 eth.py.
+.4 ip4.py.
+.4 ip6.py.
+.4 tcp.py.
+.4 udp.py.
+.3 pipeline.
+.4 filter.py.
+.4 identify.py.
+.4 merge.py.
+.3 common.py.
+.3 memorymap.py.
+}
+\caption{A speculative code layout.}
+\label{fig:codelayout}
+\end{figure}
+\section{Abstractions}
+When dealing with a problem, it is helpful to simplify details to a more abstract form. This way, it is possible to handle \emph{packets} instead of \emph{pcap-formatted ethernet packet data}.
+
+For this project, there are three major abstract entities: packets, packet sources and protocols.
+
+\subsection{Packets}
+Packets are represented by instances of a \emph{Packet class}. The Packet class will consist of a collection of fields; the \emph{linktype}, the time the packet arrived, the recorded packet data, and the packet's original length along with a special field, \emph{identity}.
+
+\begin{figure}
+\center
+\includegraphics[scale=0.7]{diagrams/packet.png}
+\caption{The packet class}
+\end{figure}
+
+Here, \emph{linktype} is an integer constant that represents one of many network media types. An important design decision was to make as few assumptions as possible about program input, so this field exists to identify what kind of packet this is. The most common value for this will be $1$, which corresponds to Ethernet (\texttt{LinkType.ETHERNET}) but other values are possible and should be supported.
+
+\emph{identity} is a field, set to None by default, which holds the root protocol (i.e. the bottom most protocol) instance, more on this in the \emph{Protocols} section (\ref{sec:desproto}).
+
+\subsection{Packet Sources}
+\emph{Packet sources} are objects that support Python's \emph{iterator protocol} that yield the packet objects mentioned above. Packet sources are presented by the library as building blocks for higher level applications, and most of them can be chained together.
+
+\subsection{Protocols}
+\label{sec:desproto}
+Network protocols are represented by Protocol classes. Protocol classes are the most complex abstraction.
+
+Logically speaking, instances of communication over a network have a linear hierarchy of protocols. A \emph{carrier protocol} encapsulates another protocol, which itself may be another carrier protocol. For this reason, Protocol instances have a structure not unlike a linked list - each instance has a parent protocol (called \texttt{prev}) and possibly a child protocol (called \texttt{next}).
+
+\begin{figure}[H]
+\center
+\includegraphics[scale=0.7]{diagrams/protocol.png}
+\caption{The packet class}
+\end{figure}
+
+\section{The \texttt{common} Module}
+\section{The \texttt{memorymap} Module}
+\section{The \texttt{capfile} Package}
+\section{The \texttt{identity} Package}
+\section{The \texttt{pipeline} Package}
+
+\chapter{Implementation}
 
 \chapter{Appendix}
 \section{Formats}
@@ -585,6 +710,11 @@ Pcap file format.
     Simon Peyton Jones (December, 2014)\\
     The Haskell 98 Report\\
     \url{https://www.haskell.org/onlinereport/intro.html}
+
+\bibitem{mono}
+	Mono Project (Accessed April, 2015)\\
+	Cross platform, open source .NET framework\\
+	\url{http://www.mono-project.com}
 
 \bibitem{cpy2maint}
     Various authors (13th of April, 2014)\\

@@ -1,0 +1,5 @@
+digraph {
+charset="utf-8"
+rankdir=BT
+"0" [label="{Packet|data : bytearray\lidentity : Protocol\llinktype : int\loriglen : int\lunixtime : float\l|}", shape="record"];
+}
