@@ -1,8 +1,8 @@
-from .. import common
-
 """
 merge: contains the definition for the merge function.
 """
+
+from .. import common
 
 def merge(preaders, relative=True, offset=None):
     """Generator function that takes a list of PacketReaders and some parameters.
