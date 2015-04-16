@@ -1,11 +1,3 @@
-import enum
-
-import collections
-import math
-import time
-
-import binascii
-
 """
 common:
  - Definition for the 'Packet' class
@@ -16,20 +8,26 @@ Contains two constants, PACKET_MINAGE and PACKET_MAXAGE, two
 psuedopackets being older then or newer then all other packets, respectively.
 """
 
+import enum
+
+import time
+import binascii
+
+
 class Packet:
     """Class consisting of five fields,
- - unixtime: Floating point number, time in seconds since 1st Jan, 1970.
- - linktype: Integer constant representing the root format of the
-             packet as specified by the source.
- - origlen: Original length of the 'data' field.
- - data: Packet data as a bytearray.
- - identity: The root protocol instance.
+     - unixtime: Floating point number, time in seconds since 1st Jan, 1970.
+     - linktype: Integer constant representing the root format of the
+                 packet as specified by the source.
+     - origlen: Original length of the 'data' field.
+     - data: Packet data as a bytearray.
+     - identity: The root protocol instance.
 
-Comparison operator methods and the length method are implemented.
-Comparisons work on the value of 'unixtime', so a < b means a is older then b.
-The length is 'origlen', so len(a) < len(b) means a was shorter then b."""
+    Comparison operator methods and the length method are implemented.
+    Comparisons work on the value of unixtime, so a < b means a is older then b.
+    The length is 'origlen', so len(a) < len(b) means a was shorter then b."""
 
-    __slots__ = ["unixtime", "linktype","origlen", "data", "identity"]
+    __slots__ = ["unixtime", "linktype", "origlen", "data", "identity"]
 
     def __init__(self, ut, lt, ol, dat):
         self.unixtime = ut
@@ -63,48 +61,51 @@ The length is 'origlen', so len(a) < len(b) means a was shorter then b."""
     def __len__(self):
         return self.origlen
 
+    def __str__(self):
+        """Creates a human readable string summary of this packet."""
+        try:
+            lnkt = LinkType(self.linktype).value
+        except ValueError:
+            lnkt = "(unknown)"
 
-def print_packetinfo(packet):
-    """Prints information in a Packet tuple to stdout."""
-    try:
-        lt = LinkType(packet.linktype).value
-    except ValueError:
-        lt = "(unknown)"
+        if self.identity is not None:
+            ident = "/".join(i.name for i in self.identity)
+            if not self.identity.is_complete():
+                ident += " (incomplete)"
+        else:
+            ident = "(not identified)"
 
-    if packet.identity is not None:
-        ident = "/".join(i.name for i in packet.identity)
-        if not packet.identity.is_complete():
-            ident += " (incomplete)"
-    else:
-        ident = "(not identified)"
+        fmtargs = (
+            time.ctime(self.unixtime), lnkt, ident,
+            self.origlen, len(self.data)
+        )
 
-    print("{0} Linktype: {1}, Identity: {2},\
- Original length: {3}, Captured length: {4}".format(
-        time.ctime(packet.unixtime), lt, ident,
-        packet.origlen, len(packet.data)))
+        return "{0} Linktype: {1}, Identity: {2},\
+ Original length: {3}, Captured length: {4}".format(*fmtargs)
 
 
-def parse_int(s):
+
+def parse_int(intstr):
     """Simple string -> integer parsing/guessing function.
 Uses 'int' to do actual conversion, returns None on error."""
     try:
-        if s.startswith("0x"):
-            return int(s[2:], 16)
-        if s.startswith("0o"):
-            return int(s[2:], 8)
-        if s.startswith("0b"):
-            return int(s[2:], 2)
+        if intstr.startswith("0x"):
+            return int(intstr[2:], 16)
+        if intstr.startswith("0o"):
+            return int(intstr[2:], 8)
+        if intstr.startswith("0b"):
+            return int(intstr[2:], 2)
 
-        return int(s)
+        return int(intstr)
     except ValueError:
         return None
 
 
-def parse_hexbytes(s):
+def parse_hexbytes(hexstr):
     """Simple hex string -> bytes parsing function.
 Uses binascii to do actual conversion, returns None on error."""
     try:
-        return binascii.unhexlify(s)
+        return binascii.unhexlify(hexstr)
     except binascii.Error:
         return None
 
@@ -158,7 +159,7 @@ def ip4_bin2str(ip4b):
     """Converts a IPv4 address in big-endian byte form to a
 string form not unlike the one accepted by the function above.
 Returns None on a format error."""
-    
+
     if len(ip4b) != 4:
         return None
 
@@ -177,9 +178,9 @@ Returns None on a format error."""
         # This can only appear once, RFC 595 section 2.2.
         if "::" in ip6s:
             ip6i_start, ip6i_end = ip6s.split("::")
-        
-            ip6i_start = [expand(pair) for pair in ip6s_start.split(":")]
-            ip6i_end = [expand(pair) for pair in ip6s_end.split(":")]
+
+            ip6i_start = [expand(pair) for pair in ip6i_start.split(":")]
+            ip6i_end = [expand(pair) for pair in ip6i_end.split(":")]
             ip6i = ip6i_start + [0]*(16 - (len(ip6i_start) + len(ip6i_end))) + ip6i_end
         else:
             ip6i = [expand(pair) for pair in ip6s.split(":")]
@@ -195,14 +196,16 @@ string form not unlike the one accepted by the function above.
 Returns None on a format error."""
     # Contracts a byte pair into a potentially compressed string.
     contract = lambda p: "{0:x}".format(p[0]*256 + p[1])
-    
+
     if len(ip6b) != 16:
         return None
 
     return ":".join(contract(ip6b[i:i+2]) for i in range(0, 16, 2))
 
-# Linktype definitions used by tcpdump and friends, http://www.tcpdump.org/linktypes.html 
+
+# Linktype definitions used by tcpdump and friends, http://www.tcpdump.org/linktypes.html
 class LinkType(enum.Enum):
+    """Linktype Enumerations matching those used in tcpdump and pcap files."""
     NULL = 0
     ETHERNET = 1
     AX25 = 3
