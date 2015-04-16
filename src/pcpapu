@@ -23,7 +23,7 @@ from packet.identity.core import AddrType
 
 from packet.pipeline.merge import merge
 from packet.pipeline.identify import identify
-from packet.pipeline.filter import filter
+from packet.pipeline.filter import filter, KEEP, DISCARD
 
 
 def build_prototype_list(attrdefstrs):
@@ -68,11 +68,19 @@ def merge_prog(argv):
 
 
 def filter_prog(argv):
+    def interpret_policy(polstr):
+        polstr = polstr.lower()
+        if polstr.startswith("d"):
+            return DISCARD
+        else:
+            return KEEP
+
     parser = argparse.ArgumentParser(prog="{0} {1}".format(argv[0], argv[1]), description="Filter packets from a capture.")
     parser.add_argument("-i", "--in", type=argparse.FileType("rb"), dest="infile", action="store", help="Input file")
     parser.add_argument("-o", "--out", type=argparse.FileType("wb"), dest="outfile", action="store", help="Output file")
-    parser.add_argument("-p", "--permit", type=build_prototype_list, dest="permit_set", action="append", help="")
+    parser.add_argument("-k", "--keep", type=build_prototype_list, dest="keep_set", action="append", help="")
     parser.add_argument("-d", "--discard", type=build_prototype_list, dest="discard_set", action="append", help="")
+    parser.add_argument("-p", "--policy", type=interpret_policy, dest="policy", action="store", choices={DISCARD, KEEP}, default=KEEP, help="")
 
     arguments = parser.parse_args(argv[2:])
 
@@ -84,7 +92,7 @@ def filter_prog(argv):
     source = pcap.PcapReader(arguments.infile)
     destination = pcap.PcapWriter(arguments.outfile)
 
-    for packet in filter(identify(source), permit=arguments.permit_set, discard=arguments.discard_set):
+    for packet in filter(identify(source), keep=arguments.keep_set, discard=arguments.discard_set, policy=arguments.policy):
         destination.write_packet(packet)
 
     destination.close()
