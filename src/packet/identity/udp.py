@@ -21,7 +21,7 @@ from .core import uint16pack, uint16unpack
 #       User Datagram Header Format    
 
 
-class UDP(core.Protocol):
+class UDP(core.CarrierProtocol):
     name = "udp"
 
     __slots__ = {}
@@ -33,10 +33,11 @@ class UDP(core.Protocol):
 
     def _calculate_offsets(self):
         # Fixed offsets.
+        pass
 
 
     def replace_hosts(self, hostmap):
-
+        pass
 
     def get_attributes(self):
         """Retrieve a set of attributes describing fields in this protocol."""
