@@ -1,6 +1,7 @@
 from .. import common
 
 from . import core
+from . import ip
 
 from .core import uint16pack, uint16unpack
 
@@ -73,8 +74,8 @@ class UDP(core.Protocol):
     def interpret_packet(data, parent):
         """Interpret packet data for this protocol."""
         instance = UDP(data, parent)
-
-core.protocol_register(UDP)
         return instance
 
+
 core.register_protocol(UDP)
+ip.register_ip_protocol(UDP.name, ip.PROTO_UDP)
