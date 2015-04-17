@@ -2,12 +2,25 @@
 \documentclass[10pt,a4paper,notitlepage]{report}
 \usepackage{ifxetex,ifluatex}
 
+\newif\ifxetexorluatex
+\ifxetex
+  \xetexorluatextrue
+\else
+  \ifluatex
+    \xetexorluatextrue
+  \else
+    \xetexorluatexfalse
+  \fi
+\fi
+
 % Better rendition of computer modern.
 \usepackage{lmodern}
 
-\usepackage{fontspec}
-%\usepackage[utf8]{luainputenc}
-\usepackage[utf8]{inputenc}
+\ifxetexorluatex
+    \usepackage{fontspec}
+\else
+    \usepackage[utf8]{inputenc}
+\fi
 
 % For mathematical typesetting.
 \usepackage{amsfonts,amsmath,amsfonts,amssymb}
@@ -233,7 +246,7 @@ Many languages were assessed for use in this project using the criteria above, w
 \end{itemize}
 
 \subsection{C}
-For a while, C was the \emph{lingua franca} of the programming world. C is a fairly old language, dating back to 1972 and was used to write many parts of the UNIX operating system. %TODO REFS!
+For a while, C was the \emph{lingua franca} of the programming world. C is a fairly old language, dating back to 1972 and was used to write many parts of the UNIX operating system\cite{tcpl}.
 
 C is technically considered a high-level programming language, in that it gives you automatic variable allocation and permits arbitrarily complex arithmetic and logical expressions without explicitly storing intermediary results. The detail of a register (memory that is part of the CPU) is seldom expressed in C code; variables have an addressable place in main memory unless the register keyword is used in variable declaration\footnote{Although, an optimising compiler \emph{can} do this for you.}.
 
@@ -244,18 +257,57 @@ Perhaps the biggest issue with using C is work to functionality ratio. Data stru
 C is a compiled language, which means the project requires compilation to a platform specific executable. While the code in itself is no less portable for this, it does require testing on compliers for all supported platforms - most of which are not completely compatible with each other.
 
 \subsubsection{C++}
-Originally called and often described as `C with classes', C++ is a derivative of the C programming language. %TODO REFS!
+Often described as `C with classes', C++ is a derivative (for the most part, a superset) of the C programming language\cite{tcpppl}.
 C++ adds classes, namespaces, `references' and templates to the C language. For the most part, it retains compatibility with the C language and can be freely mixed with C code.
 
 C++ resolves some of the issues with using C for this project. However, the remaining issues make C/C++ difficult to choose.
 
 \subsection{Java}
-Java is a language usually compiled to \emph{bytecode} and then interpreted by a virtual machine, the JVM.
+Java is a language usually compiled to \emph{bytecode} and then interpreted by a virtual machine, the Java Virtual Machine (JVM). The virtual machine accepts programs in a standardised form, so Java bytecode can work on multiple implementations. This means that Java programs, once compiled, can be run anywhere\footnote{It should be noted that other compilers exist - GCJ\cite{gcj} is such an example that compiles Java into machine code.}. Java is a very popular language\cite{javatech}, used in enterprise environments and commonly taught to university students doing a course in computer science.
+
+Java is a strongly typed, partially object oriented language - it supports all typical object oriented abstractions, but also supports \emph{primitive types} and treats classes and methods differently to other objects (you cannot assign them like other objects).
+
+Java has the advantage of executable portability that C and C++ do not, and is almost perfect for this task. It supports loading bytecode at runtime and has support for file I/O.
+
+The only real issue is somewhat subjective - the author finds Java code needlessly verbose. This is discussed in the verbosity section (\ref{sec:verbosity}).
 
 \subsection{Python}
 Python is an interpreted, multi-paradigm, fully object oriented language. Python also has it's own philosophy - solutions are often deemed to be \emph{pythonic} based on various factors such as elegance and being obvious. However, in Python, mechanism is separate from policy; the various Python conventions are exactly that - conventions.
 
 Python code is usually distributed in source form, but can be compiled to a bytecode not unlike Java. Python as a language does not enforce any kind of information hiding or encapsulation, and does \emph{not} require nor support typed variables\footnote{Note that this does not mean python is weakly typed -  Python has strong typing that requires explicit conversion.}. This is in contrast to Java, which provides these kind of access qualifiers. Instead of these, a convention is used - private and protected access qualifiers are signified by a single underscore before member names, and API documentation is generally used to specify argument and return types for functions and methods.
+
+\subsection{Code Verbosity}
+\label{sec:verbosity}
+Code verbosity is a problem in certain languages, and can make even simple code hard to follow - the less you have to read, the quicker you can comprehend it.
+
+To illustrate this problem, consider a simple task: write a program that counts the number of lines in a text file.
+In the interest of fairness, the program will have specific behaviour; it should accept standard input or a file path as it's first command line parameter, and work by looking at each character in the file and comparing it to a line feed. If reading from a file that does not exist, it should print an error message. Additionally, all variable identifiers should be the same or similar when translated to code.
+
+This program was fully implemented for the three considered languages - C, Java and Python. The C implementation is as follows:
+\lstinputlisting[
+	language={C},label={lst:nol.c},numbers=left,
+	caption={Number of Lines program, in C}
+]{nol.c}
+
+The C version's program source code consists of 38 lines and occupies 514 bytes of storage. This version of the program produces the correct output of 38 when run on it's own code, 50 and 22 when run on the other two versions' code.
+
+The Java version, with full exception handling as requested by the Java compiler, looks like this:
+
+\lstinputlisting[
+	language={Java},label={lst:nol.java},numbers=left,
+	caption={Number of Lines program, in Java}
+]{nol.java}
+
+The Java version is considerably larger, consisting of 50 lines and is 1113 bytes large. This version also produces correct behaviour.
+
+The Python version, in Python 3, looks like this:
+
+\lstinputlisting[
+	language={[3]Python},label={lst:nol.py},numbers=left,
+	caption={Number of Lines program, in Python}
+]{nol.py}
+
+The python version is the smallest, at just 22 lines and 371 bytes in size. Again, correct behaviour is observed.
 
 \subsection{Chosen Language: Python}
 Time was the unspoken major factor in this decision, and given the liberty to choose any programming language means ones in which the programmer has experience will take precedence. This means that languages designed for unfamiliar paradigms (such as Haskell, being a purely functional programming language\cite{haskfunc}) or languages that leave a considerable amount of work to their user (such as Assembly) were eliminated.
@@ -550,6 +602,17 @@ The Internet Protocol, commonly known as IPv4 or just IP, is specified and expla
 
 \subsection{User Datagram Protocol}
 \label{sec:udp}
+\begin{figure}[H]
+\center
+\begin{bytefield}[bitwidth=1.0em]{32}
+\bitheader{0-31}\\
+\bitbox{16}{Source Port} & \bitbox{16}{Destination Port}\\
+\bitbox{16}{Length} & \bitbox{16}{Checksum}\\
+\wordbox{1}{Data ...}
+\end{bytefield}
+\caption{UDP Packet format.}
+\label{fig:udpfmt}
+\end{figure}
 
 \subsection{Transmission Control Protocol}
 \label{sec:tcp}
@@ -608,10 +671,13 @@ You put them together to make a larger capture, you need to alter times and stuf
 % Design %
 %%%%%%%%%%
 \chapter{Design}
+It is important to note that the design evolved with the implementation - challenges discovered in implementation will be referenced in the design.
+
+
 \section{Structure}
 Ultimately, code maintainability relies on a logical layout. Firstly, a clear distinction between \emph{application code} and \emph{library code} was decided. All \emph{library code} is to be contained in it's own Python package.
 
-Much like the programs, this code has several well differentiated tasks - \emph{reading and understanding packet captures}, \emph{dissecting and altering packets} and \emph{processing streams of packets}. Code that handles these abstract tasks are contained as their own \emph{subpackage}, \emph{capfile}, \emph{identity} and \emph{pipeline} respectively.
+Much like the programs, this code has several well differentiated tasks - \emph{reading and understanding packet captures}, \emph{dissecting and altering packets} and \emph{processing streams of packets}. Code that handles these abstract tasks are contained as their own subpackage, \emph{capfile}, \emph{identity} and \emph{pipeline} respectively.
 
 \begin{figure}[H]
 \dirtree{%
@@ -657,13 +723,16 @@ Here, \emph{linktype} is an integer constant that represents one of many network
 \emph{identity} is a field, set to None by default, which holds the root protocol (i.e. the bottom most protocol) instance, more on this in the \emph{Protocols} section (\ref{sec:desproto}).
 
 \subsection{Packet Sources}
-\emph{Packet sources} are objects that support Python's \emph{iterator protocol} that yield the packet objects mentioned above. Packet sources are presented by the library as building blocks for higher level applications, and most of them can be chained together.
+\emph{Packet sources} are objects that support Python's \emph{iterator protocol} that yield the packet objects mentioned above. Packet sources are presented by the library as building blocks for higher level applications.
+Packet sources represent a kind of lazily-evaluated interface towards streams of packets - this cuts down on memory usage, improving scalability. Sources that depend on other sources can be chained without restriction.
 
 \subsection{Protocols}
 \label{sec:desproto}
 Network protocols are represented by Protocol classes. Protocol classes are the most complex abstraction.
 
 Logically speaking, instances of communication over a network have a linear hierarchy of protocols. A \emph{carrier protocol} encapsulates another protocol, which itself may be another carrier protocol. For this reason, Protocol instances have a structure not unlike a linked list - each instance has a parent protocol (called \texttt{prev}) and possibly a child protocol (called \texttt{next}).
+
+A carrier protocol will also have some kind of \emph{route}, a known source and destination. This may or may not depend  on the parent protocol. For instance, IP packets will typically be sent over Ethernet frames, but IP implements a logically independent network from an Ethernet network - these frames, when reaching a router, will be sent somewhere else (with altered frame data), potentially to entirely different routers over an entirely different carrier, all while preserving the IP frame. This is how internetworking works. Conversely, UDP packets rely on the logical route established by IP packets to transmit data, and are basically an extension of the \emph{protocol} field in an IP header.
 
 \begin{figure}[H]
 \center
@@ -711,6 +780,24 @@ Pcap file format.
     Addy Yeow Chin Heng\\
     libpcap-based Ethernet packet generator.\\
     \url{http://bittwist.sourceforge.net/}
+
+\bibitem{tcpl}
+	Brian W. Kernighan, Dennis M. Ritchie (1988)\\
+	The C Programming Language, 2nd edition.
+
+\bibitem{tcpppl}
+	Bjarne Stroustrup (1997)\\
+	The C++ Programming Language, 3rd edition.
+
+\bibitem{gcj}
+	The GCC Team (30th of June, 2014)\\
+	The GNU Compiler for the Java Programming Language\\
+	\url{https://gcc.gnu.org/java/}
+
+\bibitem{javatech}
+	Oracle Corporation (Accessed April, 2015)\\
+	`Learn about Java Technology'\\
+	\url{https://www.java.com/en/about/}
 
 \bibitem{haskfunc}
     Simon Peyton Jones (December, 2014)\\
