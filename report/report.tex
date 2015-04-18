@@ -116,10 +116,10 @@ A document describing the design and development of a tool to assist in the craf
 \chapter{Introduction}
 Education is important. Education is one of the underpinnings of a progressive society, along with law and order and a few other things.
 Despite this, it seems human ingenuity is education's greatest enemy. Humans are lazy - most of us will strive to do as little work as possible for the greatest gain.
-We seek to make our lives better, easier, all to spend more time on the things we enjoy. For many, this will be leisure activities, for some, socialising, the humble few may take joy in aulturism.
+We seek to make our lives better, easier, all to spend more time on the things we enjoy. For many, this will be leisure activities, for some, socialising, the humble few may take joy in altruism.
 
 But motivations are irrelevant here, just the effects.
-In academia, plagiarism is problem - people are unwilling to put the time in to do their own work. They realise that if someone else has solved a problem identical to theirs, they could just reuse that.
+In academia, plagiarism is a problem - people are unwilling to put the time in to do their own work. They realise that if someone else has solved a problem identical to theirs, they could just reuse that.
 What these people fail to realise, is that there is no substitute for experience. This problem is relevant in all fields, academic or applied, practical or theoretical; computer security and forensics is no exception.
 
 \section{Reader level}
@@ -192,7 +192,7 @@ This approach has the advantage of a flexible interface and fast implementation 
 \subsection{Generation}
 Much like \emph{synthesis}, this would understand a declarative language for describing a scenario, but this approach would be to program a network of computers to actually do the actions in the scenario rather then synthesise their side effects. This would then run a packet sniffer on this network, generating perfectly authentic network captures of a real network, but where the human actors in a scenario are emulated by computers.
 
-This approach has the advantage of flexibility and authenticity - at the cost of being very inefficient and fragile. It's more then likely such an approach would use a network of virtual machines running real-world operating systems and protocol implementations. This introduces a fair amount of unpredictability (which is both a good and bad thing), and would require changes if/when a used interface changes.
+This approach has the advantage of flexibility and authenticity - at the cost of being very inefficient and fragile. It is more then likely such an approach would use a network of virtual machines running real-world operating systems and protocol implementations. This introduces a fair amount of unpredictability (which is both a good and bad thing), and would require changes if/when a used interface changes.
 
 \subsection{Composition}
 This was the first approach considered, and is perhaps the simplest. This would be a program that takes a set of existing packet captures (ideally, small purpose-built captures representing single transactions) and combines them while altering things like hosts, times and the like.
@@ -207,9 +207,9 @@ This approach has the advantage that real-world scenarios can be used - an exist
 Choosing a programming language is, obviously, a decision that needs to be made, and there is no single correct choice. There are many factors influencing such a decision, each one needs to be considered. There were three major factors considered in this decision: requirements - what does the program require? knowledge - how difficult will it be to program in and maintain? availability - on what platforms can projects using this language be used?
 
 \subsection{Requirements influence}
-At it's heart, this project is a data processing project. There are no requirements for real-time processing, no requirements for concurrency, no requirement to make use of or implement a specific API nor requirements for any kind of interactive behaviour. This project can very easily be designed and implemented as a batch program - give input, run program, get output.
+At its heart, this project is a data processing project. There are no requirements for real-time processing, no requirements for concurrency, no requirement to make use of or implement a specific API nor requirements for any kind of interactive behaviour. This project can very easily be designed and implemented as a batch program - give input, run program, get output.
 
-Given the minimalistic requirements of the program, just about any Turing-complete language is serviceable. As such, the decision will have to be made predominantly on the other three factors. That's not to say entirely, some languages lend themselves quite well to generic data manipulation, while others are more specialised and geared towards specific purposes. For instance, Javascript is more suited towards web-based projects (given that it's usual interpreter is a web browser), while C, Java and Python are more general purpose. Haskell, Java and Python have good support for abstract data structures while various assembly languages barely have the notion of a data type.
+Given the minimalistic requirements of the program, just about any Turing-complete language is serviceable. As such, the decision will have to be made predominantly on the other three factors. That's not to say entirely, some languages lend themselves quite well to generic data manipulation, while others are more specialised and geared towards specific purposes. For instance, Javascript is more suited towards web-based projects (given that its usual interpreter is a web browser), while C, Java and Python are more general purpose. Haskell, Java and Python have good support for abstract data structures while various assembly languages barely have the notion of a data type.
 
 One important factor is for the program to be easily extended. While it is possible to write an extendible program in just about any language, it helps considerably if there is support for loading code from an external source at runtime, i.e. to allow building a plugin architecture.
 Most languages or platforms allow this in some manner (and practically all platforms depend on doing this in one way or another - this is how shared libraries work). While POSIX platforms provide functions like \lstinline$void *dlopen(const char *filename, int flag);$, this interface isn't consistently available on non-POSIX platforms, and requires code to be compiled first. Meanwhile, Python, Javascript and even Bash provide methods for loading new code programatically without the need to compile code first, allowing for a very flexible, powerful and user-friendly system to be developed.
@@ -234,8 +234,6 @@ syscall      ; Do the system call. Similair to int 0x80.
 \end{lstlisting}
 
 \section{Programming Language: Assessment}
-(work in progress, needs finishing and refs)
-
 Many languages were assessed for use in this project using the criteria above, with some being discarded on a singular fatal flaw. These are:
 \begin{itemize}
 \item C\#, Visual Basic, other .NET languages: These are fairly portable with the advent of Mono\cite{mono}, but the author still has reservations about this.
@@ -272,16 +270,16 @@ Java has the advantage of executable portability that C and C++ do not, and is a
 The only real issue is somewhat subjective - the author finds Java code needlessly verbose. This is discussed in the verbosity section (\ref{sec:verbosity}).
 
 \subsection{Python}
-Python is an interpreted, multi-paradigm, fully object oriented language. Python also has it's own philosophy - solutions are often deemed to be \emph{pythonic} based on various factors such as elegance and being obvious. However, in Python, mechanism is separate from policy; the various Python conventions are exactly that - conventions.
+Python is an interpreted, multi-paradigm, fully object oriented language. Python also has its own philosophy - solutions are often deemed to be \emph{pythonic} based on various factors such as elegance and being obvious. However, in Python, mechanism is separate from policy; the various Python conventions are exactly that - conventions.
 
 Python code is usually distributed in source form, but can be compiled to a bytecode not unlike Java. Python as a language does not enforce any kind of information hiding or encapsulation, and does \emph{not} require nor support typed variables\footnote{Note that this does not mean python is weakly typed -  Python has strong typing that requires explicit conversion.}. This is in contrast to Java, which provides these kind of access qualifiers. Instead of these, a convention is used - private and protected access qualifiers are signified by a single underscore before member names, and API documentation is generally used to specify argument and return types for functions and methods.
 
 \subsection{Code Verbosity}
 \label{sec:verbosity}
 Code verbosity is a problem in certain languages, and can make even simple code hard to follow - the less you have to read, the quicker you can comprehend it.
-
+\pagebreak
 To illustrate this problem, consider a simple task: write a program that counts the number of lines in a text file.
-In the interest of fairness, the program will have specific behaviour; it should accept standard input or a file path as it's first command line parameter, and work by looking at each character in the file and comparing it to a line feed. If reading from a file that does not exist, it should print an error message. Additionally, all variable identifiers should be the same or similar when translated to code.
+In the interest of fairness, the program will have specific behaviour; it should accept standard input or a file path as its first command line parameter, and work by looking at each character in the file and comparing it to a line feed. If reading from a file that does not exist, it should print an error message. Additionally, all variable identifiers should be the same or similar when translated to code.
 
 This program was fully implemented for the three considered languages - C, Java and Python. The C implementation is as follows:
 \lstinputlisting[
@@ -289,19 +287,19 @@ This program was fully implemented for the three considered languages - C, Java 
 	caption={Number of Lines program, in C}
 ]{nol.c}
 
-The C version's program source code consists of 38 lines and occupies 514 bytes of storage. This version of the program produces the correct output of 38 when run on it's own code, 50 and 22 when run on the other two versions' code.
+The C version's program source code consists of 38 lines and occupies 514 bytes of storage. This version of the program produces the correct output of 38 when run on its own code, 50 and 22 when run on the other two versions' code.
+\pagebreak
 
 The Java version, with full exception handling as requested by the Java compiler, looks like this:
-
 \lstinputlisting[
 	language={Java},label={lst:nol.java},numbers=left,
 	caption={Number of Lines program, in Java}
 ]{nol.java}
 
 The Java version is considerably larger, consisting of 50 lines and is 1113 bytes large. This version also produces correct behaviour.
+\pagebreak
 
 The Python version, in Python 3, looks like this:
-
 \lstinputlisting[
 	language={[3]Python},label={lst:nol.py},numbers=left,
 	caption={Number of Lines program, in Python}
@@ -312,7 +310,7 @@ The python version is the smallest, at just 22 lines and 371 bytes in size. Agai
 \subsection{Chosen Language: Python}
 Time was the unspoken major factor in this decision, and given the liberty to choose any programming language means ones in which the programmer has experience will take precedence. This means that languages designed for unfamiliar paradigms (such as Haskell, being a purely functional programming language\cite{haskfunc}) or languages that leave a considerable amount of work to their user (such as Assembly) were eliminated.
 
-The choice was Python. This was driven by it's status as a multi-paradigm language that offers a different models of program abstraction.
+The choice was Python. This was driven by its status as a multi-paradigm language that offers a different models of program abstraction.
 To illustrate this, below are two functionally equivalent and compatible prime number \emph{iterators};
 \begin{lstlisting}[
 	language={[3]Python},label={lst:ooprime},
@@ -380,7 +378,7 @@ print "a", "b", "c",
 
 The former outputting ``a b c'' followed by a newline, and the latter outputting ``a b c'' without a newline! There is no convenient way of changing what the item separator is, requiring setting a field in the `sys' module. The exec statement has similar issues.
 
-Furthermore, Python 2 has some odd semantics for it's `input' function, which will read a line of standard input, and then \emph{evaluate this input as a Python expression}. In order to read the unevaluated input, `raw_input' is needed.
+Furthermore, Python 2 has some odd semantics for its `input' function, which will read a line of standard input, and then \emph{evaluate this input as a Python expression}. In order to read the unevaluated input, `raw_input' is needed.
 
 Python 2 evolved in such a way to have two different object orientation systems. Python 2 has \emph{old-style} classes and \emph{new-style} classes, observe:
 
@@ -448,7 +446,7 @@ Perhaps the most compelling reason is that the reference implementation, CPython
 \section{Architecture}
 There are many different ways of categorising programs, but most programs have a important, distinctive piece of behaviour that can place a program in one of two mutually exclusive categories. That is, are they \emph{interactive} or not.
 
-In the context of program design, an interactive program is one that accepts and alters it's behaviour based on human input.
+In the context of program design, an interactive program is one that accepts and alters its behaviour based on human input.
 A prime example of an interactive program is a text editor - it accepts input in the form of a series of keyboard presses and interprets each of these as a command to write a corresponding character.
 
 Conversely, a non-interactive program is one that does \emph{not} accept user input. For instance, a compiler is generally non-interactive - it takes input in the form of source code, and produces output in the form of compiled code.
@@ -461,7 +459,7 @@ This is the Unix philosophy: Write programs that do one thing and do it well. Wr
 To this end, a system based around multiple small utilities that can be strung together to produce the desired output seems an appropriate architecture. Out of necessity, \emph{text} will not be used as a model for data, but a ubiquitous packet capture format will be used. It is evident from the programs listed in section \ref{sec:existing} that this format is \emph{pcap}.
 
 \section{Development Methodology}
-The widely known `waterfall model' of software development was, in it's current form, presented as a flawed model that lacked development stage feedback\cite{wwr-waterfall-notes}. It represents an idealised scenario where all requirements are specific, well understood and concrete, and that there are no unforeseen problems in implementation. Unfortunately, this is not how things work in practice.
+The widely known `waterfall model' of software development was, in its current form, presented as a flawed model that lacked development stage feedback\cite{wwr-waterfall-notes}. It represents an idealised scenario where all requirements are specific, well understood and concrete, and that there are no unforeseen problems in implementation. Unfortunately, this is not how things work in practice.
 
 As the project will consist of lots of small components, with a tree-like dependency graph, it is possible to design, build and test sets of components, without having designed a complete system. This is called \emph{prototyping}, and is a practical approach to designing small systems.
 Doing this repeatedly to build a larger system is known as \emph{incremental development}, and is essentially concurrent application of the waterfall model. Doing any design methodology repeatedly is called \emph{iterative development}.
@@ -484,15 +482,10 @@ Another method would be to simply gather some background knowledge - how network
 
 Local area networks typically have a homogeneous medium, the most common of which is Ethernet. From a data analysis point of view, this is one of the basic `carrier protocols' that all other protocols are encapsulated within.
 
-Things to mention:
-
-Carriers, Most LANs use Ethernet.
-
-Routers and modems may change the carrier.
-
-Ideally, Internet Protocol packets remain the same.
-
-Forward thinking and IPv6
+%Things to mention:
+%Routers and modems may change the carrier.
+%Ideally, Internet Protocol packets remain the same.
+%Forward thinking and IPv6
 
 The next problem, is understanding these protocols enough to identify them. This is also a straightforward task, most of these protocols are standardised by the IETF (Internet Engineering Task Force), and are publicly available as RFCs (Request For Comments).
 
@@ -549,7 +542,7 @@ The Address Resolution Protocol, commonly known as ARP, was first proposed and s
 
 ARP's primary purpose is to map \emph{hardware} host addresses to \emph{protocol} addresses, originally proposed for mapping MAC addresses to IPv4 addresses.
 
-ARP packets consist of two 16 bit type identifiers, two 6 bit lengh fields and a 16 bit opcode field, followed by four variable length address fields.\footnote{It is interesting to note that in principle, ARP can work with any hardware or protocol address up to 255 bytes in length - it's design allowing for arbitrary sizes for either, however in practice it is only ever used for MAC/IPv4 resolution. For IPv6, the same problem was solved with a new protocol, NDP (see \ref{sec:ndp})}
+ARP packets consist of two 16 bit type identifiers, two 6 bit lengh fields and a 16 bit opcode field, followed by four variable length address fields.\footnote{It is interesting to note that in principle, ARP can work with any hardware or protocol address up to 255 bytes in length - its design allowing for arbitrary sizes for either, however in practice it is only ever used for MAC/IPv4 resolution. For IPv6, the same problem was solved with a new protocol, NDP (see \ref{sec:ndp})}
 
 \begin{figure}[H]
 \center
@@ -671,11 +664,11 @@ You put them together to make a larger capture, you need to alter times and stuf
 % Design %
 %%%%%%%%%%
 \chapter{Design}
-It is important to note that the design evolved with the implementation - challenges discovered in implementation will be referenced in the design.
+It is important to note that the design evolved with the implementation - challenges discovered in implementation will be reflected in the design.
 
 
 \section{Structure}
-Ultimately, code maintainability relies on a logical layout. Firstly, a clear distinction between \emph{application code} and \emph{library code} was decided. All \emph{library code} is to be contained in it's own Python package.
+Ultimately, code maintainability relies on a logical layout. Firstly, a clear distinction between \emph{application code} and \emph{library code} was decided. All \emph{library code} is to be contained in its own Python package.
 
 Much like the programs, this code has several well differentiated tasks - \emph{reading and understanding packet captures}, \emph{dissecting and altering packets} and \emph{processing streams of packets}. Code that handles these abstract tasks are contained as their own subpackage, \emph{capfile}, \emph{identity} and \emph{pipeline} respectively.
 
@@ -720,7 +713,7 @@ Packets are represented by instances of a \emph{Packet class}. The Packet class 
 
 Here, \emph{linktype} is an integer constant that represents one of many network media types. An important design decision was to make as few assumptions as possible about program input, so this field exists to identify what kind of packet this is. The most common value for this will be $1$, which corresponds to Ethernet (\texttt{LinkType.ETHERNET}) but other values are possible and should be supported.
 
-\emph{identity} is a field, set to None by default, which holds the root protocol (i.e. the bottom most protocol) instance, more on this in the \emph{Protocols} section (\ref{sec:desproto}).
+The \emph{identity} is a field holds the root protocol (i.e. the bottom most protocol) instance for this packet. This is set to None by default, signifying the packet either has not been identified or has no known interpretation. More on this in the \emph{Protocols} section (\ref{sec:desproto}).
 
 \subsection{Packet Sources}
 \emph{Packet sources} are objects that support Python's \emph{iterator protocol} that yield the packet objects mentioned above. Packet sources are presented by the library as building blocks for higher level applications.
@@ -730,23 +723,59 @@ Packet sources represent a kind of lazily-evaluated interface towards streams of
 \label{sec:desproto}
 Network protocols are represented by Protocol classes. Protocol classes are the most complex abstraction.
 
-Logically speaking, instances of communication over a network have a linear hierarchy of protocols. A \emph{carrier protocol} encapsulates another protocol, which itself may be another carrier protocol. For this reason, Protocol instances have a structure not unlike a linked list - each instance has a parent protocol (called \texttt{prev}) and possibly a child protocol (called \texttt{next}).
+Logically speaking, instances of communication over a network have a linear hierarchy of protocols. A \emph{carrier protocol} encapsulates another protocol, which itself may be another carrier protocol.
 
-A carrier protocol will also have some kind of \emph{route}, a known source and destination. This may or may not depend  on the parent protocol. For instance, IP packets will typically be sent over Ethernet frames, but IP implements a logically independent network from an Ethernet network - these frames, when reaching a router, will be sent somewhere else (with altered frame data), potentially to entirely different routers over an entirely different carrier, all while preserving the IP frame. This is how internetworking works. Conversely, UDP packets rely on the logical route established by IP packets to transmit data, and are basically an extension of the \emph{protocol} field in an IP header.
+A carrier protocol will also have some kind of \emph{route}, a known source and destination. This may or may not depend  on the parent protocol. For instance, IP packets will typically be sent over Ethernet frames, but IP implements a logically independent network from an Ethernet network - these frames, when reaching a router, will be sent somewhere else (with altered frame data), potentially to entirely different routers over an entirely different carrier, all while preserving the IP frame. This is how internetworking works. Conversely, UDP packets rely on the logical route established by IP packets to transmit data, and are basically an extension of the \emph{protocol} or \emph{next} field in an IP header.
 
 \begin{figure}[H]
 \center
 \includegraphics[scale=0.7]{diagrams/protocol.png}
-\caption{The packet class}
+\caption{The protocol and carrier protocol classes}
 \end{figure}
 
+The diagram above shows the design of the Protocol and CarrierProtocol classes. For any protocol to be represented in the program, it must have a Protocol class. This class has a well defined form, and this is important as extensibility 
+
+Protocol classes have a single \emph{class variable} and three \emph{unbound methods} (static methods), in addition to the per-instance fields and bound methods typical of most classes. These are used to identify the protocol, and construct protocol instances respectively. A more detailed description of these is given below.
+
+Firstly, every protocol instance has a field called data. This is intended to be used as a quasi-internal field, holding either a Python `memoryview' object or a `memorymap' object (see \ref{sec:memmap}). Python \texttt{memoryview} objects are effectively pointers to regions of memory held by objects supporting the \emph{buffer} protocol. A \texttt{memoryview} of a \texttt{bytearray} provides a read-write view of that data without requiring a direct reference to it. Like most python collections, \texttt{memoryview} objects support being sliced - this is important.
+
+Because packets have a linear hierarchy of protocols, Protocol instances have a structure not unlike a linked list - each instance has a parent protocol (called \texttt{prev}) and a child protocol (called \texttt{next}); these are set to none if this is the bottom most or top most protocol, respectively.
+
+Additionally, there is a boolean value called \texttt{completed}, which is to signify whether this protocol instance has finished being dissected. Setting this value to false allows other parts of the code to know that a packet has had its identification deferred until more information is available.
+
+As for bound methods, there are 6 defined, \texttt{get_attributes}, \texttt{set_attributes}, \texttt{match_attributes}, \texttt{is_complete}, \texttt{recalculate_checksums} and \texttt{replace_hosts}.
+
+The \texttt{is_complete}, \texttt{recalculate_checksums} and \texttt{replace_hosts} methods are all propagating methods - they will call their own equivalent on the child protocol instance, if any. \texttt{is_complete} works on the aformentioned \texttt{completed} boolean, returning true if and only if this value is true for all child protocols.
+
+As replacing host identity information is one of the goals of the project, a \texttt{replace_hosts} method was defined. This takes a single argument, a dictionary. This dictionary defines a mapping between host identifiers and their replacements, the idea being that implementations of this method will look for possible substitutions and alter their instance data accordingly, and then call \texttt{replace_hosts} on the child instance. This provides a very simple and reliable way of doing this substitution. In a similar vein, \texttt{recalculate_checksums} is for updating any checksum data. Actual recalculation should start from the top most protocol instance, as the lower level carriers may have checksums on their payload (i.e. UDP).
+
+The \texttt{get_attributes}, \texttt{set_attributes}, \texttt{match_attributes} (and \texttt{build_attributes})  methods all work with or produce  a set of \emph{protocol attributes}. The precise format of said attributes is entirely up to the implementing class, but is suggested to be a \emph{dictionary}.
+
+\texttt{get_attributes} is supposed to return `attributes' of that protocol instance (for example, IPv4 attributes might contain the source/destination address and the protocol number). Conversely, \texttt{set_attributes} is supposed to alter packet data such that the packet corresponds to the attributes provided. \texttt{match_attributes} compares a set of attributes to those of the protocol instance - if they match, this method returns true, else false.
+
+Protocol classes are also required to have a few unbound methods. The most important one, is \texttt{interpret_packet}. 
+This method takes two arguments, a \texttt{memoryview} or \texttt{memorymap} object, and a \emph{parent} protocol instance. It is the job of this method to construct and return a protocol instance, possibly calling \texttt{interpret_packet} a subset of the data provided. This method is also responsible for maintaining state for completing deferred identification. \texttt{interpret_stream} effectively does the same thing, but for \emph{streams}.
+Because both of these methods may have side effects, as a library, it was deemed appropriate to have some kind of mechanism for restoring the default set of state for these classes - this is the job of the \texttt{reset_state} method.
+
+\texttt{build_attributes} is the last unbound method. This method is supposed to return attributes not unlike those returned by \texttt{get_attributes}, and is used for turning human input (an `attribute string') into a workable object.
+
+Finally, all protocol classes need to have a human-readable name. This is for both output (such as when `printing' a packet) but mainly as a unique identifier for a Protocol class. The intention is, that protocols are referred to by this name, and that a Protocol class can be replaced by one with the same name, should the user want to use an alternate implementation. This name is also used in constructing and comparing attributes.
+
+\section{Memory maps}
+\label{sec:memmap}
+It was known from the start of the project that often, parts of protocol data will exist over many packets.
+
+
+\chapter{Implementation}
 \section{The \texttt{common} Module}
 \section{The \texttt{memorymap} Module}
 \section{The \texttt{capfile} Package}
 \section{The \texttt{identity} Package}
-\section{The \texttt{pipeline} Package}
+\subsection{Protocol classes}
+In the default implementation of \texttt{match_attributes}, \texttt{get_attributes} is called.
 
-\chapter{Implementation}
+The default implementation of \texttt{match_attributes}
+\section{The \texttt{pipeline} Package}
 
 \chapter{Testing}
 
