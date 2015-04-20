@@ -804,11 +804,12 @@ The ideal implementation would have a similar interface to that of \emph{memoryv
 
 \chapter{Implementation}
 \section{The \texttt{memorymap} Module}
-The \texttt{memorymap} module implements the \emph{memorymap} class as described in \ref{sec:memmap}, and works by mapping a virtual `index space' to a pair of  actual indices, referring to to one of the \emph{memoryview} objects it is composed of and it's .
+The \texttt{memorymap} module implements the \emph{memorymap} class as described in \ref{sec:memmap}, and works by mapping multiple \emph{memoryview} objects (henceforth referred to as a \emph{segment}) to a single \emph{logical} `index space'.
 
-It stores it's constituent views in a list, along with their logical starting and ending index.
+It stores it's constituent segments in a list, along with their \emph{logical} starting and ending index. A \emph{logical index} is translated to an index pair by searching for the view range of values encompassing that index.
 
-A \emph{logical index} 
+A \emph{logical index} is converted to a pair of actual indices, the `segemnt index', which refers to one of the segments in the segment list, and a `local index', which is the part of the segment.
+
 
 \section{The \texttt{common} Module}
 \section{The \texttt{capfile} Package}
