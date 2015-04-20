@@ -20,6 +20,7 @@ from packet import common
 from packet.capfile import pcap
 
 from packet.identity.core import AddrType
+from packet.identity.core import lookup_protocol
 
 from packet.pipeline.merge import merge
 from packet.pipeline.identify import identify
@@ -30,7 +31,7 @@ def build_prototype_list(attrdefstrs):
     attrlist = []
     for attrdefstr in attrdefstrs.split("/"):
         protoname, _, attrstr = attrdefstr.partition(":")
-        protocol = identity_core.lookup_protocol(protoname)
+        protocol = lookup_protocol(protoname)
         attrlist.append((protocol.name, protocol.build_attributes(attrstr)))
     return attrlist
 
