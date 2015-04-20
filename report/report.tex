@@ -108,6 +108,8 @@ A document describing the design and development of a tool to assist in the craf
 \end{center}
 \end{abstract}
 \pagebreak
+\listoffigures
+\lstlistoflistings
 \tableofcontents
 
 %%%%%%%%%%%%%%%%
@@ -123,7 +125,7 @@ In academia, plagiarism is a problem - people are unwilling to put the time in t
 What these people fail to realise, is that there is no substitute for experience. This problem is relevant in all fields, academic or applied, practical or theoretical; computer security and forensics is no exception.
 
 \section{Reader level}
-The reader is expected to be somewhat familiar with networking terminology and forensic analysis techniques.
+The reader is expected to be somewhat familiar with networking terminology and forensic analysis techniques. Basic knowledge of Python will be required to understand the design and implementation chapters.
 
 \section{The problem}
 Teaching network security and forensics is aided greatly by the presentation of example packet captures. These are used to learn and practice analytical skills, and to assess the level of understanding and knowledge that students hold.
@@ -154,7 +156,7 @@ From the manpage\cite{tshark-man}:
 \textbf{TShark} is a network protocol analyzer. It lets you capture packet data from a live network, or read packets from a previously saved capture file, either printing a decoded form of those packets to the standard output or writing the packets to a file.  \textbf{TShark}'s native capture file format is \textbf{pcap} format, which is also the format used by \textbf{tcpdump} and various other tools.
 \end{quote}
 
-As stated, it acts as a network traffic capture and analysis tool. It has functionality that will identify packets by protocol (and can reconstruct TCP streams) and allows the user to filter them. This is useful functionality, as it allows you to remove packets from certain protocols making captures simpler to understand.
+As stated, it acts as a network traffic capture and analysis tool. It has functionality that will identify packets by protocol (and can reconstruct TCP streams) and allows the user to filter them. This is useful functionality, as it allows you to remove packets based on the protocols they contain, making captures simpler to understand.
 
 \subsection{Bit-Twist}
 Bit-Twist is a tool suite containing a packet capture 'generator' (a traffic replay program, not unlike tcpreplay\cite{tcpreplay-web}) and a pcap editor.
@@ -169,13 +171,13 @@ This tool is \emph{very} close to the desired utility. It permits editing a pack
 \item Appending a `payload' (arbitrary bytes) to the end of every packet.
 \item Removing a range of bytes from every packet.
 \item Recalculating checksums for (non-fragmented) IP, TCP, UDP and ICMP packets.
-\item Saving a specific range of packets either by their occurance (i.e. The fourth packet to the seventh packet) or by their timeframe (i.e. all packets between 2006/10/1 00:00:00 and 2006/10/31 10:30:00).
+\item Saving a specific range of packets either by their occurence (i.e. The fourth packet to the seventh packet) or by their timeframe (i.e. all packets between 2006/10/1 00:00:00 and 2006/10/31 10:30:00).
 \item Truncating packets to a specific 'layer' - where 2 is the link layer, 3 is the network layer and 4 is the application layer.
 \item Restricting edits to a specific 'header'- Ethernet, ARP, IP, ICMP, TCP and UDP are supported in this case.
 \end{itemize}
 
 \section{Conclusions}
-There are tools that can help, but nothing that appears geared towards the problem. Most existing tools present a kind of `read-only' interface toward existing captures, or allow modifying them while preserving packet integrity. Bit-Twist's pcap editor allows arbitrary modification, but is somewhat cumbersome to use, applying the same changes on all packets.
+There are tools that can help, but nothing particularly geared towards the problem. Most existing tools present a kind of `read-only' interface toward existing captures, or allow modifying them while preserving packet integrity. Bit-Twist's pcap editor allows arbitrary modification, but is somewhat cumbersome to use, applying the same changes on all packets.
 
 %%%%%%%%%%%%
 % Research %
@@ -204,7 +206,12 @@ This approach has the advantage that real-world scenarios can be used - an exist
 
 % Programming language criteria
 \section{Programming language: Criteria}
-Choosing a programming language is, obviously, a decision that needs to be made, and there is no single correct choice. There are many factors influencing such a decision, each one needs to be considered. There were three major factors considered in this decision: requirements - what does the program require? knowledge - how difficult will it be to program in and maintain? availability - on what platforms can projects using this language be used?
+Choosing a programming language is, obviously, a decision that needs to be made, and there is no single correct choice. There are many factors influencing such a decision, each one needs to be considered. There were three major factors considered in this decision:
+\begin{enumerate}{}
+\item Requirements - what does the program require?
+\item Knowledge - how difficult will it be to program in and maintain?
+\item Availability - on what platforms can projects using this language be used?
+\end{enumerate}
 
 \subsection{Requirements influence}
 At its heart, this project is a data processing project. There are no requirements for real-time processing, no requirements for concurrency, no requirement to make use of or implement a specific API nor requirements for any kind of interactive behaviour. This project can very easily be designed and implemented as a batch program - give input, run program, get output.
@@ -212,7 +219,7 @@ At its heart, this project is a data processing project. There are no requiremen
 Given the minimalistic requirements of the program, just about any Turing-complete language is serviceable. As such, the decision will have to be made predominantly on the other three factors. That's not to say entirely, some languages lend themselves quite well to generic data manipulation, while others are more specialised and geared towards specific purposes. For instance, Javascript is more suited towards web-based projects (given that its usual interpreter is a web browser), while C, Java and Python are more general purpose. Haskell, Java and Python have good support for abstract data structures while various assembly languages barely have the notion of a data type.
 
 One important factor is for the program to be easily extended. While it is possible to write an extendible program in just about any language, it helps considerably if there is support for loading code from an external source at runtime, i.e. to allow building a plugin architecture.
-Most languages or platforms allow this in some manner (and practically all platforms depend on doing this in one way or another - this is how shared libraries work). While POSIX platforms provide functions like \lstinline$void *dlopen(const char *filename, int flag);$, this interface isn't consistently available on non-POSIX platforms, and requires code to be compiled first. Meanwhile, Python, Javascript and even Bash provide methods for loading new code programatically without the need to compile code first, allowing for a very flexible, powerful and user-friendly system to be developed.
+Most languages or platforms allow this in some manner (and practically all platforms depend on doing this in one way or another - this is how shared libraries work). While POSIX platforms provide functions like \lstinline$void *dlopen(const char *filename, int flag);$, this interface is not consistently available on non-POSIX platforms, and requires code to be compiled first. Meanwhile, Python, Javascript and even Bash provide methods for loading new code programatically without the need to compile code first, allowing for a very flexible, powerful and user-friendly system to be developed.
 
 \subsection{Knowledge influence}
 Knowledge is a subjective factor that pertains to the programmer(s) developing the project. It is a limiting factor; a programmer proficient in C is not necessarily going to be able to understand a very different language such as Haskell. Also worth mentioning is simple preference - while not a overriding factor - can help shape a choice.
@@ -237,7 +244,7 @@ syscall      ; Do the system call. Similair to int 0x80.
 Many languages were assessed for use in this project using the criteria above, with some being discarded on a singular fatal flaw. These are:
 \begin{itemize}
 \item C\#, Visual Basic, other .NET languages: These are fairly portable with the advent of Mono\cite{mono}, but the author still has reservations about this.
-\item Haskell: An interesting language, but requires a substantially different approach to program design then what the author is familiar with.
+\item Haskell: An interesting language, but requires a substantially different approach to program design than the author is familiar with.
 \item PHP, Javascript: Languages that are perfectly serviceable for the task at hand, but have a heavy focus on web development rather then packet capture processing. A more neutral choice would be better.
 \item Assembly: These languages are very low level and require a great deal of effort to accomplish simple tasks. Additionally, they tend not to be portable.
 \item COBOL: An affront to language design, this is on the list purely as humour.
@@ -279,7 +286,7 @@ Python code is usually distributed in source form, but can be compiled to a byte
 Code verbosity is a problem in certain languages, and can make even simple code hard to follow - the less you have to read, the quicker you can comprehend it.
 \pagebreak
 To illustrate this problem, consider a simple task: write a program that counts the number of lines in a text file.
-In the interest of fairness, the program will have specific behaviour; it should accept standard input or a file path as its first command line parameter, and work by looking at each character in the file and comparing it to a line feed. If reading from a file that does not exist, it should print an error message. Additionally, all variable identifiers should be the same or similar when translated to code.
+In the interest of fairness, the program will have specific behaviour; it should accept standard input or a file path as its first command line parameter, and work by looking at each character in the file and comparing it to a line feed. If reading from a file that does not exist, it should print an error message. Additionally, all variable identifiers should be the same or similar when translated to code.\footnote{The author recognises that code style has an impact on the metrics used (line count and source file size), and that all of these programs can be rewritten to occuply less space, however doing so would render them neigh-unmaintainable.} 
 
 This program was fully implemented for the three considered languages - C, Java and Python. The C implementation is as follows:
 \lstinputlisting[
@@ -310,8 +317,8 @@ The python version is the smallest, at just 22 lines and 371 bytes in size. Agai
 \subsection{Chosen Language: Python}
 Time was the unspoken major factor in this decision, and given the liberty to choose any programming language means ones in which the programmer has experience will take precedence. This means that languages designed for unfamiliar paradigms (such as Haskell, being a purely functional programming language\cite{haskfunc}) or languages that leave a considerable amount of work to their user (such as Assembly) were eliminated.
 
-The choice was Python. This was driven by its status as a multi-paradigm language that offers a different models of program abstraction.
-To illustrate this, below are two functionally equivalent and compatible prime number \emph{iterators};
+The choice was Python. This was driven by its status as a multi-paradigm language that offers different models of program abstraction.
+To illustrate this, shown below are two functionally equivalent and compatible prime number \emph{iterators};
 \begin{lstlisting}[
 	language={[3]Python},label={lst:ooprime},
 	caption={[Python primegen, object style]An object oriented approach to a prime generator.}
@@ -469,7 +476,7 @@ Ultimately, a prototype driven iterative and incremental development model seems
 \section{Libraries}
 The use of external libraries was considered for understanding file formats - namely libpcap, a C library, which supports the ubiquitous pcap file format.
 
-Python supports a FFI (Foreign Function Interface) module for C libraries under the name `ctypes' and supports understanding C-like data structures using the `struct' module, so this itself isn't a limiting factor.
+Python supports a FFI (Foreign Function Interface) module for C libraries under the name `ctypes' and supports understanding C-like data structures using the `struct' module, so this itself is not a limiting factor.
 However, existing bindings are outdated or are for Python 2, so a new set of bindings would have to be written. Libpcap does not have a very complex interface, but a lot of the functionality of libpcap is irrelevant - functionality related to querying network devices and capturing their output is not needed. The effort required to make a proper set of library bindings exceeds the effort to reimplement the desired functionality in pure python.
 
 Instead, the documentation for libpcap's file format was used. This will be discussed later.
@@ -487,7 +494,7 @@ Local area networks typically have a homogeneous medium, the most common of whic
 %Ideally, Internet Protocol packets remain the same.
 %Forward thinking and IPv6
 
-The next problem, is understanding these protocols enough to identify them. This is also a straightforward task, most of these protocols are standardised by the IETF (Internet Engineering Task Force), and are publicly available as RFCs (Request For Comments).
+The next problem is understanding these protocols enough to identify them. This is also a straightforward task, most of these protocols are standardised by the IETF (Internet Engineering Task Force), and are publicly available as RFCs (Request For Comments).
 
 As this project is about manipulating packet captures, it is essential to know what bits of data are important, and which are not. The three most important types of data are:
 \begin{itemize}
@@ -532,9 +539,9 @@ These details are transmitted most significant bit first, most significant byte 
 The frame format is extended by IEEE 802.1Q and further extended by IEEE 802.1AD. 802.1Q adds support for VLANs (Virtual Local Area Networks) and 802.1AD adds support for an additional layer of VLANs.
 Logically, the information these extensions add is placed before the Ethertype, and consist of a 2 octet differentiating identifier ($0x8100$ for 1Q, $0x88A8$ for 1AD) in place of the Ethertype, and a 2 octet `VLAN tag'. This identifier is used to determine if the frame has any such extensions. 802.1Q adds a single VLAN tag, 802.1AD adds an additional identifier and VLAN tag preceding the 802.1Q field.
 
-This all means that an Ethernet \emph{frame} has a variadic size, with a range of $64$ to $1564$ octets ($+4$ or $+8$ octets, for 802.1Q and 802.1AD respectively).
+This all means that an Ethernet \emph{frame} has a variable size, with a range of $64$ to $1564$ octets ($+4$ or $+8$ octets, for 802.1Q and 802.1AD respectively).
 
-The source and destination address fields are fairly self-explanatory, the Ethertype describes either the contents of the payload, or its length. The former seems to be the typical case, and is invaluable to interpreting Ethernet frames carrying multiple protocols.
+The source and destination address fields are fairly self-explanatory, the Ethertype describes either the contents of the payload, or its length. The former seems to be the typical case, and is invaluable to interpreting Ethernet frames on networks carrying multiple protocols.
 
 \subsection{Address Resolution Protocol}
 \label{sec:arp}
@@ -542,7 +549,7 @@ The Address Resolution Protocol, commonly known as ARP, was first proposed and s
 
 ARP's primary purpose is to map \emph{hardware} host addresses to \emph{protocol} addresses, originally proposed for mapping MAC addresses to IPv4 addresses.
 
-ARP packets consist of two 16 bit type identifiers, two 6 bit lengh fields and a 16 bit opcode field, followed by four variable length address fields.\footnote{It is interesting to note that in principle, ARP can work with any hardware or protocol address up to 255 bytes in length - its design allowing for arbitrary sizes for either, however in practice it is only ever used for MAC/IPv4 resolution. For IPv6, the same problem was solved with a new protocol, NDP (see \ref{sec:ndp})}
+ARP packets consist of two 16 bit type identifiers, two 6 bit length fields and a 16 bit opcode field, followed by four variable length address fields.\footnote{It is interesting to note that in principle, ARP can work with any hardware or protocol address up to 255 bytes in length - its design allowing for arbitrary sizes for either, however in practice it is only ever used for MAC/IPv4 resolution. For IPv6, the same problem was solved with a new protocol, NDP (see \ref{sec:ndp})}
 
 \begin{figure}[H]
 \center
@@ -635,7 +642,7 @@ You put them together to make a larger capture, you need to alter times and stuf
 \begin{enumerate}[label=\bfseries FR\arabic*:]
 \item \label{fr:1} The programs shall be able to read a packet capture file in at least pcap format as program input.
 \item \label{fr:2} The programs shall be able to write a packet capture file in at least pcap format as program output.
-\item \label{fr:3} The programs shall be able to identify protocols used in individual packets, and based off this information should...
+\item \label{fr:3} The programs shall be able to identify protocols used in individual packets, and based on this information should...
 \item \label{fr:4} ... be able to selectively remove packets belonging to a predefined set of protocols.
 \item \label{fr:5} ... be able to alter the contents of packets based on a set of predefined substitutions.
 \item \label{fr:6} There shall be a program that accepts multiple inputs, and merge them into a single output.
@@ -649,10 +656,10 @@ You put them together to make a larger capture, you need to alter times and stuf
 \item \label{nfr:1} The programs shall be usable on any python implementation supporting at least Python 3.4.
 \item \label{nfr:2} The programs shall be usable on any platform supported by such an implementation.
 \item \label{nfr:3} The programs should scale well and have, as a worst case, a small coefficient linear memory usage growth rate in respect to input data size.
-\item \label{nfr:4} The program should scale well and have a linear time complexity in respect to input data size.
+\item \label{nfr:4} The programs should scale well and have a linear time complexity in respect to input data size.
 \item \label{nfr:5} The source code shall be designed in a maintainable manner, such that...
-\item \label{nfr:6} ... irreleant components make no assumptions about the input file format.
-\item \label{nfr:7} ... irreleant components make no assumptions about the output file format.
+\item \label{nfr:6} ... components not related to file handling make no assumptions about the input file format.
+\item \label{nfr:7} ... components not related to file handling make no assumptions about the output file format.
 \item \label{nfr:8} ... support for identifying new protocols requires few, if any alterations to existing code.
 \item \label{nfr:9} ... support for new file formats requires few alterations to existing code.
 \item \label{nfr:10} The programs (and their source code) should be structured and reusable with-well defined interfaces.
@@ -665,7 +672,6 @@ You put them together to make a larger capture, you need to alter times and stuf
 %%%%%%%%%%
 \chapter{Design}
 It is important to note that the design evolved with the implementation - challenges discovered in implementation will be reflected in the design.
-
 
 \section{Structure}
 Ultimately, code maintainability relies on a logical layout. Firstly, a clear distinction between \emph{application code} and \emph{library code} was decided. All \emph{library code} is to be contained in its own Python package.
@@ -763,12 +769,48 @@ Finally, all protocol classes need to have a human-readable name. This is for bo
 
 \section{Memory maps}
 \label{sec:memmap}
-It was known from the start of the project that often, parts of protocol data will exist over many packets.
+In order to identify protocols, packet data needs to be examined. As some protocols can have a variety of carriers, and carrier protocols can have a variable size, the exact location of one protocol's header is not a constant offset.
 
+The initial approach to this problem was just to copy the payload section of a protocol and present that to the next protocol interpreter. This works, but means any modifications would require the packet to be rebuilt - a time consuming operation.
+
+Python \emph{memoryview} objects provide a memory-efficient and simple way of presenting smaller sections of data from an object. They are probably best illustrated with an example:
+\begin{lstlisting}[
+	language={[3]Python},
+   	caption={[Memoryview demonstration]A demonstration of memoryviews. v is a view of data, and v1/v2 are subviews of data.}
+]
+>>> data = bytearray(b"abcdef")
+>>> v = memoryview(data)
+>>> bytes(v)
+b'abcdef'
+>>> v1 = v[0:3]
+>>> v2 = v[3:6]
+>>> bytes(v1)
+b'abc'
+>>> bytes(v2)
+b'def'
+>>> v2[1] = b"E"
+>>> bytes(v)
+b'abcdEf'
+\end{lstlisting}
+Here, some data object (called \texttt{data}) is being read and altered by some \emph{memoryview} objects (called \texttt{v}, \texttt{v1} and \texttt{v2}).
+
+Importantly for this project, alterations to \emph{memoryview} objects affect their backing store - changes are reflected in the object the views are based on. These are sufficient to provide a linear tree of protocol instances with read/write access to packet data, but it was known from the start of the project that sometimes, parts of protocol data will exist over many packets.
+
+For identification purposes, this can easily be solved by simply copying parts of the fragmented data and concatenating them. This solution is a different application of the first solution presented and suffers from all its downsides in addition to the problem of making alteration a very difficult task.
+
+To solve this problem efficiently, a \emph{memorymap} class is needed. This class would provide logically contiguous access to multiple, separate \emph{memoryview} objects.
+
+The ideal implementation would have a similar interface to that of \emph{memoryview} objects, and function as a drop-in replacement. This means protocol classes need not worry over how many packets their data is spread.
 
 \chapter{Implementation}
-\section{The \texttt{common} Module}
 \section{The \texttt{memorymap} Module}
+The \texttt{memorymap} module implements the \emph{memorymap} class as described in \ref{sec:memmap}, and works by mapping a virtual `index space' to a pair of  actual indices, referring to to one of the \emph{memoryview} objects it is composed of and it's .
+
+It stores it's constituent views in a list, along with their logical starting and ending index.
+
+A \emph{logical index} 
+
+\section{The \texttt{common} Module}
 \section{The \texttt{capfile} Package}
 \section{The \texttt{identity} Package}
 \subsection{Protocol classes}
