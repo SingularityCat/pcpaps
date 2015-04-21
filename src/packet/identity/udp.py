@@ -21,6 +21,9 @@ from .core import uint16pack, uint16unpack
 #       User Datagram Header Format    
 
 
+# Minimum size of a valid UDP header.
+UDP_MIN_SIZE = 8
+
 class UDP(core.CarrierProtocol):
     name = "udp"
 
@@ -28,6 +31,9 @@ class UDP(core.CarrierProtocol):
 
     def __init__(self, data, prev):
         super().__init__(data, prev)
+
+        if len(data) < UDP_MIN_SIZE:
+            raise core.ProtocolFormatError("Truncated UDP frame.")
         self._calculate_offsets()
 
 
@@ -35,8 +41,8 @@ class UDP(core.CarrierProtocol):
         # Fixed offsets.
         self._sport = slice(0, 2)
         self._dport = slice(2, 4)
-        self._len = slice(4, 8)
-        self._chksum = slice(8, 10)
+        self._len = slice(4, 6)
+        self._chksum = slice(6, 8)
 
         length = uint16unpack(self.data[self._len])
         self.payload = self.data[10:length+10]
