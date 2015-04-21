@@ -46,8 +46,10 @@ ETHERTYPE_IP6 = 0x86DD
 ETHERTYPE_IEEE802_1Q = 0x8100
 ETHERTYPE_IEEE802_1AD = 0x88A8
 
-# Ethernet minimum frame size is 64.
-ETHERNET_MIN_FRAME_SIZE = 64
+# The Ethernet minimum frame size is actully 64.
+# We use the largest frame header size instead to allow for some 'runt frames'
+# That occasionally crop up carrying protocols like ARP.
+ETHERNET_MIN_FRAME_SIZE = 16
 
 
 
@@ -79,7 +81,7 @@ class Ethernet(core.CarrierProtocol):
         super().__init__(data, prev)
 
         if len(data) < ETHERNET_MIN_FRAME_SIZE:
-            raise core.ProtocolFormatError("Ethernet: Runt frame!")
+            raise core.ProtocolFormatError("Very short Ethernet frame.")
         self._calculate_offsets()
 
 
