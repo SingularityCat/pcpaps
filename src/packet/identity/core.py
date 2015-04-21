@@ -293,9 +293,9 @@ def root_identify(packet):
     else:
         protocol = ProtocolStub
 
-    try:
-        packet.identity = protocol.interpret_packet(memoryview(packet.data), None)
-    except ProtocolFormatError:
+    
+    packet.identity = protocol.interpret_packet(memoryview(packet.data), None)
+    if packet.identity == None:
         packet.identity = ProtocolStub(memoryview(packet.data), None)
 
 
