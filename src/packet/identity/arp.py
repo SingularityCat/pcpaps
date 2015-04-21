@@ -35,6 +35,8 @@ ARP_PROTOCOL_IPV4 = 0x0800
 ARP_OPCODE_REQUEST = 1
 ARP_OPCODE_REPLY = 2
 
+# Minimum size for a valid ARP packet.
+ARP_MIN_SIZE = 8
 
 class ARP(core.Protocol):
     name = "arp"
@@ -45,6 +47,9 @@ class ARP(core.Protocol):
 
     def __init__(self, data, prev):
         super().__init__(data, prev)
+        if len(data) < ARP_MIN_SIZE:
+            raise core.ProtocolFormatError("Truncated ARP packet.")
+
         self._calculate_offsets()
 
     def _calculate_offsets(self):
@@ -71,10 +76,10 @@ class ARP(core.Protocol):
 
         # These values are used by replace_hosts.
         self.hardware_is_ethernet = (htype == ARP_HARDWARE_ETHERNET) and\
-            (hlen == 6)
+            (hlen == 6) and (len(self.data) >= ARP_MIN_SIZE + 20)
 
         self.protocol_is_ipv4 = (ptype == ARP_PROTOCOL_IPV4) and\
-            (plen == 4)
+            (plen == 4) and (len(self.data) >= ARP_MIN_SIZE + 20)
 
 
     def replace_hosts(self, hostmap):
@@ -127,16 +132,19 @@ target based on the given mapping."""
             self.data[self._opcode] = uint16pack(attrs["opcode"])
 
         # For these replacements, we check to see if we're replacing things of
-        # the correct length.
-        if "sha" in attrs and len(attrs["sha"]) == hlen:
-            self.data[self._sha] = attrs["sha"]
-        if "spa" in attrs and len(attrs["spa"]) == plen:
-            self.data[self._spa] = attrs["spa"]
-        if "tha" in attrs and len(attrs["tha"]) == hlen:
-            self.data[self._tha] = attrs["tha"]
-        if "tpa" in attrs and len(attrs["tpa"]) == plen:
-            self.data[self._tpa] = attrs["tpa"]
-
+        # the correct length. For extra robustness, catch ValueErrors.
+        try:
+            if "sha" in attrs and len(attrs["sha"]) == hlen:
+                self.data[self._sha] = attrs["sha"]
+            if "spa" in attrs and len(attrs["spa"]) == plen:
+                self.data[self._spa] = attrs["spa"]
+            if "tha" in attrs and len(attrs["tha"]) == hlen:
+                self.data[self._tha] = attrs["tha"]
+            if "tpa" in attrs and len(attrs["tpa"]) == plen:
+                self.data[self._tpa] = attrs["tpa"]
+        except ValueError:
+            # Might be encountered if the frame is truncated.
+            pass
 
     # ARP prototype attribute string format:
     # <attr> = <key> "=" <value>
@@ -193,7 +201,11 @@ target based on the given mapping."""
     @staticmethod
     def interpret_packet(data, parent):
         """Interpret packet data for this protocol."""
-        instance = ARP(data, parent)
+        try:
+            instance = ARP(data, parent)
+        except core.ProtocolFormatError:
+            return None
+
         return instance
 
 core.register_protocol(ARP)
