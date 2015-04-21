@@ -164,7 +164,7 @@ class IPv4(core.CarrierProtocol):
 
         if len(data) < (5*4):
             raise core.ProtocolFormatError("Data too short for valid header.")
-        elif (data[0] & 0xF0 >> 4) != 4:
+        elif ((data[0] & 0xF0) >> 4) != 4:
             raise core.ProtocolFormatError("Data is not a IPv4 header.")
 
         self._calculate_offsets()
