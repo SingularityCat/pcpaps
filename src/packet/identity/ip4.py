@@ -85,10 +85,12 @@ class FragmentTracker:
     """Used to track fragmented IP packets."""
     __slots__ = {"frags", "deferred_frags", "next_offset"}
 
+
     def __init__(self):
         self.frags = []
         self.deferred_frags = []
         self.next_offset = 0
+
 
     def add_fragment(self, frag):
         """Returns True if packet is complete, False if otherwise."""
@@ -110,7 +112,7 @@ class FragmentTracker:
 
                 # Iterate over deferred list.
                 for frag in current_deferred:
-                    tr = try_insert(frag)
+                    tr = self.try_insert(frag)
 
                     if tr is None:
                         # Tracking complete!
@@ -121,12 +123,15 @@ class FragmentTracker:
 
         return False
 
+
     def try_insert(self, frag):
-        """Try to add a fragment to the frags list.
-Tristate return:
- - None  = last fragment added.
- - True  = fragment added, more needed.
- - False = fragment deferred."""
+        """
+        Try to add a fragment to the frags list.
+        Tristate return:
+         - None  = last fragment added.
+         - True  = fragment added, more needed.
+         - False = fragment deferred.
+        """
         frag_flags, frag_offset, _ = frag.get_fraginfo()
         if frag_offset == self.next_offset:
             self.frags.append(frag)
@@ -140,6 +145,7 @@ Tristate return:
             self.deferred_frags.append(frag)
             # Added to deferred pool.
             return False
+
 
 class IPv4(core.CarrierProtocol):
     name = "ip4"
@@ -155,6 +161,12 @@ class IPv4(core.CarrierProtocol):
     def __init__(self, data, prev):
         """"""
         super().__init__(data, prev)
+
+        if len(data) < (5*4):
+            raise core.ProtocolFormatError("Data too short for valid header.")
+        elif (data[0] & 0xF0 >> 4) != 4:
+            raise core.ProtocolFormatError("Data is not a IPv4 header.")
+
         self._calculate_offsets()
 
 
@@ -180,12 +192,17 @@ class IPv4(core.CarrierProtocol):
         self.payload_length = self.payload_end - self.payload_offset
 
 
+    def get_protocol(self):
+        """Returns the protocl number of this IP header."""
+        return self.data[self._proto]
+
+
     # Used by the interpreter/fragment tracker.
     def get_fraginfo(self):
         """Returns the flags, fragment offset and fragment ident."""
         fragdat = self.data[self._flags_fragoff]
         frag_flags, frag_offset = ip4_extract_fragment_info(fragdat)
-        frag_id = self.get_route() + bytes(self.data[self._id]) + bytes(self.data[self._proto],)
+        frag_id = self.get_route() + bytes(self.data[self._id]) + bytes(self.get_protocol(),)
         return frag_flags, frag_offset*8, frag_id
 
 
@@ -231,14 +248,15 @@ class IPv4(core.CarrierProtocol):
 
 
     def recalculate_checksums(self):
+        """Recalculate the checksum for this IP header."""
         if self.next is not None:
-            self.next.reecalculate_checksums()
+            self.next.recalculate_checksums()
 
 
     @staticmethod
     def reset_state():
         """Resets the fragment_trackers dict."""
-        fragment_trackers = {}
+        fragment_trackers.clear()
 
 
     # IPv4 attrstr format.
@@ -272,9 +290,14 @@ class IPv4(core.CarrierProtocol):
     @staticmethod
     def interpret_packet(data, parent):
         """Interpret packet data for this protocol."""
-        instance = IPv4(data, parent)
+        try:
+            instance = IPv4(data, parent)
+        except core.ProtocolFormatError:
+            return None
+
         # Get protocol number for packet.
-        protonum = instance.data[instance._proto]
+        protonum = instance.get_protocol()
+
         # Get the fragment flags / fragment offset.
         frag_flags, frag_offset, frag_id = instance.get_fraginfo()
 
