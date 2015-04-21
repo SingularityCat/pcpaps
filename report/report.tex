@@ -466,7 +466,7 @@ This is the Unix philosophy: Write programs that do one thing and do it well. Wr
 To this end, a system based around multiple small utilities that can be strung together to produce the desired output seems an appropriate architecture. Out of necessity, \emph{text} will not be used as a model for data, but a ubiquitous packet capture format will be used. It is evident from the programs listed in section \ref{sec:existing} that this format is \emph{pcap}.
 
 \section{Development Methodology}
-The widely known `waterfall model' of software development was, in its current form, presented as a flawed model that lacked development stage feedback\cite{wwr-waterfall-notes}. It represents an idealised scenario where all requirements are specific, well understood and concrete, and that there are no unforeseen problems in implementation. Unfortunately, this is not how things work in practice.
+The widely known `waterfall model' of software development was, in its current form, presented as a flawed model that lacked development stage feedback\cite{wwr-waterfall-notes}. The waterfall model is fairly simple, it suggests a requirements analysis stage, followed by a linear progression of design, implementation, testing and finally maintenance. It works in an idealised scenario where all requirements are specific, well understood and concrete, and that there are no unforeseen problems in implementation. Unfortunately, this is not how things work in practice.
 
 As the project will consist of lots of small components, with a tree-like dependency graph, it is possible to design, build and test sets of components, without having designed a complete system. This is called \emph{prototyping}, and is a practical approach to designing small systems.
 Doing this repeatedly to build a larger system is known as \emph{incremental development}, and is essentially concurrent application of the waterfall model. Doing any design methodology repeatedly is called \emph{iterative development}.
@@ -804,12 +804,38 @@ The ideal implementation would have a similar interface to that of \emph{memoryv
 
 \chapter{Implementation}
 \section{The \texttt{memorymap} Module}
-The \texttt{memorymap} module implements the \emph{memorymap} class as described in \ref{sec:memmap}, and works by mapping multiple \emph{memoryview} objects (henceforth referred to as a \emph{segment}) to a single \emph{logical} `index space'.
+The \texttt{memorymap} module implements the \emph{memorymap} class as described in \ref{sec:memmap}, and works by mapping multiple \emph{memoryview} objects to a single \emph{logical} `index space'.
 
-It stores it's constituent segments in a list, along with their \emph{logical} starting and ending index. A \emph{logical index} is translated to an index pair by searching for the view range of values encompassing that index.
+The \texttt{memorymap} class stores each constituent \emph{memoryview} object (denoted $V$) as part of a three-tuple,  with their \emph{logical} starting and ending index ($min$ and $max$, respectively). This tuple is henceforth referred to as a \emph{segment} (or $S$). These segments are stored in a list ($Q$), in ascending order of ranges.
 
-A \emph{logical index} is converted to a pair of actual indices, the `segemnt index', which refers to one of the segments in the segment list, and a `local index', which is the part of the segment.
+{\small
+A note on notation: Slightly non-standard notation and concepts have been employed to make this mathematical model more readable and understandable. \emph{Lists} are \emph{tuples} with different notation.
 
+For a tuple, superscript denotes a component, i.e.  for tuple $T = (a,\, b,\, c\, ...)$,   $T^{a} = a$.
+
+For a list, square brackets denote a specific element, i.e. for list $R = (\pi,\, \epsilon,\, \lambda\, ...)$, $R[3] = \lambda$
+}
+
+\begin{align*}
+S_{i} &= ( V_{i},\, min_{i},\, max_{i} )\\
+Q &= [ S_{0},\, S_{1},\, S_{2}\, ... \,S_{i} ]\\
+\end{align*}
+\begin{center}
+Given $S_{a}$ and $S_{b}$ as any two elements in $Q$, where $a < b$,
+\end{center}
+\begin{align*}
+&\ S_{a}^{max} \leq S_{b}^{min} 
+\end{align*}
+
+A \emph{logical index} ($n_{logical}$) is translated to a pair of actual indices, the \emph{segment index} ($n_{segment}$), which refers to one of the segments in the segment list, and a \emph{local index} ($n_{local}$), which is the part of the segment.
+
+This translation is done by a very simple algorithm. A binary search of the segment list is done, identifying the range encompassing a \emph{logical index}.
+
+\begin{align*}
+n_{segment} &= search(Q,\,n_{logical})\\
+N &= Q[n_{segment}]\\
+n_{local} &= n_{logical} - N^{min}
+\end{align*}
 
 \section{The \texttt{common} Module}
 \section{The \texttt{capfile} Package}
@@ -822,7 +848,20 @@ The default implementation of \texttt{match_attributes}
 
 \chapter{Testing}
 
+\section{Testing approaches}
+
+\subsection{}
+
 \chapter{Critical Evaluation}
+
+\section{Successes}
+
+\section{Failures}
+
+\section{Retrospective Design Criticisms}
+
+\section{Retrospective Method Criticisms}
+
 
 \chapter{Appendix}
 \section{Formats}
