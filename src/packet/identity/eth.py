@@ -1,3 +1,8 @@
+"""
+Ethernet dissection module.
+Contains the Ethernet (eth) Protocol class, and a handful of constants.
+"""
+
 from .. import common
 
 from . import core
@@ -41,6 +46,10 @@ ETHERTYPE_IP6 = 0x86DD
 ETHERTYPE_IEEE802_1Q = 0x8100
 ETHERTYPE_IEEE802_1AD = 0x88A8
 
+# Ethernet minimum frame size is 64.
+ETHERNET_MIN_FRAME_SIZE = 64
+
+
 
 def find_ethertype_offset(data):
     """Finds the offset of the true ethertype of a frame."""
@@ -68,6 +77,9 @@ class Ethernet(core.CarrierProtocol):
     def __init__(self, data, prev):
         """Constructor."""
         super().__init__(data, prev)
+
+        if len(data) < ETHERNET_MIN_FRAME_SIZE:
+            raise core.ProtocolFormatError("Ethernet: Runt frame!")
         self._calculate_offsets()
 
 
@@ -84,6 +96,11 @@ class Ethernet(core.CarrierProtocol):
         self.payload_offset = etype_offset + 2
 
 
+    def get_ethertype(self):
+        """Returns the ethertype as a number."""
+        return uint16unpack(self.data[self._ethertype])
+
+
     def get_route(self):
         """Returns the route of this ethernet header, as a 12-byte string."""
         return bytes(self.data[self._dmac]) + bytes(self.data[self._smac])
@@ -95,8 +112,10 @@ class Ethernet(core.CarrierProtocol):
 
 
     def replace_hosts(self, hostmap):
-        """Replaces the source and destination mac addresses with the
-corresponding value in the MAC section of the hostmap argument (if present)."""
+        """
+        Replaces the source and destination mac addresses with the corresponding
+        value in the MAC section of the hostmap argument (if present).
+        """
 
         macmap = hostmap[core.AddrType.MAC.value]
         dmac = bytes(self.data[self._dmac])
@@ -116,17 +135,15 @@ corresponding value in the MAC section of the hostmap argument (if present)."""
         """Returns the fields in this packet as a attribute dict."""
         dmac = bytes(self.data[self._dmac])
         smac = bytes(self.data[self._smac])
-        ethertype = uint16unpack(self.data[self._ethertype])
         return {
             "dmac" : dmac,
             "smac" : smac,
-            "ethertype" : ethertype,
+            "ethertype" : self.get_ethertype(),
         }
 
 
     def set_attributes(self, attrs):
-        """Updates the fields in this header to represent the contents
-of an attribute dict."""
+        """Updates the fields in this header to represent the contents of an attribute dict."""
         # Get updated values
         if "dmac" in attrs:
             self.data[self._dmac] = attrs["dmac"]
@@ -143,12 +160,17 @@ of an attribute dict."""
 
     @staticmethod
     def interpret_packet(data, parent):
-        """Creates a protocol instance and determines the next protocol to use.
-This makes use of a registry of ethertype -> protocol names, updated with
-the 'register_ethertype' function in this module."""
-        instance = Ethernet(data, parent)
+        """
+        Creates a protocol instance and determines the next protocol to use.
+        This makes use of a registry of ethertype -> protocol names, updated
+        with the 'register_ethertype' function in this module.
+        """
+        try:
+            instance = Ethernet(data, parent)
+        except core.ProtocolFormatError:
+            return None
 
-        ethertype = uint16unpack(instance.data[instance._ethertype])
+        ethertype = instance.get_ethertype()
 
         if ethertype in ethertype_registry:
             protoname = ethertype_registry[ethertype]
