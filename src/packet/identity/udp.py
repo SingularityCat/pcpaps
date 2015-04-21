@@ -24,7 +24,7 @@ from .core import uint16pack, uint16unpack
 class UDP(core.CarrierProtocol):
     name = "udp"
 
-    __slots__ = {}
+    __slots__ = {"_sport", "_dport", "_len", "_chksum", "payload_offset"}
 
     def __init__(self, data, prev):
         super().__init__(data, prev)
@@ -33,27 +33,39 @@ class UDP(core.CarrierProtocol):
 
     def _calculate_offsets(self):
         # Fixed offsets.
-        pass
+        self._sport = slice(0, 2)
+        self._dport = slice(2, 4)
+        self._len = slice(4, 8)
+        self._chksum = slice(8, 10)
 
+        length = uint16unpack(self.data[self._len])
+        self.payload = self.data[10:length+10]
 
-    def replace_hosts(self, hostmap):
-        pass
 
     def get_attributes(self):
         """Retrieve a set of attributes describing fields in this protocol."""
         return {
+            "sport" : bytes(self.data[self._dport]),
+            "dport" : bytes(self.data[self._sport])
         }
 
 
     def set_attributes(self, attrs):
         """Alter packet data to match a set of protocol attributes."""
+        pass
+
+
+    def recalculate_checksums(self):
+        """Recalculate the checksum for this UDP header."""
+        if self.next is not None:
+            self.next.recalculate_checksums()
 
 
     # <attr> = <key> "=" <value>
     # <attrstr> = <attr> | <attr> ";" <attrstr>
     #
     # Attributes are seperated by semicolons, which contain colon-seperated key-value pairs.
-    # Valid keys are 
+    # Valid keys are sport, dport
     @staticmethod
     def build_attributes(attrstr):
         """Creates a set of attributes from an attribute string."""
@@ -65,6 +77,9 @@ class UDP(core.CarrierProtocol):
                 # Split into kvp.
                 k, v = attr.split("=")
 
+                if k == "sport" or k == "dport":
+                    attrdict[k] = common.interpret_int(v)
+
             except ValueError:
                 # Skip malformed attribute.
                 pass
@@ -74,7 +89,11 @@ class UDP(core.CarrierProtocol):
     @staticmethod
     def interpret_packet(data, parent):
         """Interpret packet data for this protocol."""
-        instance = UDP(data, parent)
+        try:
+            instance = UDP(data, parent)
+        except core.ProtocolFormatError:
+            return None
+
         return instance
 
 
