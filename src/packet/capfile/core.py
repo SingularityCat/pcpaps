@@ -4,21 +4,34 @@ core:
 """
 
 
+class PacketIOError(Exception):
+    """Exception raised by Packet(Reader|Writer)s."""
+    pass
+
+
 class PacketReader:
-    """Abstract class for packet readers.
-Implementatons must provide the 'read_packet' method.
-This class implements the __next__ method based on read_packet()"""
+    """
+    Abstract class for packet readers.
+    Implementatons must provide the 'read_packet' method.
+    This class implements the __next__ method based on read_packet()
+    """
 
 
     def __iter__(self):
-        """This makes the object an iterable.
-A 'self iterable' as it simply returns self."""
+        """
+        This makes the object an iterable.
+        A 'self iterable' as it simply returns self.
+        """
         return self
 
 
     def __next__(self):
         """Iterator protocol interface."""
-        pkt = self.read_packet()
+        try:
+            pkt = self.read_packet()
+        except PacketIOError:
+            raise StopIteration()
+
         if pkt is None:
             raise StopIteration()
 
@@ -26,8 +39,10 @@ A 'self iterable' as it simply returns self."""
 
 
     def read_packet(self):
-        """Abstract method read_packet.
-Should return the 'Packet' object, or None if there are no packets left."""
+        """
+        Abstract method read_packet.
+        Should return the 'Packet' object, or None if there are no packets left.
+        """
         raise NotImplementedError("read_packet not implemented.")
 
 
@@ -37,13 +52,17 @@ Should return the 'Packet' object, or None if there are no packets left."""
 
 
 class PacketWriter:
-    """Abstract class for packet writers.
-Implementations must provide the 'write_packet' method."""
+    """
+    Abstract class for packet writers.
+    Implementations must provide the 'write_packet' method.
+    """
 
 
     def write_packet(self, packet):
-        """Abstact method write_packet
-Should take one argument, the 'Packet' object."""
+        """
+        stact method write_packet
+        ould take one argument, the 'Packet' object.
+        """
         raise NotImplementedError("write_packet not implemented.")
 
 
