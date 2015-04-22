@@ -96,7 +96,7 @@
 %\lstset{upquote=true}
 \lstset{basicstyle=\ttfamily}
 
-\author{Elliot Thomas\\ \small Supervisor: Sean Tohill\\ \\ University of Westminster}
+\author{Elliot Thomas (\texttt{w1372638})\\ \small Supervisor: Sean Tohill\\ \\ University of Westminster}
 \title{Network Packet Capture Generation and Falsification}
 \date{\today}
 
@@ -125,7 +125,7 @@ In academia, plagiarism is a problem - people are unwilling to put the time in t
 What these people fail to realise, is that there is no substitute for experience. This problem is relevant in all fields, academic or applied, practical or theoretical; computer security and forensics is no exception.
 
 \section{Reader level}
-The reader is expected to be somewhat familiar with networking terminology and forensic analysis techniques. Basic knowledge of Python will be required to understand the design and implementation chapters.
+The reader is expected to be somewhat familiar with networking terminology and forensic analysis techniques, in addition to having some background in programming. Knowledge of specifically Python will be required to understand the design and implementation chapters.
 
 \section{The problem}
 Teaching network security and forensics is aided greatly by the presentation of example packet captures. These are used to learn and practice analytical skills, and to assess the level of understanding and knowledge that students hold.
@@ -647,8 +647,10 @@ You put them together to make a larger capture, you need to alter times and stuf
 \item \label{fr:5} ... be able to alter the contents of packets based on a set of predefined substitutions.
 \item \label{fr:6} There shall be a program that accepts multiple inputs, and merge them into a single output.
 \item \label{fr:7} There shall be a program that alters the timestamp metadata for individual packets.
-\item \label{fr:8} Programs shall support loading external support code (extensions) for handling new protocols at runtime.
-\item \label{fr:9} The programs shall be able to operate on streaming data in addition to static files.
+\item \label{fr:8} There shall be a program that selectively removes packets pertaining to specific protocols.
+\item \label{fr:9} There shall be a program that finds and replaces host identifiers within packets contained in a capture.
+\item \label{fr:10} Programs shall support loading external support code (extensions) for handling new protocols at runtime.
+\item \label{fr:11} The programs shall be able to operate on streaming data in addition to static files.
 \end{enumerate}
 
 \section{Non-functional Requirements}
@@ -722,9 +724,19 @@ Here, \emph{linktype} is an integer constant that represents one of many network
 
 The \emph{identity} is a field holds the root protocol (i.e. the bottom most protocol) instance for this packet. This is set to None by default, signifying the packet either has not been identified or has no known interpretation. More on this in the \emph{Protocols} section (\ref{sec:desproto}).
 
-\subsection{Packet Sources}
+\subsection{Packet Sources and Sinks}
 \emph{Packet sources} are objects that support Python's \emph{iterator protocol} that yield the packet objects mentioned above. Packet sources are presented by the library as building blocks for higher level applications.
 Packet sources represent a kind of lazily-evaluated interface towards streams of packets - this cuts down on memory usage, improving scalability. Sources that depend on other sources can be chained without restriction.
+
+A certain type of packet source, a packet reader, is to represent sources based off the various packet capture file formats. These classes implement methods in an abstract class, PacketReader. This abstract class will implement the interface of a packet source using \texttt{read_packet}, and can be used just like one. Along with a packet reader, a packet writer class is available as a \emph{packet sink} - there are no semantics beyond implementing the \texttt{close} and \texttt{write_packet} methods in the PacketWriter class.
+
+\begin{figure}[H]
+\center
+\includegraphics[scale=0.7]{diagrams/packetio.png}
+\caption{The PacketReader and PacketWriter abstract classes, with the generic PacketIOError exception.}
+\end{figure}
+
+The PacketReader and PacketWriter classes should also raise exceptions when they find a problem reading or writing a packet, respectively. The exceptions raised should be derive from the PacketIOError class.
 
 \subsection{Protocols}
 \label{sec:desproto}
@@ -803,6 +815,104 @@ To solve this problem efficiently, a \emph{memorymap} class is needed. This clas
 
 The ideal implementation would have a similar interface to that of \emph{memoryview} objects, and function as a drop-in replacement. This means protocol classes need not worry over how many packets their data is spread.
 
+\section{User Interface}
+The project is more then just a library. The project also seeks to provide a useful user interface to manipulate packet captures. In terms of requirements, this section refers to the design of \ref{fr:6} \emph{merge program}. \ref{fr:7} \emph{timestamp alteration program}, \ref{fr:8} \emph{filter program} and \ref{fr:9} \emph{host identity replacement program}.
+
+As is normal for batch data processing tools, these have a command line interface.
+
+\subsection{Common interface elements}
+The programs are to understand their command line arguments as a series of options with mostly unary or nullary parameters. For ease of use, there will be no specific order to command line options and no explicit options will be mandatory, each program having \emph{default} behaviour.
+
+Here, arity means how many arguments the option requires, i.e. a nullary option takes no arguments,  a unary option requires one, a binary option would require 2 etc.
+Frequency is how often the option should appear. Singular indicates the option should appear at most once, arbitrary means the option can appear any number of times.
+
+There will be commonalities between tools. These are detailed below.
+
+\begin{tabularx}{\textwidth}{|c|c|c|c|X|}
+\cline{1-2}
+\multicolumn{2}{|c|}{\textbf{Option Flag}} & \multicolumn{3}{c}{}\\ \hline
+\textbf{Short} & \textbf{Long} & \textbf{Arity} & \textbf{Frequency} & \textbf{Description} \\ \hline
+\texttt{-h} & \texttt{--help} & nullary & singular & Prints out help text.\\\hline
+\texttt{-i} & \texttt{--input} & unary & singular & The capture file to read from (defaults to stdin).\\ \hline
+\texttt{-o} & \texttt{--output} & unary & singular & The capture file to write to (defaults to stdout).\\ \hline
+\end{tabularx}
+
+\subsection{The merge tool}
+The merge tool will take an arbitrary number of packet capture files, and write out a single capture from these.
+
+The merge tool was also seen as the appropriate place to do time alteration, so this program fulfils the role of \ref{fr:6} \emph{merge program} and \ref{fr:7} \emph{timestamp alteration program}.
+
+\begin{tabularx}{\textwidth}{|c|c|c|c|X|}
+\cline{1-2}
+\multicolumn{2}{|c|}{\textbf{Option Flag}} & \multicolumn{3}{c}{}\\ \hline
+\textbf{Short} & \textbf{Long} & \textbf{Arity} & \textbf{Frequency} & \textbf{Description} \\ \hline
+\texttt{-i} & \texttt{--input} & unary & arbitrary & The capture files to read from (if none specified, reads from stdin exclusively).\\ \hline
+\texttt{-r} & \texttt{--relative} & nullary & singular & Makes all packet arrival times from a file relative to the time the first packet recorded in that file (this is on by default).\\ \hline
+\texttt{-a} & \texttt{--absolute} & nullary & singular & Packets retain their original time (this is the opposite of the \emph{relative} mode above).\\ \hline
+\texttt{-t} & \texttt{--offset} & unary & singular & Time offset, this value is added to the arrival times of all packets. If this value is not provided, it is set to the \emph{average arrival time of the first packet in each capture}. \\ \hline
+\end{tabularx}
+
+\begin{verbatim}
+[user@host ~]$ merge -i cap1.pcap -i cap2.pcap -o cap12.pcap
+\end{verbatim}
+\subsection{The filter tool}
+The filter tool will fulfil the role of \ref{fr:8} \emph{filter program}.
+
+\begin{tabularx}{\textwidth}{|c|c|c|c|X|}
+\cline{1-2}
+\multicolumn{2}{|c|}{\textbf{Option Flag}} & \multicolumn{3}{c}{}\\ \hline
+\textbf{Short} & \textbf{Long} & \textbf{Arity} & \textbf{Frequency} & \textbf{Description} \\ \hline
+\texttt{-k} & \texttt{--keep} & unary & arbitrary & A packet identity to keep.\\ \hline
+\texttt{-d} & \texttt{--discard} & unary & arbitrary & A packet identity to discard.\\ \hline
+\texttt{-p} & \texttt{--policy} & unary & singular & The policy to apply to any unaccounted for packet. Accepts either \emph{keep} or \emph{discard}.\\ \hline
+\end{tabularx}
+
+The tool will operate by first checking if a packet's identity matches anything in the \emph{keep} set. If so, the packet will be reproduced in output. If not in the \emph{keep} set, the packet's identity is then checked against items in the \emph{discard} set. If any match is sound, the packet will not be present in output. If a packet's identity is not present in either set, the value of \emph{policy} is used - if keep, the packet is kept, if discard, the packet is discarded.
+
+Here, an \emph{identity} will be specified as a specially formatted string, consisting of \emph{protocol names} and \emph{protocol attributes}.
+
+Valid protocol names are arbitrary strings\footnote{In the case of protocol names, ideally alphanumeric.} that contain no colons or slashes. Valid protocol attributes share the same restrictions.
+
+\begin{grammar}
+<prototype> ::= <protocol name> `:' <protocol attributes>
+\alt <protocol name>
+
+<identity> ::= <prototype> | <prototype> `/' <identity>
+\end{grammar}
+
+The exact format of the protocol attributes string depends entirely on the Protocol class, this string will be parsed by the \texttt{build_attributes} method. However, a consistent format should be used (but not imposed) - to this end, the format used by all built-in Protocol classes will take the form of a simple key-equals-value semicolon separated list.
+
+\begin{grammar}
+<kvp> ::= <key> `=' <value>
+
+<protocol attributes> ::= <kvp> | <kvp> `;' <protocol attributes>
+\end{grammar}
+
+
+\subsection{The maphosts tool}
+The `maphosts' realises \ref{fr:9} \emph{host identity replacement program}.
+
+\begin{tabularx}{\textwidth}{|c|c|c|c|X|}
+\cline{1-2}
+\multicolumn{2}{|c|}{\textbf{Option Flag}} & \multicolumn{3}{c}{}\\ \hline
+\textbf{Short} & \textbf{Long} & \textbf{Arity} & \textbf{Frequency} & \textbf{Description} \\ \hline
+\texttt{-m} & \texttt{--mac} & unary & arbitrary & A mapping of an Ethernet MAC address to its replacement.\\ \hline
+\texttt{-4} & \texttt{--ip4} & unary & arbitrary & A mapping of an IPv4 address to its replacement.\\ \hline
+\texttt{-6} & \texttt{--ip6} & unary & arbitrary & A mapping of an IPv4 address to its replacement.\\ \hline
+\end{tabularx}
+
+\begin{grammar}
+<hexbyte> ::= 00 | 01 | 02 | 03 ... FF
+
+<decbyte> ::= 0 | 1 | 2 | 3 ... 255
+
+<MAC address> ::= <hexbyte> `:' <hexbyte> `:' <hexbyte> `:' <hexbyte> `:' <hexbyte> `:' <hexbyte>
+
+<IPv4 address> ::= <decbyte> `.' <decbyte> `.' <decbyte> `.' <decbyte>
+
+<address pair> ::= <address> `=' <address>
+\end{grammar}
+
 \chapter{Implementation}
 Implementation started concurrently with design. Challenges encountered during implementation would change the design, and vice versa.
 
@@ -810,7 +920,7 @@ Implementation started concurrently with design. Challenges encountered during i
 While this section is not really about any specific implementation detail, it does cover noteworthy discipline used by the author \emph{while implementing}.
 
 \subsection{Coding Style}
-Some of the functional requirements (namely \ref{nfr:10} code structure and \ref{nfr:11} code documentation) effectively require code to be well-written and well-documented.
+Some of the functional requirements (namely \ref{nfr:10} \emph{code structure} and \ref{nfr:11} \emph{code documentation}) effectively require code to be well-written and well-documented.
 
 To this end, a variant of the standard Python code style was used. In essence:
 \begin{enumerate}[label=\roman*)]
@@ -820,9 +930,18 @@ To this end, a variant of the standard Python code style was used. In essence:
 \item Constants are CAPITALS\textunderscore{}WITH\textunderscore{}UNDERSCORES.\\
 \item Class identifieirs are written in UpperCamelCase.
 \end{enumerate}
-\subsection{Version Control}
 
-\pagebreak
+In contrast to normal Python style guidelines, this particular style makes classes easy to differentiate from functions.
+
+In addition to following the aforementioned coding style, the code was also written to be mostly PEP8\cite{pep8} compliant (this was checked with the \texttt{pep8} conformance checker, see \cite{pep8chk}).
+
+\subsection{Version Control}
+Any programming project will benefit form a form of version control. Version control helps keep a record of progress and allows mistakes to be easily reverted.
+
+Version control is also useful as a kind of synchronisation system between multiple computers, permitting an individual to continue work while away from their normal work environment.
+
+The author used \emph{git} as their version control system (VCS), as they had prior knowledge on how to use it.
+
 \section{The \texttt{memorymap} Module}
 The \texttt{memorymap} module implements the \emph{memorymap} class as described in \ref{sec:memmap}, and works by mapping multiple \emph{memoryview} objects to a single \emph{logical} `index space'.
 
@@ -872,6 +991,8 @@ The default implementation of \texttt{match_attributes}
 
 \section{Testing During Development}
 \subsection{Regression Testing}
+
+\chapter{Future Work}
 
 \chapter{Critical Evaluation}
 
@@ -975,6 +1096,16 @@ Pcap file format.
 	S. Deering, R. Hinden, The Internet Society (December 1998)\\
 	Internet Protocol, Version 6 (IPv6)\\
 	\url{https://tools.ietf.org/html/rfc2460}
+
+\bibitem{pep8}
+	Guido van Rossum, Barry Warsaw, Nick Coghlan (1st of August, 2013)\\
+	PEP 8 - Style Guide for Python Code\\
+	\url{https://www.python.org/dev/peps/pep-0008/}\\
+	
+\bibitem{pep8chk}
+	Johann C. Rocholl (last updated 18th of March, 2015)\\
+	pep8 - Python style guide checker\\
+	\url{http://github.com/jcrocholl/pep8/}
 
 \end{thebibliography}
 \end{document}
