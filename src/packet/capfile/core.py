@@ -16,14 +16,12 @@ class PacketReader:
     This class implements the __next__ method based on read_packet()
     """
 
-
     def __iter__(self):
         """
         This makes the object an iterable.
         A 'self iterable' as it simply returns self.
         """
         return self
-
 
     def __next__(self):
         """Iterator protocol interface."""
@@ -37,14 +35,12 @@ class PacketReader:
 
         return pkt
 
-
     def read_packet(self):
         """
         Abstract method read_packet.
         Should return the 'Packet' object, or None if there are no packets left.
         """
         raise NotImplementedError("read_packet not implemented.")
-
 
     def close(self):
         """Abstract method close. Should close filesystem resources."""
@@ -57,14 +53,12 @@ class PacketWriter:
     Implementations must provide the 'write_packet' method.
     """
 
-
     def write_packet(self, packet):
         """
         stact method write_packet
         ould take one argument, the 'Packet' object.
         """
         raise NotImplementedError("write_packet not implemented.")
-
 
     def close(self):
         """Abstract method close. Should cleanup any filesystem resources."""

@@ -100,7 +100,6 @@ class PcapRangeError(PacketIOError):
 class PcapReader(PacketReader):
     """PcapReader: reader for pcap files."""
 
-
     def __init__(self, fstream, magic=None):
         """
         Creates a PcapReader from an open stream.
@@ -130,7 +129,6 @@ class PcapReader(PacketReader):
             self.sigfigs,\
             self.snaplen,\
             self.network = global_header_struct.unpack(global_header_data)
-
 
     def read_packet(self):
         """
@@ -166,7 +164,6 @@ class PcapReader(PacketReader):
 class PcapWriter(PacketWriter):
     """PcapWriter: writer for pcap files."""
 
-
     def __init__(self, stream, magic=PCAP_LE_REGULAR, thiszone=0, snaplen=65535, network=1):
         """Setup a new PcapWriter object, and write a global header to the stream."""
         self.stream = stream
@@ -182,7 +179,6 @@ class PcapWriter(PacketWriter):
         self.stream.write(global_header_struct.pack(
             PCAP_MAJOR_VER, PCAP_MINOR_VER, 0, 0,
             self.snaplen, self.network))
-
 
     def write_packet(self, packet):
         """Writes a packet record header and data to the stream."""
@@ -201,7 +197,6 @@ class PcapWriter(PacketWriter):
         self.stream.write(packet_header)
         self.stream.write(packet.data[:maxlen])
         self.stream.flush()
-
 
     def close(self):
         """Closes the stream."""
