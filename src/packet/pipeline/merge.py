@@ -4,18 +4,23 @@ merge: contains the definition for the merge function.
 
 from .. import common
 
+
 def merge(preaders, relative=True, offset=None):
-    """Generator function that takes a list of packet sources and two parameters.
-If relative is true, then the time of the -first- packet from a source is subtracted
-from all packets from that source.
-If offset is not none, this value is added to the time of all packets, otherwise
-the average start time is used.
-Returns a generator that produces the next chronological packet on each iteration."""
-    # Create a local copy of the 'preaders' argument - we don't want to modify the original.
+    """
+    Generator function that takes a list of packet sources and two parameters.
+    If relative is true, then the time of the -first- packet from a source is
+    subtracted from all packets from that source.
+    If offset is not none, this value is added to the time of all packets,
+    otherwise the average start time is used.
+    Returns a generator that produces the next chronological packet on each iteration.
+    """
+    # Create a local copy of the 'preaders' argument
+    # we don't want to modify the original.
     tails = preaders[:]
     heads = []
 
-    # Create a list of 'heads' - packets in the start of each source, deleting empty sources.
+    # Create a list of 'heads',
+    # packets in the start of each source, deleting empty sources.
     src_count = len(tails)
     i = 0
     while i < src_count:
@@ -25,7 +30,6 @@ Returns a generator that produces the next chronological packet on each iteratio
         except StopIteration:
             del tails[i]
             src_count -= 1
-
 
     # Create list of staring packet times.
     times = [pkt.unixtime for pkt in heads]
@@ -64,4 +68,3 @@ Returns a generator that produces the next chronological packet on each iteratio
             del tails[min_idx]
             del offsets[min_idx]
             src_count -= 1
-
