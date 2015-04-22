@@ -207,7 +207,7 @@ This approach has the advantage that real-world scenarios can be used - an exist
 % Programming language criteria
 \section{Programming language: Criteria}
 Choosing a programming language is, obviously, a decision that needs to be made, and there is no single correct choice. There are many factors influencing such a decision, each one needs to be considered. There were three major factors considered in this decision:
-\begin{enumerate}{}
+\begin{enumerate}[label=\roman*)]
 \item Requirements - what does the program require?
 \item Knowledge - how difficult will it be to program in and maintain?
 \item Availability - on what platforms can projects using this language be used?
@@ -663,8 +663,9 @@ You put them together to make a larger capture, you need to alter times and stuf
 \item \label{nfr:8} ... support for identifying new protocols requires few, if any alterations to existing code.
 \item \label{nfr:9} ... support for new file formats requires few alterations to existing code.
 \item \label{nfr:10} The programs (and their source code) should be structured and reusable with-well defined interfaces.
-\item \label{nfr:11} The programs should be resilient - they should handle invalid data gracefully.
-\item \label{nfr:12} The programs should be secure - they should handle malicious data in a safe way.
+\item \label{nfr:11} The source code should be well documented and adequately commented, to assist future developers in understanding the code.
+\item \label{nfr:12} The programs should be resilient - they should handle invalid data gracefully.
+\item \label{nfr:13} The programs should be secure - they should handle malicious data in a safe way.
 \end{enumerate}
 
 %%%%%%%%%%
@@ -803,6 +804,25 @@ To solve this problem efficiently, a \emph{memorymap} class is needed. This clas
 The ideal implementation would have a similar interface to that of \emph{memoryview} objects, and function as a drop-in replacement. This means protocol classes need not worry over how many packets their data is spread.
 
 \chapter{Implementation}
+Implementation started concurrently with design. Challenges encountered during implementation would change the design, and vice versa.
+
+\section{Meta-Implementation}
+While this section is not really about any specific implementation detail, it does cover noteworthy discipline used by the author \emph{while implementing}.
+
+\subsection{Coding Style}
+Some of the functional requirements (namely \ref{nfr:10} code structure and \ref{nfr:11} code documentation) effectively require code to be well-written and well-documented.
+
+To this end, a variant of the standard Python code style was used. In essence:
+\begin{enumerate}[label=\roman*)]
+\item Indentation is done with four spaces.\\
+\item \emph{Private} fields in a class start with an underscore.\\
+\item Functions and methods are lower\textunderscore{}case\textunderscore{}with\textunderscore{}underscores.\\
+\item Constants are CAPITALS\textunderscore{}WITH\textunderscore{}UNDERSCORES.\\
+\item Class identifieirs are written in UpperCamelCase.
+\end{enumerate}
+\subsection{Version Control}
+
+\pagebreak
 \section{The \texttt{memorymap} Module}
 The \texttt{memorymap} module implements the \emph{memorymap} class as described in \ref{sec:memmap}, and works by mapping multiple \emph{memoryview} objects to a single \emph{logical} `index space'.
 
@@ -850,7 +870,8 @@ The default implementation of \texttt{match_attributes}
 
 \section{Testing approaches}
 
-\subsection{}
+\section{Testing During Development}
+\subsection{Regression Testing}
 
 \chapter{Critical Evaluation}
 
