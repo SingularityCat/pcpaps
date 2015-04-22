@@ -1,7 +1,7 @@
 import struct
 
 from ..common import Packet
-from .core import PacketReader, PacketWriter
+from .core import PacketReader, PacketWriter, PacketIOError
 
 """
 pcap: Contains classes for reading and writing to pcap files.
@@ -52,8 +52,10 @@ PCAP_MINOR_VER = 4
 # resolution. This is stored in the same endianess as the rest of the
 # integer data in this file, giving four possible values this could be.
 def pcap_magic_resolve(magic):
-    """Function that resolves pcap's magic number into an appropriate struct/scale.
-Raises PcapFormatError on invalid magic."""
+    """
+    Function that resolves pcap's magic number into an appropriate struct/scale.
+    Raises PcapFormatError on invalid magic.
+    """
     if magic.startswith(b"\xa1\xb2"):
         # File is big-endian...
         global_header_struct = PCAP_BE_GLOB_HDR
@@ -85,24 +87,28 @@ Raises PcapFormatError on invalid magic."""
     return global_header_struct, packet_header_struct, timescale
 
 
-class PcapFormatError(RuntimeError):
+class PcapFormatError(PacketIOError):
     """Exception raised when a file format error occurs."""
     pass
 
 
-class PcapRangeError(RuntimeError):
+class PcapRangeError(PacketIOError):
     """Exception raised when a unrepresentable value is encountered."""
     pass
 
 
 class PcapReader(PacketReader):
     """PcapReader: reader for pcap files."""
+
+
     def __init__(self, fstream, magic=None):
-        """Creates a PcapReader from an open stream.
-Takes one mandatory and one optional argument,
- - fstream: The readable stream to use.
- - magic: The first four bytes of the file.
-   If this is None, four bytes are read from the stream first."""
+        """
+        Creates a PcapReader from an open stream.
+        Takes one mandatory and one optional argument,
+         - fstream: The readable stream to use.
+         - magic: The first four bytes of the file.
+        If this is None, four bytes are read from the stream first.
+        """
         self.stream = fstream
 
         # Read magic number if not done so already.
@@ -125,9 +131,12 @@ Takes one mandatory and one optional argument,
             self.snaplen,\
             self.network = global_header_struct.unpack(global_header_data)
 
+
     def read_packet(self):
-        """Reads a packet record header and it's data from the stream.
-Returns a Packet object, or None on EOF"""
+        """
+        Reads a packet record header and it's data from the stream.
+        Returns a Packet object, or None on EOF.
+        """
         packet_header_data = self.stream.read(self.packet_header_struct.size)
         # Test for EOF or truncation
         if packet_header_data == b"":
@@ -155,7 +164,9 @@ Returns a Packet object, or None on EOF"""
 
 
 class PcapWriter(PacketWriter):
-    """"""
+    """PcapWriter: writer for pcap files."""
+
+
     def __init__(self, stream, magic=PCAP_LE_REGULAR, thiszone=0, snaplen=65535, network=1):
         """Setup a new PcapWriter object, and write a global header to the stream."""
         self.stream = stream
@@ -172,8 +183,11 @@ class PcapWriter(PacketWriter):
             PCAP_MAJOR_VER, PCAP_MINOR_VER, 0, 0,
             self.snaplen, self.network))
 
+
     def write_packet(self, packet):
         """Writes a packet record header and data to the stream."""
+        if packet.linktype != self.network:
+            raise PcapFormatError("Packet cannot be represented (wrong linktype)")
 
         # Truncate packet.data to the snaplen limit, if needed.
         maxlen = min(self.snaplen, len(packet.data))
@@ -187,6 +201,7 @@ class PcapWriter(PacketWriter):
         self.stream.write(packet_header)
         self.stream.write(packet.data[:maxlen])
         self.stream.flush()
+
 
     def close(self):
         """Closes the stream."""
