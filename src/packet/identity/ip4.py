@@ -1,5 +1,3 @@
-import struct
-
 from .. import common
 from .. import memorymap
 
@@ -39,37 +37,6 @@ IP4_FLAG_MORE_FRAGMENTS = 0b001
 IP4_FLAG_DONT_FRAGMENT = 0b010
 IP4_FLAG_EVIL_BIT = 0b100 # RFC 3514 :)
 
-# The checksum algorithm is:
-#      The checksum field is the 16 bit one's complement of the one's
-#      complement sum of all 16 bit words in the header.  For purposes of
-#      computing the checksum, the value of the checksum field is zero.
-
-def ip4_checksum(hdr):
-    n32words, rem = divmod(len(hdr), 4)
-
-    # header must be a multiple of 4 bytes large,
-    # and must contain at least 5 of these.
-    if rem != 0 or n32words < 5:
-        # !!?
-        return None
-
-    n16words = n32words * 2
-
-    # generate list of 16-bit words.
-    words = [word for word in struct.Struct("!"+"H"*n16words).unpack(hdr)]
-    words[5] = 0 # Checksum word is 0 for checksum validation.
-
-    ocsum = 0
-
-    for word in words:
-        # One's complement addition of 16-bit words.
-        acc = ocsum + word
-        carry = acc >> 16
-        ocsum = (acc & 0xFFFF) + carry
-
-    b1, b2 = divmod(ocsum, 256)
-    return bytes((~b1 & 0xFF, ~b2 & 0xFF))
-
 
 def ip4_extract_fragment_info(fragdat):
     frag_flags = (fragdat[0] & 0xE0) >> 5
@@ -77,7 +44,6 @@ def ip4_extract_fragment_info(fragdat):
     return frag_flags, frag_offset
 
 # Support for fragmented IP packets.
-#
 fragment_trackers = {}
 
 
@@ -155,8 +121,8 @@ class IPv4(core.CarrierProtocol):
                  "_id", "_flags_fragoff",
                  "_ttl", "_proto", "_chksum",
                  "_saddr",
-                 "_daddr"}
-
+                 "_daddr",
+                 "logical_payload_length"}
 
     def __init__(self, data, prev):
         """"""
@@ -168,7 +134,6 @@ class IPv4(core.CarrierProtocol):
             raise core.ProtocolFormatError("Data is not a IPv4 header.")
 
         self._calculate_offsets()
-
 
     def _calculate_offsets(self):
         """"""
@@ -190,12 +155,11 @@ class IPv4(core.CarrierProtocol):
         self.payload_offset = (ihl * 4) # IHL is in terms of 4 bytes.
         self.payload_end = uint16unpack(self.data[self._len])
         self.payload_length = self.payload_end - self.payload_offset
-
+        self.logical_payload_length = self.payload_length
 
     def get_protocol(self):
         """Returns the protocl number of this IP header."""
         return self.data[self._proto]
-
 
     # Used by the interpreter/fragment tracker.
     def get_fraginfo(self):
@@ -205,15 +169,17 @@ class IPv4(core.CarrierProtocol):
         frag_id = self.get_route() + bytes(self.data[self._id]) + bytes(self.get_protocol(),)
         return frag_flags, frag_offset*8, frag_id
 
-
     def get_route(self):
         """Returns the route defined by this IP header."""
         return bytes(self.data[self._saddr]) + bytes(self.data[self._daddr])
 
-
     def get_route_reciprocal(self):
         """Returns the reciprocal route of this IP header."""
         return bytes(self.data[self._daddr]) + bytes(self.data[self._saddr])
+
+    def get_payload_length(self):
+        """Returns the (possibly logical) payload length."""
+        return self.logical_payload_length
 
 
     def get_attributes(self):
@@ -224,11 +190,9 @@ class IPv4(core.CarrierProtocol):
             "daddr": bytes(self.data[self._daddr])
         }
 
-
     def set_attributes(self, attrs):
         """Alter packet data to match a set of protocol attributes."""
         pass
-
 
     def replace_hosts(self, hostmap):
         """Replace source/destination addresses."""
@@ -246,18 +210,19 @@ class IPv4(core.CarrierProtocol):
         if self.next is not None:
             self.next.replace_hosts(hostmap)
 
-
     def recalculate_checksums(self):
         """Recalculate the checksum for this IP header."""
         if self.next is not None:
             self.next.recalculate_checksums()
 
+        # Nullify the checksum and replace.
+        self.data[self._chksum] = b"\x00\x00"
+        self.data[self._chksum] = ip.checksum(self.data[:self.payload_offset])
 
     @staticmethod
     def reset_state():
         """Resets the fragment_trackers dict."""
         fragment_trackers.clear()
-
 
     # IPv4 attrstr format.
     # <attr> = <key> "=" <value>
@@ -285,7 +250,6 @@ class IPv4(core.CarrierProtocol):
                 pass
 
         return attrdict
-
 
     @staticmethod
     def interpret_packet(data, parent):
@@ -320,7 +284,9 @@ class IPv4(core.CarrierProtocol):
                 del fragment_trackers[frag_id]
                 views = []
 
+                logical_length = 0
                 for frag in ft.frags:
+                    logical_length += frag.payload_length
                     frag.completed = True
                     # Add payload memoryview to views list.
                     views.append(
@@ -333,9 +299,12 @@ class IPv4(core.CarrierProtocol):
                     mapped_data = memorymap.memorymap(views)
                     # Interpret payload.
                     next = protocol.interpret_packet(mapped_data, instance)
-                    # Assign child to next of all fragments.
-                    for frag in ft.frags:
-                        frag.next = next
+
+                # Assign child and logical length to next of all fragments.
+                for frag in ft.frags:
+                    frag.next = next
+                    frag.logical_payload_length = logical_length
+
         else:
             # No fragmentation!
             # Determine protocol.
