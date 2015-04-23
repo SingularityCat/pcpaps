@@ -39,30 +39,39 @@ class TCPStateMachine:
 class TCP(core.CarrierProtocol):
     name = "tcp"
 
-    __slots__ = {"_sport", "_dport",
+    __slots__ = {"payload_offset", "port",
+                 "_sport", "_dport",
                  "_seqnum",
                  "_acknum",
-                 "_offset_flags", "_window"
+                 "_offset_byte", "_flags_byte", "_window"
                  "_chksum", "_urgptr"}
 
     def __init__(self, data, prev):
         super().__init__(data, prev)
         self._calculate_offsets()
+        self.port = None
 
     def _calculate_offsets(self):
         self._sport = slice(0, 2)
         self._dport = slice(2, 4)
         self._seqnum = slice(4, 8)
         self._acknum = slice(8, 12)
-        self._offset_flags = slice(12, 14)
+        self._offset_byte = 12
+        self._flags_byte = 13
         self._window = slice(14, 16)
         self._chksum = slice(16, 18)
         self._urgptr = slice(18, 20)
+
+        # Data offset is in multiples of 4.
+        self.payload_offset = ((self.data[self._offset_byte] & 0xF0) >> 2)
 
 
     def get_attributes(self):
         """Retrieve a set of attributes describing fields in this protocol."""
         return {
+            "port": self.port,
+            "sport": uint16unpack(self.data[self._dport]),
+            "dport": uint16unpack(self.data[self._sport])
         }
 
     def set_attributes(self, attrs):
@@ -73,6 +82,10 @@ class TCP(core.CarrierProtocol):
         """Recalculate the checksum for this TCP header."""
         if self.next is not None:
             self.next.recalculate_checksums()
+
+        # Nullify the checksum and replace.
+        self.data[self._chksum] = b"\x00\x00"
+        self.data[self._chksum] = ip.checksum()
 
     @staticmethod
     def reset_state():
