@@ -50,8 +50,8 @@ class UDP(core.CarrierProtocol):
     def get_attributes(self):
         """Retrieve a set of attributes describing fields in this protocol."""
         return {
-            "sport": bytes(self.data[self._dport]),
-            "dport": bytes(self.data[self._sport])
+            "sport": uint16unpack(self.data[self._dport]),
+            "dport": uint16unpack(self.data[self._sport])
         }
 
     def set_attributes(self, attrs):
