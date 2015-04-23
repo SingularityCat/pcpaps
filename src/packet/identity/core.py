@@ -198,7 +198,6 @@ class CarrierProtocol(Protocol):
     the get_route and get_route_reciprocal methods.
     """
 
-
     def get_route(self):
         """
         Abstract method returning a hashable object that represents
@@ -206,7 +205,6 @@ class CarrierProtocol(Protocol):
         protocol would direct a packet.
         """
         raise NotImplementedError("get_route not implemented.")
-
 
     def get_route_reciprocal(self):
         """
@@ -216,6 +214,12 @@ class CarrierProtocol(Protocol):
         """
         raise NotImplementedError("get_route_reciprocal not implemented.")
 
+    def get_payload_length(self):
+        """
+        Abstract method returning the lengh of the payload,
+        if indicated in the protocol.
+        """
+        raise NotImplementedError("get_payload_length not implemented.")
 
 # ProtocolStub class.
 # This class contains stub implementations of the methods in the Protocol class.

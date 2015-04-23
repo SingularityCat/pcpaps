@@ -1,7 +1,7 @@
 digraph {
 charset="utf-8"
 rankdir=BT
-"0" [label="{CarrierProtocol|\l|get_route()\lget_route_reciprocal()\l}", shape="record"];
+"0" [label="{CarrierProtocol|\l|get_route()\lget_route_reciprocal()\lget_payload_length()\l}", shape="record"];
 "1" [label="{Protocol|completed : bool\ldata\lname : str\lnext : Protocol\lprev : Protocol\l|build_attributes()\lget_attributes()\linterpret_packet()\linterpret_stream()\lis_complete()\lmatch_attributes()\lrecalculate_checksums()\lreplace_hosts()\lreset_state()\lset_attributes()\l}", shape="record"];
 "0" -> "1" [arrowhead="empty", arrowtail="none"];
 }
