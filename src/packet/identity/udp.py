@@ -24,6 +24,7 @@ from .core import uint16pack, uint16unpack
 # Minimum size of a valid UDP header.
 UDP_MIN_SIZE = 8
 
+
 class UDP(core.CarrierProtocol):
     name = "udp"
 
@@ -36,7 +37,6 @@ class UDP(core.CarrierProtocol):
             raise core.ProtocolFormatError("Truncated UDP frame.")
         self._calculate_offsets()
 
-
     def _calculate_offsets(self):
         # Fixed offsets.
         self._sport = slice(0, 2)
@@ -45,27 +45,23 @@ class UDP(core.CarrierProtocol):
         self._chksum = slice(6, 8)
 
         length = uint16unpack(self.data[self._len])
-        self.payload = self.data[10:length+10]
-
+        self.payload_offset = 8
 
     def get_attributes(self):
         """Retrieve a set of attributes describing fields in this protocol."""
         return {
-            "sport" : bytes(self.data[self._dport]),
-            "dport" : bytes(self.data[self._sport])
+            "sport": bytes(self.data[self._dport]),
+            "dport": bytes(self.data[self._sport])
         }
-
 
     def set_attributes(self, attrs):
         """Alter packet data to match a set of protocol attributes."""
         pass
 
-
     def recalculate_checksums(self):
         """Recalculate the checksum for this UDP header."""
         if self.next is not None:
             self.next.recalculate_checksums()
-
 
     # <attr> = <key> "=" <value>
     # <attrstr> = <attr> | <attr> ";" <attrstr>
