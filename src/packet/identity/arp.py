@@ -38,6 +38,7 @@ ARP_OPCODE_REPLY = 2
 # Minimum size for a valid ARP packet.
 ARP_MIN_SIZE = 8
 
+
 class ARP(core.Protocol):
     name = "arp"
 
@@ -81,7 +82,6 @@ class ARP(core.Protocol):
         self.protocol_is_ipv4 = (ptype == ARP_PROTOCOL_IPV4) and\
             (plen == 4) and (len(self.data) >= ARP_MIN_SIZE + 20)
 
-
     def replace_hosts(self, hostmap):
         """This method replaces MAC and IP addresses of both the sender and
 target based on the given mapping."""
@@ -107,7 +107,6 @@ target based on the given mapping."""
             if tip in ipmap:
                 self.data[self._tpa] = ipmap[tip]
 
-
     def get_attributes(self):
         """Retrieve a set of attributes describing fields in this protocol."""
         return {
@@ -125,11 +124,11 @@ target based on the given mapping."""
         hlen = self.data[self._hlen]
         plen = self.data[self._plen]
         if "htype" in attrs:
-            self.data[self._htype] = uint16pack(attrs["htype"])
+            self.data[self._htype] = uint16pack(attrs["htype"] & 0xFFFF)
         if "ptype" in attrs:
-            self.data[self._htype] = uint16pack(attrs["ptype"])
+            self.data[self._htype] = uint16pack(attrs["ptype"] & 0xFFFF)
         if "opcode" in attrs:
-            self.data[self._opcode] = uint16pack(attrs["opcode"])
+            self.data[self._opcode] = uint16pack(attrs["opcode"] &  0xFFFF)
 
         # For these replacements, we check to see if we're replacing things of
         # the correct length. For extra robustness, catch ValueErrors.
@@ -207,6 +206,7 @@ target based on the given mapping."""
             return None
 
         return instance
+
 
 core.register_protocol(ARP)
 eth.register_ethertype(ARP.name, eth.ETHERTYPE_ARP)

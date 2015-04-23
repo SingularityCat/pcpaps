@@ -48,14 +48,12 @@ class Protocol:
         self.prev = prev
         self.completed = True
 
-
     def __iter__(self):
         """Generator method for accessing this/child protocol instances."""
         current = self
         while current is not None:
             yield current
             current = current.next
-
 
     def is_complete(self):
         """Returns True if this and all child protocols are complete."""
@@ -67,7 +65,6 @@ class Protocol:
 
         return True
 
-
     def get_attributes(self):
         """
         Abstract method get_attributes.
@@ -75,14 +72,12 @@ class Protocol:
         """
         raise NotImplementedError("get_attributes not implemented.")
 
-
     def set_attributes(self, attrs):
         """
         Abstract method set_attributes.
         Should accept a dict of attributes and update data accordingly.
         """
         raise NotImplementedError("set_attributes not implemented.")
-
 
     def match_attributes(self, tattrs):
         """
@@ -112,7 +107,6 @@ class Protocol:
         # In all other cases...
         return False
 
-
     def replace_hosts(self, hostmap):
         """
         This method should replace instances of host identification,
@@ -123,7 +117,6 @@ class Protocol:
         """
         if self.next is not None:
             self.next.replace_hosts(hostmap)
-
 
     def recalculate_checksums(self):
         """
@@ -137,7 +130,6 @@ class Protocol:
         if self.next is not None:
             self.next.recalculate_checksums()
 
-
     @staticmethod
     def reset_state():
         """
@@ -148,7 +140,6 @@ class Protocol:
         The default implementation does nothing and should suffice for simple protocols.
         """
         return
-
 
     @staticmethod
     def interpret_packet(data, parent):
@@ -167,7 +158,6 @@ class Protocol:
         # return instance
         raise NotImplementedError("interpret_packet not implemented.")
 
-
     @staticmethod
     def interpret_stream(stream, parent):
         """
@@ -179,7 +169,6 @@ class Protocol:
         return said instance.
         """
         raise NotImplementedError("interpret_stream not implemented.")
-
 
     @staticmethod
     def build_attributes(attrstr):
@@ -236,28 +225,23 @@ class ProtocolStub(Protocol):
         """Stub. Returns an empty dictionary."""
         return {}
 
-
     def set_attributes(self, attrs):
         """Stub. Does nothing."""
         return
 
-
     def match_attributes(self, attrs):
         """Stub. Always returns true."""
         return True
-
 
     @classmethod
     def interpret_packet(cls, data, parent):
         """Stub. Returns an instance of this class."""
         return cls(data, parent)
 
-
     @classmethod
     def interpret_stream(cls, stream, parent):
         """Stub. Returns an instance of this class."""
         return cls(stream, parent)
-
 
     @staticmethod
     def build_attributes(attrstr):
@@ -332,6 +316,7 @@ def lookup_protocol(protoname):
     else:
         protocol = ProtocolStub
     return protocol
+
 
 linktype_registry = {}
 protocol_registry = {}

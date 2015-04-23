@@ -28,7 +28,7 @@ UDP_MIN_SIZE = 8
 class UDP(core.CarrierProtocol):
     name = "udp"
 
-    __slots__ = {"_sport", "_dport", "_len", "_chksum", "payload_offset"}
+    __slots__ = {"payload_length", "payload_offset", "_sport", "_dport", "_len", "_chksum"}
 
     def __init__(self, data, prev):
         super().__init__(data, prev)
@@ -44,7 +44,7 @@ class UDP(core.CarrierProtocol):
         self._len = slice(4, 6)
         self._chksum = slice(6, 8)
 
-        length = uint16unpack(self.data[self._len])
+        self.payload_length = uint16unpack(self.data[self._len])
         self.payload_offset = 8
 
     def get_attributes(self):

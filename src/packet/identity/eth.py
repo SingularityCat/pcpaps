@@ -52,7 +52,6 @@ ETHERTYPE_IEEE802_1AD = 0x88A8
 ETHERNET_MIN_FRAME_SIZE = 16
 
 
-
 def find_ethertype_offset(data):
     """Finds the offset of the true ethertype of a frame."""
     # Tenative 'EtherType'
@@ -75,7 +74,6 @@ class Ethernet(core.CarrierProtocol):
     name = "eth"
     __slots__ = {"payload_offset", "_dmac", "_smac", "_ethertype"}
 
-
     def __init__(self, data, prev):
         """Constructor."""
         super().__init__(data, prev)
@@ -83,7 +81,6 @@ class Ethernet(core.CarrierProtocol):
         if len(data) < ETHERNET_MIN_FRAME_SIZE:
             raise core.ProtocolFormatError("Very short Ethernet frame.")
         self._calculate_offsets()
-
 
     def _calculate_offsets(self):
         """Calculates offsets of all the fields and the payload."""
@@ -97,21 +94,17 @@ class Ethernet(core.CarrierProtocol):
 
         self.payload_offset = etype_offset + 2
 
-
     def get_ethertype(self):
         """Returns the ethertype as a number."""
         return uint16unpack(self.data[self._ethertype])
-
 
     def get_route(self):
         """Returns the route of this ethernet header, as a 12-byte string."""
         return bytes(self.data[self._dmac]) + bytes(self.data[self._smac])
 
-
     def get_route_reciprocal(self):
         """Returns the reciprocal route of this ethernet header."""
         return bytes(self.data[self._smac]) + bytes(self.data[self._dmac])
-
 
     def replace_hosts(self, hostmap):
         """
@@ -132,7 +125,6 @@ class Ethernet(core.CarrierProtocol):
         if self.next is not None:
             self.next.replace_hosts(hostmap)
 
-
     def get_attributes(self):
         """Returns the fields in this packet as a attribute dict."""
         dmac = bytes(self.data[self._dmac])
@@ -142,7 +134,6 @@ class Ethernet(core.CarrierProtocol):
             "smac" : smac,
             "ethertype" : self.get_ethertype(),
         }
-
 
     def set_attributes(self, attrs):
         """Updates the fields in this header to represent the contents of an attribute dict."""
@@ -158,7 +149,7 @@ class Ethernet(core.CarrierProtocol):
             # We don't support adding 1Q/1AD headers at the moment.
             if new_ethertype != ETHERTYPE_IEEE802_1Q and \
                 new_ethertype != ETHERTYPE_IEEE802_1AD:
-                self.data[self._ethertype] = uint16pack(new_ethertype)
+                self.data[self._ethertype] = uint16pack(new_ethertype & 0xFFFF)
 
     @staticmethod
     def interpret_packet(data, parent):
@@ -183,7 +174,6 @@ class Ethernet(core.CarrierProtocol):
             )
 
         return instance
-
 
     # Ethernet prototype attribute string format:
     # <attr> = <key> "=" <value>
@@ -223,6 +213,7 @@ class Ethernet(core.CarrierProtocol):
 def register_ethertype(protocol, ethertype):
     """Associates a protocol name with an ethertype."""
     ethertype_registry[ethertype] = protocol
+
 
 ethertype_registry = {}
 

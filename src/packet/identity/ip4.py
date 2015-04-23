@@ -35,7 +35,7 @@ from .core import uint16pack, uint16unpack
 # IPv4 flags
 IP4_FLAG_MORE_FRAGMENTS = 0b001
 IP4_FLAG_DONT_FRAGMENT = 0b010
-IP4_FLAG_EVIL_BIT = 0b100 # RFC 3514 :)
+IP4_FLAG_EVIL_BIT = 0b100  # RFC 3514 :)
 
 
 def ip4_extract_fragment_info(fragdat):
@@ -51,12 +51,10 @@ class FragmentTracker:
     """Used to track fragmented IP packets."""
     __slots__ = {"frags", "deferred_frags", "next_offset"}
 
-
     def __init__(self):
         self.frags = []
         self.deferred_frags = []
         self.next_offset = 0
-
 
     def add_fragment(self, frag):
         """Returns True if packet is complete, False if otherwise."""
@@ -89,7 +87,6 @@ class FragmentTracker:
 
         return False
 
-
     def try_insert(self, frag):
         """
         Try to add a fragment to the frags list.
@@ -111,7 +108,6 @@ class FragmentTracker:
             self.deferred_frags.append(frag)
             # Added to deferred pool.
             return False
-
 
 class IPv4(core.CarrierProtocol):
     name = "ip4"
@@ -152,7 +148,7 @@ class IPv4(core.CarrierProtocol):
         # Get header length.
         ihl = self.data[self._ver_ihl] & 0x0F
 
-        self.payload_offset = (ihl * 4) # IHL is in terms of 4 bytes.
+        self.payload_offset = (ihl * 4)  # IHL is in terms of 4 bytes.
         self.payload_end = uint16unpack(self.data[self._len])
         self.payload_length = self.payload_end - self.payload_offset
         self.logical_payload_length = self.payload_length
@@ -180,7 +176,6 @@ class IPv4(core.CarrierProtocol):
     def get_payload_length(self):
         """Returns the (possibly logical) payload length."""
         return self.logical_payload_length
-
 
     def get_attributes(self):
         """Retrieve a set of attributes describing fields in this protocol."""

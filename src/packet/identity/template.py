@@ -10,7 +10,7 @@ from .core import uint16pack, uint16unpack
 class Template(core.Protocol):
     name = "template"
 
-        __slots__ = {}
+    __slots__ = {}
 
     def __init__(self, data, prev):
         super().__init__(data, prev)
@@ -20,10 +20,8 @@ class Template(core.Protocol):
         # Fixed offsets.
         pass
 
-
     def replace_hosts(self, hostmap):
         pass
-
 
     def get_attributes(self):
         """Retrieve a set of attributes describing fields in this protocol."""
@@ -32,7 +30,6 @@ class Template(core.Protocol):
 
     def set_attributes(self, attrs):
         """Alter packet data to match a set of protocol attributes."""
-
 
     # <attr> = <key> "=" <value>
     # <attrstr> = <attr> | <attr> ";" <attrstr>
