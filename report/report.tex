@@ -485,14 +485,9 @@ Instead, the documentation for libpcap's file format was used. This will be disc
 The project needs to deal with real network captures. Therefore, knowledge of protocols that occur on real networks is essential. Dissecting packets to extract and replace information is a task that requires specific knowledge. Fortunately, obtaining this is a fairly straightforward task.
 
 The first problem is finding out \emph{what} protocols are used. This is almost trivial, and can be determined in numerous ways; an empirical method would be simply to examining a live network, this will tell you not only what protocols are in use, but how often they are used.
-Another method would be to simply gather some background knowledge - how networks operate and what they are used for. Internet access is almost ubiquitous, and the world wide web has become a prominent part of modern society, and it turns out these kind of statistics are well-studied. %TODO
+Another method would be to simply gather some background knowledge - how networks operate and what they are used for. Internet access is almost ubiquitous, and the world wide web has become a prominent part of modern society - the world wide web is accessed using HTTP, which depends on TCP for it's transport, which then depends on IP as it's carrier. Additionally, for hosts implementing HTTP, DNS is used for resolving host names to IP addresses.
 
-Local area networks typically have a homogeneous medium, the most common of which is Ethernet. From a data analysis point of view, this is one of the basic `carrier protocols' that all other protocols are encapsulated within.
-
-%Things to mention:
-%Routers and modems may change the carrier.
-%Ideally, Internet Protocol packets remain the same.
-%Forward thinking and IPv6
+Local area networks typically have a homogeneous medium, the most common of which is Ethernet. From a data analysis point of view, this is one of the basic `carrier protocols' that all other protocols are encapsulated within.\footnote{It is worth noting that an IP router may also act as a gateway between two different networks, possibly with different media.}
 
 The next problem is understanding these protocols enough to identify them. This is also a straightforward task, most of these protocols are standardised by the IETF (Internet Engineering Task Force), and are publicly available as RFCs (Request For Comments).
 
@@ -574,11 +569,15 @@ ARP packets consist of two 16 bit type identifiers, two 6 bit length fields and 
 \label{fig:arpfmt}
 \end{figure}
 
-As far as dissection goes, ARP is a terminal protocol and is also quite boring - it does not encapsulate anything, and is rarely interesting in terms of forensics, but it does contains four \emph{host identities}.
+As far as dissection goes, ARP is a terminal protocol and is also quite boring - it does not encapsulate anything, and is rarely interesting in terms of forensics, but it does contains four \emph{host identities}. These are significant if modification is required.
 
 \subsection{Internet Protocol (version 4)}
 \label{sec:ip4}
 The Internet Protocol, commonly known as IPv4 or just IP, is specified and explained in RFC 791\cite{rfc791}.
+
+Suffice to say, the Internet Protocol is very important, and unsurprisingly, has a rather complex form.
+
+Discussions about routing and IP addresses are outside the scope of this document, but unlike Ethernet and ARP, knowledge of protocol behaviour is needed to properly identify data transferred over IP packets.
 
 \begin{figure}[H]
 \center
@@ -594,14 +593,36 @@ The Internet Protocol, commonly known as IPv4 or just IP, is specified and expla
 \label{fig:ip4fmt}
 \end{figure}
 
+In real terms, IPv4 usually operates as a kind of datagram transfer protocol, with flags and fields telling networked hosts how important the data it contains is and how many times the packet should be rerouted (this is represented in the Time to Live (TTL) field, and is known as a \emph{hop count}). IPv4 also contains a specification for various optional parts, which occur after the destination address. For checksumming purposes, and the Internet Header Length field, these are counted as part of the header. These optional fields are always padded to the next 32 bit boundary.
+
+In addition to this mode of operation, IP also specifies behaviour when packets need to traverse media with different MTU's (Maximum Transfer Unit). It does this by splitting the packet up into smaller pieces. The fragmented packet can then be reassembled by using the second 32-bit word (see \ref{fig:ip4fmt}) of the IP header, which contains an `identification' field and two fields used for managing these fragments (additionally, the protocol field is added as part of this identity - meaning that the identification field need only be unique on a per-protocol basis). The flags field contains a bitfield holding two options, \texttt{MF} and \texttt{DF}. Bit 2 is the \texttt{DF} bit, or `Don't Fragment', which instructs the receiver to discard the packet if it needs fragmentation. Bit 1 is the \texttt{MF} field, or `More Fragments', and identifies the packet as one which has been fragmented and requires reassembly. The last fragment in a fragmented packet has \texttt{MF} bit set to 0.
+
+For dissection purposes, supporting the reassembly of this fragmentation is useful. The packet contains two IP addresses. The protocol field is necessary to determine how to interpret the payload.
+
 \subsection{Internet Protocol (version 6)}
 \label{sec:ip6}
 
-\subsection{Neighbour Discovery Protocol}
-\label{sec:ndp}
+The Internet Protocol version 6, or just IPv6, is specified in RFC 2460\cite{rfc2460}.
 
+Despite being defined in 1997, IPv6 has been adopted very slowly. IPv6 was designed to be a solution to the IPv4 address exhaustion problems anticipated at the time. (Top level IPv4 addresses  were depleted on the 3rd of February, 2011\cite{ip4depletion}
+\begin{figure}[H]
+\center
+\begin{bytefield}[bitwidth=1.0em]{32}
+\bitheader{0-31}\\
+\bitbox{4}{Version} & \bitbox{8}{Traffic Class} & \bitbox{20}{Flow Label}\\
+\bitbox{16}{Payload Length} & \bitbox{8}{Next Header} & \bitbox{8}{Hop Limit}\\
+\wordbox{4}{Source Address}\\
+\wordbox{4}{Destination Address}
+\end{bytefield}
+\caption{IPv6 header format.}
+\label{fig:ip6fmt}
+\end{figure}
+
+The IPv6 header format is considerably simpler then the one of IPv4. Much like IPv4, it contains 
 \subsection{User Datagram Protocol}
 \label{sec:udp}
+
+The User Datagram Protocol (UDP) is specified in RFC 768\cite{rfc768}.
 \begin{figure}[H]
 \center
 \begin{bytefield}[bitwidth=1.0em]{32}
@@ -614,11 +635,42 @@ The Internet Protocol, commonly known as IPv4 or just IP, is specified and expla
 \label{fig:udpfmt}
 \end{figure}
 
-\subsection{Transmission Control Protocol}
-\label{sec:tcp}
+The user datagram protocol exists as a relatively thin layer over IP. It offers data integrity and not much else.
+
+The UDP introduces the concept of a `port'. This is little more then a flexible protocol identification field, with well-known protocols operating over well-known ports. For further analysis, the \emph{destination port} should be used for payload identification.
 
 \subsection{Domain Name System}
 \label{sec:dns}
+The Domain Name System (DNS) is specified in RFC 1035\cite{rfc1035}.
+
+
+\subsection{Transmission Control Protocol}
+\label{sec:tcp}
+The Transmission Control Protocol (TCP) is specified in RFC 793\cite{rfc793}.
+
+\begin{figure}[H]
+\center
+\begin{bytefield}[bitwidth=1.0em,bitheight=2.5em]{32}
+\bitheader{0-31}\\
+\bitbox{16}{Source Port} & \bitbox{16}{Destination Port}\\
+\wordbox{1}{Sequence Number}\\
+\wordbox{1}{Acknowledgement Number}\\
+\bitbox{4}{Data Offset} & \bitbox{6}{\emph{Reserved}} &
+	\bitbox{1}{\tiny U\\R\\G} & \bitbox{1}{\tiny A\\C\\K} &
+	\bitbox{1}{\tiny P\\S\\H} & \bitbox{1}{\tiny R\\S\\T} &
+	\bitbox{1}{\tiny S\\Y\\N} & \bitbox{1}{\tiny F\\I\\N} &
+	\bitbox{16}{Window} \\
+\bitbox{16}{Checksum} & \bitbox{16}{Urgent Pointer}\\
+\wordbox{1}{Data}\\
+\end{bytefield}
+\caption{Typical TCP header format, sans options.}
+\label{fig:tcpfmt}
+\end{figure}
+
+
+
+\subsection{Neighbour Discovery Protocol}
+\label{sec:ndp}
 
 %%%%%%%%%%%%%%%%
 % Requirements %
@@ -653,6 +705,7 @@ You put them together to make a larger capture, you need to alter times and stuf
 \item \label{fr:11} The programs shall be able to operate on streaming data in addition to static files.
 \end{enumerate}
 
+\pagebreak
 \section{Non-functional Requirements}
 \begin{enumerate}[label=\bfseries NFR\arabic*:]
 \item \label{nfr:1} The programs shall be usable on any python implementation supporting at least Python 3.4.
@@ -916,6 +969,8 @@ The `maphosts' realises \ref{fr:9} \emph{host identity replacement program}.
 \chapter{Implementation}
 Implementation started concurrently with design. Challenges encountered during implementation would change the design, and vice versa.
 
+Due to the sheer number of networked protocols and the complexities in supporting some of them, the project was never expected to approach $100\%$ completion. As a result of this, much of the implementation time was actually spent improving the design sufficiently to correctly support a small subset of protocols, while considering other protocols being added in the future.
+
 \section{Meta-Implementation}
 While this section is not really about any specific implementation detail, it does cover noteworthy discipline used by the author \emph{while implementing}.
 
@@ -986,19 +1041,32 @@ The default implementation of \texttt{match_attributes}
 \section{The \texttt{pipeline} Package}
 
 \chapter{Testing}
-
-\section{Testing approaches}
+The testing for this project was done throughout development.
 
 \section{Testing During Development}
+During development, a straightforward develop, test debug approach was used to check for correctness in new code. A newly implemented feature would be tested.
+
+For simple modules, an interactive Python interpreter was started and the module imported and interacted with.
 \subsection{Regression Testing}
 
 \chapter{Future Work}
+The author hopes the current system provides useful utilities and a suitable groundwork for further extension, but naturally, there are aspects that would make the current system better.
+\begin{enumerate}[label=\roman*)]
+\item Adding an explicit notion of `groups' to make filtering fragmented protocols easier.
+\item A more rigorous definition of what constitutes a set of protocol attributes.
+\item A tool to allow a more general form of packet manipulation. The \texttt{set_attributes} method for protocols, which was unused by all existing tools, was designed to allow this.
+\item More tools to help with \emph{reducing} packet capture files to simpler states. A tool that, for instance, extracts TCP sessions into individual files would be beneficial.
+\item A utility that maintains a database of reduced captures, that constructs captures according to some kind of abstract difficulty. This would provide a more \emph{automated} solution to the original problem statement.
+\item A utility for introducing variance in packet captures, e.g. extracting IP addresses and randomising them. Support for replacement is present, so again, most of the groundwork is there for this.
+\item Altering the packet data model to support \emph{adding} or \emph{removing} data rather then just changing it.
+\end{enumerate}
 
 \chapter{Critical Evaluation}
 
 \section{Successes}
 
 \section{Failures}
+The project was never expected to be $100\%$ complete in terms of supporting protocols, but some important protocols remain to be implemented.
 
 \section{Retrospective Design Criticisms}
 
@@ -1077,8 +1145,8 @@ Pcap file format.
     \url{http://www.cs.umd.edu/class/spring2003/cmsc838p/Process/waterfall.pdf}
     
 \bibitem{ieee802.3}
-	IEEE Computer Society (28th December, 2012)
-	IEEE Standard for Ethernet (IEEE Std 802.3-2012)
+	IEEE Computer Society (28th December, 2012)\\
+	IEEE Standard for Ethernet (IEEE Std 802.3-2012)\\
 	\url{http://standards.ieee.org/getieee802/download/802.3-2012_section1.pdf}
 	
 \bibitem{rfc826}
@@ -1096,6 +1164,26 @@ Pcap file format.
 	S. Deering, R. Hinden, The Internet Society (December 1998)\\
 	Internet Protocol, Version 6 (IPv6)\\
 	\url{https://tools.ietf.org/html/rfc2460}
+
+\bibitem{ip4depletion}
+	Number Resources Organisation (3rd of February, 2011)\\
+	Free Pool of IPv4 Address Space Depleted\\
+	\url{https://www.nro.net/news/ipv4-free-pool-depleted}
+
+\bibitem{rfc768}
+	J. Postel (28th of August, 1980)\\
+	User Datagram Protocol\\
+	\url{https://tools.ietf.org/html/rfc768}
+
+\bibitem{rfc1035}
+	P. Mockapetris (November, 1987)\\
+	DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION\\
+	\url{https://tools.ietf.org/html/rfc1035}
+
+\bibitem{rfc793}
+	Information Sciences Institute, University of Southern California (September, 1981)\\
+	TRANSMISSION CONTROL PROTOCOL\\
+	\url{https://tools.ietf.org/html/rfc793}
 
 \bibitem{pep8}
 	Guido van Rossum, Barry Warsaw, Nick Coghlan (1st of August, 2013)\\
