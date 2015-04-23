@@ -1032,13 +1032,24 @@ n_{local} &= n_{logical} - N^{min}
 \end{align*}
 
 \section{The \texttt{common} Module}
+The common module contains functions and classes which are useful in many different locations.
+This is where the packet class is defined.
+
+This class contains the rather large \texttt{LinkType} enumeration, used in the identity package and the capfile package.
+
+Also contained, is a handful of input parsing functions.
+
+There are functions for parsing string representations of MAC, IPv4 and IPv6 addresses, and turning binary representations into strings. these are named \texttt{*_str2bin} and \texttt{*_bin2str}, and take a single argument returning None if the format is erroneous.
+
 \section{The \texttt{capfile} Package}
+
+
 \section{The \texttt{identity} Package}
 \subsection{Protocol classes}
-In the default implementation of \texttt{match_attributes}, \texttt{get_attributes} is called.
+In the default implementation of \texttt{match_attributes}, \texttt{get_attributes} is called. In this case, \texttt{get_attributes} is expected to return a dictionary.
 
-The default implementation of \texttt{match_attributes}
 \section{The \texttt{pipeline} Package}
+The pipeline package 
 
 \chapter{Testing}
 The testing for this project was done throughout development.
@@ -1046,7 +1057,10 @@ The testing for this project was done throughout development.
 \section{Testing During Development}
 During development, a straightforward develop, test debug approach was used to check for correctness in new code. A newly implemented feature would be tested.
 
-For simple modules, an interactive Python interpreter was started and the module imported and interacted with.
+For simple modules, an interactive Python interpreter was started and the module imported and interacted with. Many errors in early modules were detected this way.
+
+
+
 \subsection{Regression Testing}
 
 \chapter{Future Work}
