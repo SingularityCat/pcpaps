@@ -112,7 +112,7 @@ class FragmentTracker:
 class IPv4(core.CarrierProtocol):
     name = "ip4"
 
-    __slots__ = {"payload_offset", "payload_length"
+    __slots__ = {"payload_offset", "payload_length", "payload_end"
                  "_ver_ihl", "_tos", "_len",
                  "_id", "_flags_fragoff",
                  "_ttl", "_proto", "_chksum",
@@ -224,7 +224,7 @@ class IPv4(core.CarrierProtocol):
     # <attrstr> = <attr> | <attr> ";" <attrstr>
     #
     # Attributes are seperated by semicolons, which contain colon-seperated key-value pairs.
-    # Valid keys are 
+    # Valid keys are saddr, daddr, protocol
     @staticmethod
     def build_attributes(attrstr):
         """Creates a set of attributes from an attribute string."""
