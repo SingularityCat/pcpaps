@@ -13,14 +13,12 @@ import argparse
 
 import time
 
-import readline
-import code
+import packet
 
 from packet import common
 from packet.capfile import pcap
 
-from packet.identity.core import AddrType
-from packet.identity.core import lookup_protocol
+from packet.identity.core import AddrType, register_protocol, lookup_protocol
 
 from packet.pipeline.merge import merge
 from packet.pipeline.identify import identify
@@ -51,17 +49,17 @@ def build_mac_pair(rep):
     return common.mac_str2bin(a), common.mac_str2bin(b)
 
 
-def merge_prog(argv):
+def merge_prog(name, argv):
     # Set up the argument parser.
-    parser = argparse.ArgumentParser(prog="{0} {1}".format(argv[0], argv[1]), description="Merge packet captures and adjust their times.")
-    parser.add_argument("-i", "--in", type=argparse.FileType("rb"), dest="inpaths", action="append", help="Input files")
-    parser.add_argument("-o", "--out", type=argparse.FileType("wb"), dest="outpath", action="store", help="Output file")
-    parser.add_argument("-r", "--relative", dest="relative", action="store_const", const=True, default=True, help="Use relative times. (Default)")
-    parser.add_argument("-a", "--absolute", dest="relative", action="store_const", const=False, default=True, help="Do not use relative times.")
-    parser.add_argument("-t", "--time-offset", type=(lambda d: time.mktime(time.strptime(d, "%Y/%m/%d %H:%M:%S"))), dest="time_offset", action="store", default=None, help="Time offset, in Y/M/D H:M:S format.")
+    parser = argparse.ArgumentParser(prog=name, description="Merge packet captures and adjust their times.")
+    parser.add_argument("-i", "--in", type=argparse.FileType("rb"), dest="inpaths", action="append", metavar="filepath", help="Input file (can occur multiple times)")
+    parser.add_argument("-o", "--out", type=argparse.FileType("wb"), dest="outpath", action="store", metavar="filepath", help="Output file")
+    parser.add_argument("-r", "--relative", dest="relative", action="store_true", default=True, help="Use relative times. (Default)")
+    parser.add_argument("-a", "--absolute", dest="relative", action="store_false", help="Do not use relative times.")
+    parser.add_argument("-t", "--time-offset", type=(lambda d: time.mktime(time.strptime(d, "%Y/%m/%d %H:%M:%S"))), dest="time_offset", action="store", default=None, metavar="time", help="Time offset, in Y/M/D H:M:S format.")
     # Y/M/D H:M:S == "%Y/%m/%d %H:%M:%S"
 
-    arguments = parser.parse_args(argv[2:])
+    arguments = parser.parse_args(argv)
 
     if arguments.inpaths == None:
         arguments.inpaths = [sys.stdin.buffer]
@@ -75,22 +73,35 @@ def merge_prog(argv):
         destination.write_packet(packet)
 
 
-def filter_prog(argv):
+def filter_prog(name, argv):
     def interpret_policy(polstr):
         polstr = polstr.lower()
         if polstr.startswith("d"):
             return DISCARD
         else:
             return KEEP
+    helptext = """Filter packets from a capture.
+Identities have the form:
+<identity> ::= <prototype> | <prototype> / <identity>
+<prototype> ::= <protocol name> | <protocol name> : <protocol attributes>
+For example, to identify any ethernet packet carrying TCP over IP: /eth/ip4/tcp
+More specific identities can be specified.
+For example, /eth:dmac=30:21:af:42:73:30/ip4
+will match all ethernet/IPv4 packets with that destination MAC address.
+"""
+    parser = argparse.ArgumentParser(prog=name, formatter_class=argparse.RawDescriptionHelpFormatter, description=helptext)
+    parser.add_argument("-i", "--in", type=argparse.FileType("rb"), dest="infile", action="store",
+        metavar="filepath", help="Input file")
+    parser.add_argument("-o", "--out", type=argparse.FileType("wb"), dest="outfile", action="store",
+        metavar="filepath", help="Output file")
+    parser.add_argument("-k", "--keep", type=build_prototype_list, dest="keep_set", action="append",
+        metavar="identity", help="Packets matching this identity will be kept.")
+    parser.add_argument("-d", "--discard", type=build_prototype_list, dest="discard_set", action="append",
+        metavar="identity", help="Packets matching this identity will be discarded.")
+    parser.add_argument("-p", "--policy", type=interpret_policy, dest="policy", action="store", choices={"discard", "keep"}, default="keep",
+        metavar="keep/discard", help="The policy for any packet not matching an identity. (Default is keep)")
 
-    parser = argparse.ArgumentParser(prog="{0} {1}".format(argv[0], argv[1]), description="Filter packets from a capture.")
-    parser.add_argument("-i", "--in", type=argparse.FileType("rb"), dest="infile", action="store", help="Input file")
-    parser.add_argument("-o", "--out", type=argparse.FileType("wb"), dest="outfile", action="store", help="Output file")
-    parser.add_argument("-k", "--keep", type=build_prototype_list, dest="keep_set", action="append", help="")
-    parser.add_argument("-d", "--discard", type=build_prototype_list, dest="discard_set", action="append", help="")
-    parser.add_argument("-p", "--policy", type=interpret_policy, dest="policy", action="store", choices={DISCARD, KEEP}, default=KEEP, help="")
-
-    arguments = parser.parse_args(argv[2:])
+    arguments = parser.parse_args(argv)
 
     if arguments.infile == None:
         arguments.infile = sys.stdin.buffer
@@ -100,21 +111,21 @@ def filter_prog(argv):
     source = pcap.PcapReader(arguments.infile)
     destination = pcap.PcapWriter(arguments.outfile)
 
-    for packet in filter(identify(source), keep=arguments.keep_set, discard=arguments.discard_set, policy=arguments.policy):
+    for packet in filter(identify(source), keep=arguments.keep_set, discard=arguments.discard_set, policy=interpet_policy(arguments.policy)):
         destination.write_packet(packet)
 
     destination.close()
 
 
-def maphosts_prog(argv):
-    parser = argparse.ArgumentParser(prog="{0} {1}".format(argv[0], argv[1]), description="Replace host identities inside packets from a capture.")
-    parser.add_argument("-i", "--in", type=argparse.FileType("rb"), dest="infile", action="store", help="Input file")
-    parser.add_argument("-o", "--out", type=argparse.FileType("wb"), dest="outfile", action="store", help="Output file")
-    parser.add_argument("-4", "--ip4", type=build_ip4_pair, dest="ip4_pairs", action="append", default=[], help="")
-    parser.add_argument("-6", "--ip6", type=build_ip6_pair, dest="ip6_pairs", action="append", default=[], help="")
-    parser.add_argument("-m", "--mac", type=build_mac_pair, dest="mac_pairs", action="append", default=[],help="")
+def maphosts_prog(name, argv):
+    parser = argparse.ArgumentParser(prog=name, description="Replace host identities inside packets from a capture.")
+    parser.add_argument("-i", "--in", type=argparse.FileType("rb"), dest="infile", action="store", metavar="filepath", help="Input file")
+    parser.add_argument("-o", "--out", type=argparse.FileType("wb"), dest="outfile", action="store", metavar="filepath", help="Output file")
+    parser.add_argument("-4", "--ip4", type=build_ip4_pair, dest="ip4_pairs", action="append", default=[], metavar="IP4-pair", help="IPv4 address find/replace pair.")
+    parser.add_argument("-6", "--ip6", type=build_ip6_pair, dest="ip6_pairs", action="append", default=[], metavar="IP6-pair", help="IPv6 address find/replace pair.")
+    parser.add_argument("-m", "--mac", type=build_mac_pair, dest="mac_pairs", action="append", default=[], metavar="MAC-pair", help="MAC address find/replace pair.")
 
-    arguments = parser.parse_args(argv[2:])
+    arguments = parser.parse_args(argv)
 
     if arguments.infile == None:
         arguments.infile = sys.stdin.buffer
@@ -151,7 +162,18 @@ if __name__ == "__main__":
     parser.add_argument(dest="args", nargs=argparse.REMAINDER, action="store", help="subcommand arguments")
     args = parser.parse_args(sys.argv[1:])
 
+    # Load modules.
+    for mod_path in args.load:
+        try:
+            mod_file = open(mod_path, "r")
+            mod_code = mod_file.read()
+            mod = compile(mod_code, mod_path, "exec")
+            exec(mod, {"packet" : packet})
+        except FileNotFoundError:
+            print("Error: {0} no such file or directory.".format(mod_path), file = sys.stderr)
+        except SyntaxError as err:
+            print("Error: Could not load {0};".format(mod_path), file = sys.stderr)
+            print(err, file = sys.stderr)
 
-
-    progs[args.prog[1]](sys.argv)
+    progs[args.prog](sys.argv[0] + " " + args.prog, args.args)
 
