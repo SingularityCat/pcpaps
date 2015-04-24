@@ -1,5 +1,5 @@
 % !Mode:: "TeX:UTF-8"
-\documentclass[10pt,a4paper,notitlepage]{report}
+\documentclass[10pt,a4paper,notitlepage,twoside]{report}
 \usepackage{ifxetex,ifluatex}
 
 \newif\ifxetexorluatex
@@ -597,7 +597,15 @@ In real terms, IPv4 usually operates as a kind of datagram transfer protocol, wi
 
 In addition to this mode of operation, IP also specifies behaviour when packets need to traverse media with different MTU's (Maximum Transfer Unit). It does this by splitting the packet up into smaller pieces. The fragmented packet can then be reassembled by using the second 32-bit word (see \ref{fig:ip4fmt}) of the IP header, which contains an `identification' field and two fields used for managing these fragments (additionally, the protocol field is added as part of this identity - meaning that the identification field need only be unique on a per-protocol basis). The flags field contains a bitfield holding two options, \texttt{MF} and \texttt{DF}. Bit 2 is the \texttt{DF} bit, or `Don't Fragment', which instructs the receiver to discard the packet if it needs fragmentation. Bit 1 is the \texttt{MF} field, or `More Fragments', and identifies the packet as one which has been fragmented and requires reassembly. The last fragment in a fragmented packet has \texttt{MF} bit set to 0.
 
-For dissection purposes, supporting the reassembly of this fragmentation is useful. The packet contains two IP addresses. The protocol field is necessary to determine how to interpret the payload.
+IPv4 headers also contain a \emph{checksum}. The checksum algorithm is simple, and is defined as:
+\begin{quote}
+The checksum field is the 16 bit one's complement of the one's
+complement sum of all 16 bit words in the header.  For purposes of
+computing the checksum, the value of the checksum field is zero.
+\end{quote}
+It is worth noting that the same checksum algorithm is used in other protocols, notably TCP and UDP. For a Python implementation of this algorithm, see \ref{lst:pyipchksum}
+
+For dissection purposes, supporting the reassembly of this fragmentation is useful. The packet contains two IP addresses, which can be altered but will require recalculation of the checksum. The protocol field is necessary to determine how to interpret the payload.
 
 \subsection{Internet Protocol (version 6)}
 \label{sec:ip6}
@@ -618,7 +626,10 @@ Despite being defined in 1997, IPv6 has been adopted very slowly. IPv6 was desig
 \label{fig:ip6fmt}
 \end{figure}
 
-The IPv6 header format is considerably simpler then the one of IPv4. Much like IPv4, it contains 
+The IPv6 header format is considerably simpler then the one of IPv4. Much like IPv4, it contains a field indicating the protocol it carries (the `next header'). Unlike IPv4, the source and destination addresses are 16 bytes long and no fragmentation is supported in the core protocol.
+
+IPv6 has a few option extensions defined, but these options are communicated in a different way to IPv4 options. IPv6 options are just additional protocols, which contain their own `next header'.
+
 \subsection{User Datagram Protocol}
 \label{sec:udp}
 
@@ -642,6 +653,9 @@ The UDP introduces the concept of a `port'. This is little more then a flexible 
 \subsection{Domain Name System}
 \label{sec:dns}
 The Domain Name System (DNS) is specified in RFC 1035\cite{rfc1035}.
+
+This protocol normally operates over UDP port $53$, but can use TCP as an alternate transport.
+
 
 
 \subsection{Transmission Control Protocol}
@@ -667,7 +681,12 @@ The Transmission Control Protocol (TCP) is specified in RFC 793\cite{rfc793}.
 \label{fig:tcpfmt}
 \end{figure}
 
+The Transmission Control Protocol is a reliable stream transport protocol, used over an unreliable carrier such as IP. TCP headers have many fields as seen in figure \ref{fig:tcpfmt}, but there are seven important ones: source port, destination port, sequence number, acknowledgement number, data offset, flags and checksum. These are used to establish a kind of `circuit-switched' connection over a packet-switched network. TCP has a three-way handshake between client and server, used to negotiate this connection.\\
 
+Client machines initiate a connection by sending a header with the SYN (synchronise) flag set, the destination port set to the port number used for the desired service, and the source port set to a random, ephemeral value.
+Upon receiving a SYN, the TCP implementation on the server will, if said service is supported, will send a SYN-ACK (Synchronise/Acknowledgement) back; with the destination port set to the source port of the initial packet and the source port set to a random, ephemeral port. Finally, the client then responds with an ACK and the handshake is complete.\\
+
+From then on, either side can send headers with the PSH (push) flag set. These contain the data being sent over the logical stream. Each PSH should be reciprocated with an ACK from the other side. The FIN (
 
 \subsection{Neighbour Discovery Protocol}
 \label{sec:ndp}
@@ -995,7 +1014,7 @@ Any programming project will benefit form a form of version control. Version con
 
 Version control is also useful as a kind of synchronisation system between multiple computers, permitting an individual to continue work while away from their normal work environment.
 
-The author used \emph{git} as their version control system (VCS), as they had prior knowledge on how to use it.
+The author used \emph{git} (\url{http://git-scm.com})as their version control system (VCS), as they had prior knowledge on how to use it.
 
 \section{The \texttt{memorymap} Module}
 The \texttt{memorymap} module implements the \emph{memorymap} class as described in \ref{sec:memmap}, and works by mapping multiple \emph{memoryview} objects to a single \emph{logical} `index space'.
@@ -1037,31 +1056,133 @@ This is where the packet class is defined.
 
 This class contains the rather large \texttt{LinkType} enumeration, used in the identity package and the capfile package.
 
-Also contained, is a handful of input parsing functions.
+Also contained, is a handful of input parsing functions. A few basic ones, such as \texttt{parse_int} and \texttt{parse_hexbytes}.
 
 There are functions for parsing string representations of MAC, IPv4 and IPv6 addresses, and turning binary representations into strings. these are named \texttt{*_str2bin} and \texttt{*_bin2str}, and take a single argument returning None if the format is erroneous.
 
 \section{The \texttt{capfile} Package}
+This package contains code for reading and writing abstract packets to packet capture files. Currently, only the \emph{pcap} files are supported, but the author hopes extending the library and programs to accept different formats.
+ 
+\subsection{The \texttt{core} Module}
+This contains abstract classes supposed to make adding new capture formats easier. Very simple PacketReader and PacketWriter classes are provided, with a PacketIOError exception class for abstracted error handling.
 
+\subsection{The \texttt{pcap} Module}
+This module contains two classes, a PcapReader class, which implements abstract methods in the PacketReader class, and a PcapWriter class, which implements abstract methods in the PacketWriter class.
+
+These classes implement support for manipulating \emph{pcap} files according to the pcap format specification\cite{pcapfmt}, which is described below.
+
+\begin{figure}[H]
+\center
+\begin{bytefield}{32}
+\bitheader{0-31}\\
+\wordbox{1}{Magic Number}\\
+\bitbox{16}{Version Major} & \bitbox{16}{Version Minor}\\
+\wordbox{1}{Time Zone Offset}\\
+\wordbox{1}{No. of Significant Figures}\\
+\wordbox{1}{Maximum Snapshot Length}\\
+\wordbox{1}{Linktype}
+\end{bytefield}
+\caption{pcap global header.}
+\label{fig:pcapglob}
+\end{figure}
+
+The pcap format is quite simple, perhaps the reasons for its ubiquity. A pcap file starts with a \emph{magic number} field. This indicates the format specifics of that capture file. The magic number is $a1\: b2\: c3\: d4$ for \emph{millisecond resolution} pcap files, and $a1\: b2\: 3c\: 4d$ for \emph{nanosecond resolution} files. Additionally, this field is in the same byte ordering as the rest of the fields in the file, so $d4\: c3\: b2\: a1$ would indicate that the file stores little-endian millisecond resolution fields, rather then big-endian.
+
+The rest of the fields are indicated in figure \ref{fig:pcapglob}, and are fairly self explanatory. Linktype is an integer constant indicating the network media (such as Ethernet). These are the same as the values present in the \texttt{common} module.
+
+\begin{figure}[H]
+\center
+\begin{bytefield}{32}
+\bitheader{0-31}\\
+\wordbox{1}{Timestamp (seconds)}\\
+\wordbox{1}{Timestamp (milli/nanoseconds)}\\
+\wordbox{1}{Recorded Snapshot Length}\\
+\wordbox{1}{Original Snapshot Length}
+\end{bytefield}
+\caption{pcap record header}
+\label{fig:pcaprec}
+\end{figure}
+
+Pcap \emph{records} consist of a record header and a packet snapshot. The packet data is presented verbatim, as it was on the network, but truncated to fit within the maximum snapshot length defined in the header.
+
+The record header also has a simple layout. A 32-bit timestamp, in seconds since the UNIX epoch, and another 32-bit field of either millisecond or nanosecond resolution time, which serves as additional precision for this value.
+
+Two more 32-bit fields are present, consisting of the recorded snapshot length and the original snapshot length. The recorded length indicates how many bytes after this header belong to a packet snapshot. Record headers immediately follow the global header and snapshot data.
+
+These classes handle erroneous data in a robust and well defined manner - if the PcapReader encounters a truncated file, it will read and return all entries which are intact, raising a PcapFormatError exception when the truncated entry is reached.
+ 
+If the PcapWriter is instructed to write a packet with a LinkType that differs from that of the network section of the file, it will raise a PcapRangeError exception.
 
 \section{The \texttt{identity} Package}
+This module is where most of the interesting code is. This is the package where all `builtin' protocol classes reside.
+
+\subsection{The \texttt{core} Module}
+The core module in the identity package is where the Protocol class is defined. This serves as step 0 in the packet identification system.
+
+This module serves as the registry of all supported protocols, and maintains a mapping of \emph{protocol name} to \emph{protocol class}. All Protocol classes should be registered with this module. Additionally, this module maintains a mapping of \emph{linktypes} to \emph{protocol names}, used in order to determine  which \emph{base protocol class} to use.
+ 
+\subsection{The \texttt{ip} Module}
+The \texttt{ip} module is part of the identity package, and is used by the the \texttt{ip4} and \texttt{ip6} modules.
+
+Aside from providing the IP protocol registry used by these modules, it provides an implementation of the checksum algorithm mentioned in \ref{sec:ip4}.
+\begin{lstlisting}[
+	language={[3]Python},label={lst:pyipchksum},
+	caption={IP checksum algorithm, in Python.}
+]
+# The checksum algorithm is:
+#      The checksum field is the 16 bit one's complement of the one's
+#      complement sum of all 16 bit words in the header.  For purposes of
+#      computing the checksum, the value of the checksum field is zero.
+
+def checksum(data):
+    """General implementation of the IP checksum algorithm."""
+    n16words, rem = divmod(len(data), 2)
+
+    if rem != 0:
+        # Argument is not in terms of 16-bit words.
+        return None
+
+    # generate list of 16-bit words.
+    words = [word for word in struct.Struct("!"+"H"*n16words).unpack(data)]
+
+    ocsum = 0
+    for word in words:
+        # One's complement addition of 16-bit words.
+        acc = ocsum + word
+        carry = acc >> 16
+        ocsum = (acc + carry) & 0xFFFF
+
+    b1, b2 = divmod(ocsum, 256)
+    return bytes((~b1 & 0xFF, ~b2 & 0xFF))
+\end{lstlisting}
+
 \subsection{Protocol classes}
-In the default implementation of \texttt{match_attributes}, \texttt{get_attributes} is called. In this case, \texttt{get_attributes} is expected to return a dictionary.
+There are quite a few Protocol classes implemented, enough to provide basic sanitisation and anonymisation features useful for the project.
 
 \section{The \texttt{pipeline} Package}
 The pipeline package 
 
 \chapter{Testing}
-The testing for this project was done throughout development.
+The testing for this project was done throughout development. 
+A mixture of \emph{white box} and \emph{black box} testing was employed. Typically, a small test run with known inputs and expected outputs was run after every major feature or refactoring work was carrier out, and if erroneous or regressive behaviour was observed, code was reviewed and debugged.
 
 \section{Testing During Development}
-During development, a straightforward develop, test debug approach was used to check for correctness in new code. A newly implemented feature would be tested.
+During development, a straightforward develop, test debug approach was used to check for correctness in new code. Any newly implemented feature would be tested.
 
 For simple modules, an interactive Python interpreter was started and the module imported and interacted with. Many errors in early modules were detected this way.
 
+\begin{figure}[H]
+\center
+\includegraphics[scale=0.75]{pictures/pudb.png}
+\caption{Screenshot of pudb, the debugger used. (\url{http://pypi.python.org/pypi/pudb})}
+\end{figure}
 
+When the programs became more complex, a debugger was used. This permitted analysis of complex state at runtime without the (mis)use of `print statements'.
 
 \subsection{Regression Testing}
+When any major feature stopped working, the use of version control and the regression testing made it easy to determine what changes had been made, and determine the culprit.
+
+
 
 \chapter{Future Work}
 The author hopes the current system provides useful utilities and a suitable groundwork for further extension, but naturally, there are aspects that would make the current system better.
@@ -1078,9 +1199,9 @@ The author hopes the current system provides useful utilities and a suitable gro
 \chapter{Critical Evaluation}
 
 \section{Successes}
-
+The author is generally pleased with the outcome of the project, a working and usable suite of tools. 
 \section{Failures}
-The project was never expected to be $100\%$ complete in terms of supporting protocols, but some important protocols remain to be implemented.
+The project was never expected to be $100\%$ complete in terms of supporting protocols, but some important protocol classes are at time of writing, incomplete.
 
 \section{Retrospective Design Criticisms}
 
@@ -1208,6 +1329,11 @@ Pcap file format.
 	Johann C. Rocholl (last updated 18th of March, 2015)\\
 	pep8 - Python style guide checker\\
 	\url{http://github.com/jcrocholl/pep8/}
+
+\bibitem{pcapfmt}
+	Ulf Lamping, Guy Harris, Gerald Combs, numerous others (Last edited: 29th of July, 2013)\\
+	`Development/LibpcapFileFormat'\\
+	\url{https://wiki.wireshark.org/Development/LibpcapFileFormat}
 
 \end{thebibliography}
 \end{document}
