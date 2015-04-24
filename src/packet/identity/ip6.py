@@ -52,7 +52,7 @@ class IPv6(core.CarrierProtocol):
         self._daddr = slice(20, 36)
 
         self.payload_offset = 36
-        self.payload_length = self.data[self._paylen]
+        self.payload_length = uint16unpack(self.data[self._paylen])
 
     def get_protocol(self):
         """Returns the protocl number (next header) of this IPv6 header."""
