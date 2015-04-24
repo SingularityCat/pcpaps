@@ -36,12 +36,19 @@ def build_prototype_list(attrdefstrs):
     return attrlist
 
 
-def help_prog(argv):
-    helptext = """{0}: Packet Caputre Processor And Publishing Utility.
-Usage: {0} [subcommand] [arguments]
-Valid subcommands are: help, merge, filter.
-Use "{0} [subcommand] --help" for help with a subcommand."""
-    print(helptext.format(argv[0]))
+def build_ip4_pair(rep):
+    a, b = rep.split("=")
+    return common.ip4_str2bin(a), common.ip4_str2bin(b)
+
+
+def build_ip6_pair(rep):
+    a, b = rep.split("=")
+    return common.ip6_str2bin(a), common.ip6_str2bin(b)
+
+
+def build_mac_pair(rep):
+    a, b = rep.split("=")
+    return common.mac_str2bin(a), common.mac_str2bin(b)
 
 
 def merge_prog(argv):
@@ -100,19 +107,6 @@ def filter_prog(argv):
 
 
 def maphosts_prog(argv):
-
-    def build_ip4_pair(rep):
-        a, b = rep.split("=")
-        return common.ip4_str2bin(a), common.ip4_str2bin(b)
-
-    def build_ip6_pair(rep):
-        a, b = rep.split("=")
-        return common.ip6_str2bin(a), common.ip6_str2bin(b)
-
-    def build_mac_pair(rep):
-        a, b = rep.split("=")
-        return common.mac_str2bin(a), common.mac_str2bin(b)
-
     parser = argparse.ArgumentParser(prog="{0} {1}".format(argv[0], argv[1]), description="Replace host identities inside packets from a capture.")
     parser.add_argument("-i", "--in", type=argparse.FileType("rb"), dest="infile", action="store", help="Input file")
     parser.add_argument("-o", "--out", type=argparse.FileType("wb"), dest="outfile", action="store", help="Output file")
@@ -146,14 +140,18 @@ def maphosts_prog(argv):
 # Logical program entry point.
 if __name__ == "__main__":
     progs = {
-        "merge" : merge_prog,
-        "filter" : filter_prog,
-        "maphosts" : maphosts_prog
+        "merge": merge_prog,
+        "filter": filter_prog,
+        "maphosts": maphosts_prog
     }
 
-    if len(sys.argv) < 2 or sys.argv[1] not in progs:
-        help_prog(sys.argv)
-        exit(1)
+    parser = argparse.ArgumentParser(prog=sys.argv[0], description="Packet Caputre Processor And Publishing Utility.")
+    parser.add_argument("-l", "--load", dest="load", action="append", help="")
+    parser.add_argument(dest="prog", choices=progs.keys(), action="store", help="subcommand")
+    parser.add_argument(dest="args", nargs=argparse.REMAINDER, action="store", help="subcommand arguments")
+    args = parser.parse_args(sys.argv[1:])
 
-    progs[sys.argv[1]](sys.argv)
+
+
+    progs[args.prog[1]](sys.argv)
 
