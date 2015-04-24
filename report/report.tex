@@ -102,9 +102,14 @@
 
 \begin{document}
 \maketitle
+\begin{center}
+BSc Computer Science (Honours)
+
+Computer Science Project (ECSC699)
+\end{center}
 \begin{abstract}
 \begin{center}
-A document describing the design and development of a tool to assist in the crafting of network packet captures for educational purposes.
+A document describing the design and development of a system to assist in the crafting of network packet captures for educational purposes.
 \end{center}
 \end{abstract}
 \pagebreak
@@ -909,7 +914,7 @@ There will be commonalities between tools. These are detailed below.
 \texttt{-o} & \texttt{--output} & unary & singular & The capture file to write to (defaults to stdout).\\ \hline
 \end{tabularx}
 
-\subsection{The merge tool}
+\subsection{The Merge Tool}
 The merge tool will take an arbitrary number of packet capture files, and write out a single capture from these.
 
 The merge tool was also seen as the appropriate place to do time alteration, so this program fulfils the role of \ref{fr:6} \emph{merge program} and \ref{fr:7} \emph{timestamp alteration program}.
@@ -927,7 +932,7 @@ The merge tool was also seen as the appropriate place to do time alteration, so 
 \begin{verbatim}
 [user@host ~]$ merge -i cap1.pcap -i cap2.pcap -o cap12.pcap
 \end{verbatim}
-\subsection{The filter tool}
+\subsection{The Filter Tool}
 The filter tool will fulfil the role of \ref{fr:8} \emph{filter program}.
 
 \begin{tabularx}{\textwidth}{|c|c|c|c|X|}
@@ -961,7 +966,7 @@ The exact format of the protocol attributes string depends entirely on the Proto
 \end{grammar}
 
 
-\subsection{The maphosts tool}
+\subsection{The Maphosts Tool}
 The `maphosts' realises \ref{fr:9} \emph{host identity replacement program}.
 
 \begin{tabularx}{\textwidth}{|c|c|c|c|X|}
@@ -1120,6 +1125,8 @@ This module is where most of the interesting code is. This is the package where 
 The core module in the identity package is where the Protocol class is defined. This serves as step 0 in the packet identification system.
 
 This module serves as the registry of all supported protocols, and maintains a mapping of \emph{protocol name} to \emph{protocol class}. All Protocol classes should be registered with this module. Additionally, this module maintains a mapping of \emph{linktypes} to \emph{protocol names}, used in order to determine  which \emph{base protocol class} to use.
+
+The Protocol registration and resolution is done using the \texttt{register_protocol} and \texttt{lookup_protocol}.
  
 \subsection{The \texttt{ip} Module}
 The \texttt{ip} module is part of the identity package, and is used by the the \texttt{ip4} and \texttt{ip6} modules.
@@ -1156,15 +1163,19 @@ def checksum(data):
     return bytes((~b1 & 0xFF, ~b2 & 0xFF))
 \end{lstlisting}
 
-\subsection{Protocol classes}
+\subsection{The Protocol classes}
 There are quite a few Protocol classes implemented, enough to provide basic sanitisation and anonymisation features useful for the project.
+
+In this project, each protocol class has its own Python module. The modules that currently exist are \texttt{eth}, \texttt{arp}, \texttt{ip4}, \texttt{ip6}, \texttt{tcp} and \texttt{udp}, \texttt{icmp} and \texttt{icmp6}. (Albeit some are incomplete, see the critical evaluation in chapter \ref{sec:criteval}).
+
+All of these classes expose the same interface as specified in section \ref{sec:desproto} of the design chapter. Because there are so many, this section will focus on one, the IPv4 class in the ip4 module.
 
 \section{The \texttt{pipeline} Package}
 The pipeline package 
 
 \chapter{Testing}
 The testing for this project was done throughout development. 
-A mixture of \emph{white box} and \emph{black box} testing was employed. Typically, a small test run with known inputs and expected outputs was run after every major feature or refactoring work was carrier out, and if erroneous or regressive behaviour was observed, code was reviewed and debugged.
+A rather informal mixture of \emph{white box} and \emph{black box} testing was employed throughout most of the development process. Typically, a small test run with known inputs and expected outputs was run after every major feature or re-factoring work was carrier out, and if erroneous or regressive behaviour was observed, code was reviewed and debugged.
 
 \section{Testing During Development}
 During development, a straightforward develop, test debug approach was used to check for correctness in new code. Any newly implemented feature would be tested.
@@ -1180,9 +1191,11 @@ For simple modules, an interactive Python interpreter was started and the module
 When the programs became more complex, a debugger was used. This permitted analysis of complex state at runtime without the (mis)use of `print statements'.
 
 \subsection{Regression Testing}
-When any major feature stopped working, the use of version control and the regression testing made it easy to determine what changes had been made, and determine the culprit.
+When any major feature stopped working, the use of version control and the regression itself (altered output, stack traces etc.) made it easy to determine what changes had caused the problem, and made fixing it easier.
 
-
+\subsection{Testing the Merge Tool}
+\subsection{Testing the Filter Tool}
+\subsection{Testing the Maphosts Tool}
 
 \chapter{Future Work}
 The author hopes the current system provides useful utilities and a suitable groundwork for further extension, but naturally, there are aspects that would make the current system better.
@@ -1197,9 +1210,11 @@ The author hopes the current system provides useful utilities and a suitable gro
 \end{enumerate}
 
 \chapter{Critical Evaluation}
-
+\label{sec:criteval}
 \section{Successes}
-The author is generally pleased with the outcome of the project, a working and usable suite of tools. 
+The author is generally pleased with the outcome of the project, a working and usable suite of tools.
+
+The filtering system works rather well, and can support very specific 
 \section{Failures}
 The project was never expected to be $100\%$ complete in terms of supporting protocols, but some important protocol classes are at time of writing, incomplete.
 
