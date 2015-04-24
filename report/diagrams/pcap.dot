@@ -1,0 +1,15 @@
+digraph "classes_No_Name" {
+charset="utf-8"
+rankdir=BT
+"0" [fontcolor="red", label="{PacketIOError|\l|}", shape="record"];
+"1" [label="{PacketReader|\l|close()\lread_packet()\l}", shape="record"];
+"2" [label="{PacketWriter|\l|close()\lwrite_packet()\l}", shape="record"];
+"3" [fontcolor="red", label="{PcapFormatError|\l|}", shape="record"];
+"4" [fontcolor="red", label="{PcapRangeError|\l|}", shape="record"];
+"5" [label="{PcapReader|magic : NoneType\lnetwork : int\lpacket_header_struct : struct.Struct\lsigfigs : int \lsnaplen : int\lstream : io.BufferedReader\lthiszone : int\ltimescale : int\lversion_major : int\lversion_minor : int\l|close()\lread_packet()\l}", shape="record"];
+"6" [label="{PcapWriter|network : int\lpacket_header_struct : struct.Struct\lsnaplen : int\lstream : io.BufferedWriter\lthiszone : int\ltimescale : int\l|close()\lwrite_packet()\l}", shape="record"];
+"3" -> "0" [arrowhead="empty", arrowtail="none"];
+"4" -> "0" [arrowhead="empty", arrowtail="none"];
+"5" -> "1" [arrowhead="empty", arrowtail="none"];
+"6" -> "2" [arrowhead="empty", arrowtail="none"];
+}

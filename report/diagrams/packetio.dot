@@ -1,0 +1,7 @@
+digraph  {
+charset="utf-8"
+rankdir=BT
+"0" [fontcolor="red", label="{PacketIOError|\l|}", shape="record"];
+"1" [label="{PacketReader|\l|close()\lread_packet()\l}", shape="record"];
+"2" [label="{PacketWriter|\l|close()\lwrite_packet()\l}", shape="record"];
+}
