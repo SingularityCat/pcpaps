@@ -170,20 +170,20 @@ def ip6_str2bin(ip6s):
     """Converts a IPv6 address in RFC-5952 format to a big-endian
 byte representation.
 Returns None on a format error."""
-    # Expands a possibly compressed string representation of a byte pair to two bytes.
-    expand = lambda s: divmod(int(s, 16), 256)
+    expand = (lambda l: int(l, 16) // 256, lambda h: int(h, 16) % 256)
 
     try:
         # Check if the string contains the zero-compressed section.
-        # This can only appear once, RFC 595 section 2.2.
+        # This can only appear once, RFC 5952 section 2.2.
         if "::" in ip6s:
             ip6i_start, ip6i_end = ip6s.split("::")
 
-            ip6i_start = [expand(pair) for pair in ip6i_start.split(":")]
-            ip6i_end = [expand(pair) for pair in ip6i_end.split(":")]
+            ip6i_start = [f(pair) for pair in ip6i_start.split(":") for f in expand]
+            ip6i_end = [f(pair) for pair in ip6i_end.split(":") for f in expand]
             ip6i = ip6i_start + [0]*(16 - (len(ip6i_start) + len(ip6i_end))) + ip6i_end
         else:
-            ip6i = [expand(pair) for pair in ip6s.split(":")]
+            #ip6i = [expand(pair) for pair in ip6s.split(":")]
+            ip6i = [f(pair) for pair in ip6s.split(":") for f in expand]
 
         return bytes(ip6i)
     except ValueError:
