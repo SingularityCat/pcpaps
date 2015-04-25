@@ -157,7 +157,7 @@ if __name__ == "__main__":
     }
 
     parser = argparse.ArgumentParser(prog=sys.argv[0], description="Packet Caputre Processor And Publishing Utility.")
-    parser.add_argument("-l", "--load", dest="load", action="append", help="")
+    parser.add_argument("-l", "--load", dest="load", action="append", default=[], help="")
     parser.add_argument(dest="prog", choices=progs.keys(), action="store", help="subcommand")
     parser.add_argument(dest="args", nargs=argparse.REMAINDER, action="store", help="subcommand arguments")
     args = parser.parse_args(sys.argv[1:])
