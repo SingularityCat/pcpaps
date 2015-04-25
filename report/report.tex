@@ -1,5 +1,5 @@
 % !Mode:: "TeX:UTF-8"
-\documentclass[10pt,a4paper,notitlepage,twoside]{report}
+\documentclass[10pt,a4paper,notitlepage]{report}
 \usepackage{ifxetex,ifluatex}
 
 \newif\ifxetexorluatex
@@ -909,6 +909,7 @@ There will be commonalities between tools. These are detailed below.
 \cline{1-2}
 \multicolumn{2}{|c|}{\textbf{Option Flag}} & \multicolumn{3}{c}{}\\ \hline
 \textbf{Short} & \textbf{Long} & \textbf{Arity} & \textbf{Frequency} & \textbf{Description} \\ \hline
+\texttt{-l} & \texttt{--load} & unary & arbitrary & Loads a external support code module.\\ \hline
 \texttt{-h} & \texttt{--help} & nullary & singular & Prints out help text.\\\hline
 \texttt{-i} & \texttt{--input} & unary & singular & The capture file to read from (defaults to stdin).\\ \hline
 \texttt{-o} & \texttt{--output} & unary & singular & The capture file to write to (defaults to stdout).\\ \hline
@@ -978,8 +979,18 @@ The `maphosts' realises \ref{fr:9} \emph{host identity replacement program}.
 \texttt{-6} & \texttt{--ip6} & unary & arbitrary & A mapping of an IPv4 address to its replacement.\\ \hline
 \end{tabularx}
 
+The \texttt{-m}, \texttt{-4} and \texttt{-6} understand address pairs as their argument. Address pairs have the form:
+
+\begin{grammar}
+<address pair> ::= <address> `=' <address>
+\end{grammar}
+
+The address here, will take the form:
+
 \begin{grammar}
 <hexbyte> ::= 00 | 01 | 02 | 03 ... FF
+
+<hexpair> ::= <hexbyte> <hexbyte>
 
 <decbyte> ::= 0 | 1 | 2 | 3 ... 255
 
@@ -987,8 +998,11 @@ The `maphosts' realises \ref{fr:9} \emph{host identity replacement program}.
 
 <IPv4 address> ::= <decbyte> `.' <decbyte> `.' <decbyte> `.' <decbyte>
 
-<address pair> ::= <address> `=' <address>
+<IPv6 address> ::= <hexpair> | <hexpair> `:' <IPv6 address>
+\alt <IPv6 address> `::' <IPv6 address>
 \end{grammar}
+
+Note that this particular grammar definition of an IPv6 address is rather vague. A more detailed explanation is given in RFC 5952\cite{rfc5952}.
 
 \chapter{Implementation}
 Implementation started concurrently with design. Challenges encountered during implementation would change the design, and vice versa.
@@ -1334,6 +1348,11 @@ Pcap file format.
 	Information Sciences Institute, University of Southern California (September, 1981)\\
 	TRANSMISSION CONTROL PROTOCOL\\
 	\url{https://tools.ietf.org/html/rfc793}
+
+\bibitem{rfc5952}
+	S. Kawamura, M. Kawashima (August 2010)\\
+	A Recommendation for IPv6 Address Text Representation\\
+	\url{https://tools.ietf.org/html/rfc5952}
 
 \bibitem{pep8}
 	Guido van Rossum, Barry Warsaw, Nick Coghlan (1st of August, 2013)\\
