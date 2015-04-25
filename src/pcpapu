@@ -48,6 +48,19 @@ def build_mac_pair(rep):
     a, b = rep.split("=")
     return common.mac_str2bin(a), common.mac_str2bin(b)
 
+def list_prog(name, argv):
+    parser = argparse.ArgumentParser(prog=name, description="Print packet metadata to standard output.")
+    parser.add_argument("-i", "--in", type=argparse.FileType("rb"), dest="infile", action="store", metavar="filepath", help="Input file")
+
+    arguments = parser.parse_args(argv)
+
+    if arguments.infile == None:
+        arguments.infile = sys.stdin.buffer
+
+    source = pcap.PcapReader(arguments.infile)
+
+    for packet in identify(source):
+        print(packet)
 
 def merge_prog(name, argv):
     # Set up the argument parser.
@@ -151,6 +164,7 @@ def maphosts_prog(name, argv):
 # Logical program entry point.
 if __name__ == "__main__":
     progs = {
+        "list": list_prog,
         "merge": merge_prog,
         "filter": filter_prog,
         "maphosts": maphosts_prog
