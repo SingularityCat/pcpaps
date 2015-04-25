@@ -83,9 +83,20 @@ class TCP(core.CarrierProtocol):
         if self.next is not None:
             self.next.recalculate_checksums()
 
-        # Nullify the checksum and replace.
-        self.data[self._chksum] = b"\x00\x00"
-        self.data[self._chksum] = ip.checksum()
+        if isinstance(self.prev, core.CarrierProtocol):
+            # Nullify the checksum and replace.
+            self.data[self._chksum] = b"\x00\x00"
+            # TCP psuedoheader
+            phdr = self.prev.get_route() +\
+                uint16pack(self.prev.get_payload_length()) +\
+                bytes((0, ip.PROTO_TCP))
+
+            # Actual TCP header/payload
+            if len(self.data) % 2 == 0:
+                ahdr = bytes(self.data)
+            else:
+                ahdr = bytes(self.data) + b"\x00"
+            self.data[self._chksum] = ip.checksum(phdr + ahdr)
 
     @staticmethod
     def reset_state():
