@@ -48,10 +48,10 @@ class IPv6(core.CarrierProtocol):
         self._paylen = slice(4, 6)
         self._next = 6
         self._hoplim = 7
-        self._saddr = slice(8, 20)
-        self._daddr = slice(20, 36)
+        self._saddr = slice(8, 24)
+        self._daddr = slice(24, 40)
 
-        self.payload_offset = 36
+        self.payload_offset = 40
         self.payload_length = uint16unpack(self.data[self._paylen])
 
     def get_protocol(self):
