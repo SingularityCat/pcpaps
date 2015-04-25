@@ -41,6 +41,10 @@ class IPv6(core.CarrierProtocol):
 
     def __init__(self, data, prev):
         super().__init__(data, prev)
+
+        if len(data) < 40:
+            raise core.ProtocolFormatError("Truncated IPv6 header")
+
         self._calculate_checksums()
 
     def _calculate_checksums(self):
