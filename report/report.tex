@@ -1122,7 +1122,7 @@ Due to the sheer number of networked protocols and the complexities in supportin
 
 An interesting point to note is that no external\footnote{External dependencies being anything not present in the Python standard library.} dependencies or code were used. Only builtin Python classes and modules in the standard library were used. These were the \texttt{struct} module,  the \texttt{sys} module, the \texttt{binascii} module and (for the commandline interface, the \texttt{argparse} module).
 
-Code may be found on the additional media supplied with this document, if this is a physical copy. 
+The source code to the project may be found on the additional media supplied with this document, if this is a physical copy.
 
 \section{Meta-Implementation}
 While this section is not really about any specific implementation detail, it does cover noteworthy disciplines used by the author \emph{while implementing}.
@@ -1586,13 +1586,13 @@ The author hopes the current system provides useful utilities and a suitable gro
 
 \chapter{Critical Evaluation}
 \label{sec:criteval}
-The author has covered a lot of groundwork needed for future development on this rather large project.
+A lot of the groundwork needed for future development of this rather large project has been covered.
 
 \section{Success}
-The author is generally pleased with the outcome of the project, a working and usable suite of tools.
+The author is generally pleased with the outcome of the project, a working suite of tools.
 
-\subsection{Protocol support}
-The tool suite supports modifying a number of essential protocols fully, with falsification undetectable by \emph{Wireshark} for all supported protocols, falsified packet captures maintain the same degree of legibility as that of the original, with few hints that the file had been tampered with.
+\subsection{Protocol Support}
+The tool suite supports modifying a number of essential protocols fully, with falsification undetectable by \emph{Wireshark} for all supported protocols. Packet captures falsified in this way maintain the same degree of legibility as that of the original, with few if any hints that the file has been tampered with.
 
 Additionally, the author managed to implement core IPv6 support, and can correctly identify the protocols it carries. IPv6 address replacement also works correctly, allowing all typical address types to be changed.
 
@@ -1603,12 +1603,12 @@ The order of growth (determined by code analysis) for most of the algorithms in 
 
 The tools seem to perform well, processing moderately sized captures (approx. 600 packets) in immeasurable time. Admittedly, no strict performance tests have been carried out, things like CPU time and I/O time have not been factored in, but the author nonetheless conducted some informal measurements made with the UNIX \texttt{time}  command and a process memory monitor.
 
-The merge tool seems to have a linear complexity. A merge between two large capture files, producing a packet capture around 154 megabytes containing 338 \emph{thousand} packets, took only 6 seconds of real time to create (\emph{Wireshark} took roughly 3 seconds to \emph{open} the file, leading the author to believe that this may be I/O bound). When this file was then merged with itself, it took a predictable 12 seconds of real time.
+The merge tool seems to have a linear complexity. A merge between two large capture files, producing a packet capture around 154 megabytes containing 338 \emph{thousand} packets, took only 6 seconds of real time to create (\emph{Wireshark} took roughly 3 seconds to \emph{open} the file, leading the author to believe that this may be disk I/O bound). When this file was then merged with itself, it took a predictable 12 seconds of real time.
 
 The filter tool seems to be fairly memory efficient. When filtering the 308 megabyte file produced from the test above, it took 46 seconds to filter all ARP packets from the input and used around 6 megabytes of memory (the python interpreter itself seems to use approximately 3 megabytes). When given an additional criteria to filter IPv6 packets, 49 seconds were required, while retaining the same memory usage.
 
 \section{Criticism}
-\subsection{Protocol support}
+\subsection{Protocol Support}
 The project was never expected to be $100\%$ complete in terms of supporting protocols, but some important protocol classes are incomplete. Most notably, the TCP class currently supports basic tests against source/destination ports and correcting the checksum - the TCP state machine is non-existent and TCP sessions cannot be tracked. As a result of this, it is currently not possible to distinguish between protocols using TCP as their transport.
 
 The reason TCP support is incomplete is simply time. The author failed to account for the complexity of tracking TCP sessions, so the class was only half-implemented.
@@ -1617,14 +1617,34 @@ The author would like to point out that despite these limitations, the tools rem
 
 Additionally, ICMP (and ICMPv6) only exists as a stub Protocol class. This is an issue as ICMP, much like TCP and UDP, contains checksums that include carrier information.
 
+\subsection{The \texttt{set_attributes} method.}
+The \texttt{set_attributes} method is not used by any code in the project. It was the author's hope that a \texttt{modify} tool could be produced, but this did not happen due to time constraints.
+
+The \texttt{set_attributes} method remains unimplemented in most protocol classes, with only ARP and Ethernet fully supporting it. This should have been made clearer in the documentation.
+
 \section{Retrospective Design Successes and Criticisms}
-The representation of packet identities as a \emph{list} of protocol identities enables a
+One of the biggest successes is the total lack of assumptions\footnote{Due to protocol specifications, TCP and UDP \emph{do} check the parent for the purpose of checksum recomputation.} protocol classes make about their parent protocol. This renders each protocol class extremely flexible, for instance, IPv4 and IPv6 can both be passed over IP. Both protocol classes make no assumptions about the parent protocol, so just two classes can be used to support IPv4 over IPv4, IPv4 over IPv6, IPv6 over IPv4 and IPv6 over IPv6, in addition to both IPv4 and IPv6 over Ethernet.
 
-The Protocol class is somewhat unwieldy. In retrospect, a clear distinction between \emph{protocol information} and \emph{dissection} could have been made.
+Another positive aspect of the design is that of the exposed interface. Exposing a high level interface using the concept of a \emph{packet source} means that tools and utilities making use of the library mainly have to concern themselves with sanitising user input - the main body of the \texttt{list} tool is just two lines long.
 
-\section{Retrospective Method Successes and Criticisms}
+As for criticisms, the Protocol class is somewhat unwieldy. In retrospect, a clear distinction between \emph{protocol information} and \emph{dissection} could have been made, a so called \emph{ProtocolDissector} class or function.
 
+\section{Retrospective Implementation Successes and Criticisms}
+The interface provided by the implementation seems fairly intuitive for a commandline application, and the documentation provided by the \texttt{--help} parameter provides a useful guide.
 
+It is hard to accurately judge performance when there are neither real-time requirements nor comparable tools, but it does appear to have generally good performance, with simple operations almost always being bottlenecked by storage bandwidth.
+
+\section{Insight}
+Research, design and implementation were all done concurrently. This methodology turned out to work quite well - the project is somewhat `complete' and a (hopefully) decent report has been produced.
+
+The author started off with a fairly strong knowledge of \emph{what} made computer networks tick, but not exactly \emph{how}.
+
+This is no longer the case.
+
+The author has new found respect and admiration for the protocols developed over 30 years ago, which despite significant changes in Internet culture and the way security is handled, still remain working.
+
+\section{Important Lessons}
+The author is the type of programmer who will write code first, then ask requirements later. While this has worked in the past for the author, it should be noted that in the case of this project, it did not work. The author has discovered that there \emph{is} a substitute for planning - it is called sleep deprivation.
 
 \begin{center}
 Elliot Thomas
@@ -1910,7 +1930,9 @@ optional arguments:
 \subsection{packet.pipeline.identify}
 \VerbatimInput{../src/doc/packet.pipeline.identify}
 
-../src/doc/packet.common
-../src/doc/packet.memorymap
+\subsection{packet.common}
+\VerbatimInput{../src/doc/packet.common}
+\subsection{packet.memorymap}
+\VerbatimInput{../src/doc/packet.memorymap}
 
 \end{document}
