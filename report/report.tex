@@ -59,9 +59,6 @@
 % Setting page geometry.
 \usepackage[left=4cm,right=2cm,top=2cm,bottom=2cm]{geometry}
 
-% Sets spacing between paragraphs
-\setlength{\parskip}{0.8em}
-
 % Default caption form
 \captionsetup{labelfont=bf,textfont=it,justification=centering,font=footnotesize}
 
@@ -126,6 +123,16 @@ A document describing the design and development of a system to assist in the cr
 \lstlistoflistings
 \tableofcontents
 
+% Sets spacing between paragraphs
+\setlength{\parskip}{0.8em}
+
+\pagebreak
+\chapter*{Acknowledgements}
+\thispagestyle{empty}
+This document was typeset using \LaTeX.
+
+With thanks to Andy Thomas for proofreading, \url{tex.stackexchange.com} for typesetting help and the Python Software Foundation for providing such a wonderful programming language.
+\pagebreak
 %%%%%%%%%%%%%%%%
 % Introduction %
 %%%%%%%%%%%%%%%%
@@ -635,7 +642,7 @@ For dissection purposes, supporting the reassembly of this fragmentation is usef
 
 The Internet Protocol version 6, or just IPv6, is specified in RFC 2460\cite{rfc2460}.
 
-Despite being defined in 1997, IPv6 has been adopted very slowly. IPv6 was designed to be a solution to the IPv4 address exhaustion problems anticipated at the time. (Top level IPv4 addresses  were depleted on the 3rd of February, 2011\cite{ip4depletion}
+Despite being defined in 1997, IPv6 has been adopted very slowly. IPv6 was designed to be a solution to the IPv4 address exhaustion problems anticipated at the time. (Top level IPv4 addresses  were depleted on the 3rd of February, 2011\cite{ip4depletion})
 \begin{figure}[H]
 \center
 \begin{bytefield}[bitwidth=1.0em]{32}
@@ -708,7 +715,7 @@ From then on, either side can send segment headers with the PSH (push) flag set.
 
 The FIN (Finish) flag can be sent to indicate that no further PSH flags will occur in communication, effectively closing one end of the  bi-directional stream.
 
-TCP has a checksum that depends on its carrier protocol. The TCP checksum is defined in a similar way to the UDP checksum, with a `psuedoheader' consisting of the source and destination addresses, the length of the entire TCP segment and the IP protocol number for TCP (again, as 16 bit integers for IPv4, or 32 bit integers for IPv6). Given that, like a UDP datagram, a TCP segment can have an odd length. To account for this, a single byte with a value of $0$ should be appended for the purposes of the calculation.
+TCP has a checksum that depends on its carrier protocol. The TCP checksum is defined in a similar way to the UDP checksum, with a `psuedoheader' consisting of the source and destination addresses, the length of the entire TCP segment and the IP protocol number for TCP (again, as 16 bit integers for IPv4, or 32 bit integers for IPv6). Like a UDP datagram, a TCP segment can have an odd length, to account for this, a single byte with a value of $0$ should be appended for the purposes of the calculation.
 
 TCP also has the notion of a port. The initial destination port (sent in a segment with the SYN flag) indicates the type of service. Further segments use ephemeral ports, so in order to reliably identify higher level protocols, all parts of a TCP stream need to be tracked and presented as a unit.
 
@@ -726,15 +733,15 @@ The domain name system is most commonly used to map a set of named \emph{hosts},
 \emph{\small Example of a domain name resolution.}
 \end{center}
 
-The domain name system exists as a distributed hierarchical database.
+The domain name system exists as a distributed hierarchical database, with DNS servers local to a network (the \emph{name server}) possibly querying servers higher up the tree. There is more to this, but a detailed discussion on how DNS works is beyond the scope of this document.
 
-DNS messages have a common header format, indicating what kind of request or reply is being sent. DNS messages can contain a wide variety of record types, such as `A' records for IPv4 addresses, `AAAA' records for IPv6 addresses, and many others.
+DNS messages have a common header format, indicating what kind of request or reply is being sent. DNS messages can contain a wide variety of record types, such as `A' records for IPv4 addresses, `AAAA' records for IPv6 addresses, and many others. Supporting DNS message falsification is considered a luxury goal for this project.
 
 \subsection{Neighbour Discovery Protocol}
 \label{sec:ndp}
 The Neighbour Discover Protocol (NDP) is specified in RFC 4861\cite{rfc4861}.
 
-NDP fills a similar role to ARP (\ref{sec:arp}) in the IPv6 role (among others), and has a message structure comparable to that of DNS (\ref{sec:dns}). NDP also provides other features for networks. Supporting NDP manipulation is considered a luxury goal for this project.
+NDP fills a similar role to ARP (\ref{sec:arp}) in the IPv6 role (among others), and has a message structure comparable to that of DNS (\ref{sec:dns}). NDP also provides other features for networks, such a router advertisement and address autoconfiguration. Supporting NDP falsification is considered a luxury goal for this project.
 
 %%%%%%%%%%%%%%%%
 % Requirements %
@@ -771,7 +778,7 @@ These are more formally specified in the functional and non-functional requireme
 \item \label{fr:6} There shall be a program that accepts multiple inputs, and merge them into a single output.
 \item \label{fr:7} There shall be a program that alters the timestamp metadata for individual packets.
 \item \label{fr:8} There shall be a program that selectively removes packets pertaining to specific protocols.
-\item \label{fr:9} There shall be a program that finds and replaces host identifiers within packets contained in a capture.
+\item \label{fr:9} There shall be a program that finds and replaces host identifiers within packets contained in a capture, while recalculating any checksums that need updating.
 \item \label{fr:10} Programs shall support loading external support code (extensions) for handling new protocols at runtime.
 \item \label{fr:11} The programs shall be able to operate on streaming data in addition to static files.
 \end{enumerate}
@@ -797,7 +804,9 @@ These are more formally specified in the functional and non-functional requireme
 \section{Functional Requirement No. 3}
 \ref{fr:3} \emph{packet identification} is quite an open ended requirement and leaves an important detail to consider: \emph{which protocols?}
 
-Section \ref{sec:protocols} talks about common protocols, but understanding just one of these protocols takes a considerable amount of time. Because of this, the author decided to \emph{initially} focus on a small number of protocols, based on their frequency of occurrence and importance; these are Ethernet, IPv4, TCP, UDP and ARP, possibly considering more should the time be available. Additionally, partial, \emph{identify only} support should be included for at least IPv6 and ICMP. This selection provides reasonable filtering and adjustment capabilities for common capture files.
+Section \ref{sec:protocols} talks about common protocols, but understanding just one of these protocols takes a considerable amount of time. Because of this, the author decided to \emph{initially} focus on a small number of protocols, based on their frequency of occurrence and importance; these are Ethernet, IPv4, TCP, UDP and ARP, possibly considering more should the time be available.
+
+Additionally, partial \emph{identify only} support should be included for at least IPv6 and ICMP. This selection provides reasonable filtering and adjustment capabilities for common capture files.
 
 %%%%%%%%%%
 % Design %
@@ -876,6 +885,12 @@ Network protocols are represented by Protocol classes. Protocols are the most co
 
 Logically speaking, instances of communication over a network conform to a linear hierarchy of protocols. A \emph{carrier protocol} encapsulates another protocol, which itself may be another carrier protocol. The system models a packet's identity around the concept of \emph{protocol instances}, which are instances of communication adhering to a specific protocol.
 
+\begin{figure}[H]
+\center
+\includegraphics[scale=0.7]{diagrams/protocol-instances.png}
+\caption{A packet's identity and protocol instances.}
+\end{figure}
+
 A carrier protocol will also have some kind of \emph{route}, a known source and destination. This may or may not depend  on the parent protocol. For instance, IP packets will typically be sent over Ethernet frames, but IP implements a logically independent network from an Ethernet network - these frames, when reaching a router, will be sent somewhere else (with altered frame data), potentially to entirely different routers over an entirely different carrier, all while preserving the IP frame. This is how internetworking works. Conversely, UDP packets rely on the logical route established by IP packets to transmit data, and are basically an extension of the \emph{protocol} or \emph{next} field in an IP header.
 
 \begin{figure}[H]
@@ -912,6 +927,7 @@ Because both of these methods may have side effects, as a library, it was deemed
 
 Finally, all protocol classes need to have a human-readable name. This is for both output (such as when `printing' a packet) but mainly as a unique identifier for a Protocol class. The intention is, that protocols are referred to by this name, and that a Protocol class can be replaced by one with the same name, should the user want to use an alternate implementation. This name is also used in constructing and comparing attributes.
 
+\pagebreak
 \section{Memory maps}
 \label{sec:memmap}
 In order to identify protocols, packet data needs to be examined. As some protocols can have a variety of carriers, and carrier protocols can have a variable size, the exact location of one protocol's header is not a constant offset.
@@ -971,6 +987,7 @@ There will be commonalities between tools. These are detailed below.
 \end{tabularx}
 
 \subsection{The List Tool}
+\label{sec:listdes}
 The list tool will take a packet capture, and print out a succinct, human-readable interpretation of each packet.
 
 The list tool has no special parameters, and does \emph{not} accept the \texttt{--output} option.
@@ -980,6 +997,7 @@ The output should be something along the lines of:
 {\small\texttt{Mon Oct 20 15:51:29 2014 Linktype: 1, Identity: eth/arp, Length: 42}}
 
 \subsection{The Merge Tool}
+\label{sec:mergedes}
 The merge tool will take an arbitrary number of packet capture files, and write out a single capture from these.
 
 The merge tool was also seen as the appropriate place to do time alteration, so this program fulfils the role of \ref{fr:6} \emph{merge program} and \ref{fr:7} \emph{timestamp alteration program}.
@@ -999,7 +1017,9 @@ The merge tool will take a slightly different \texttt{--input} option in that it
 \begin{verbatim}
 [user@host ~]$ merge -i cap1.pcap -i cap2.pcap -o cap12.pcap
 \end{verbatim}
+
 \subsection{The Filter Tool}
+\label{sec:filterdes}
 The filter tool will fulfil the role of \ref{fr:8} \emph{filter program}.
 
 \begin{tabularx}{\textwidth}{|c|c|c|c|X|}
@@ -1032,8 +1052,22 @@ The exact format of the protocol attributes string depends entirely on the Proto
 <protocol attributes> ::= <kvp> | <kvp> `;' <protocol attributes>
 \end{grammar}
 
+Invocation might look like:
 
+\begin{verbatim}
+[user@host ~]$ filter -i cap1.pcap -o cap1-noip6.pcap -k eth/ip6 -p discard
+\end{verbatim}
+for permitting only IPv6 packets, or
+
+\begin{verbatim}
+[user@host ~]$ filter -i cap1.pcap -o cap12.pcap -d eth/arp:opcode=1
+\end{verbatim}
+
+for removing all ARP requests, leaving ARP responses intact.
+
+\pagebreak
 \subsection{The Maphosts Tool}
+\label{sec:maphostsdes}
 The `maphosts' realises \ref{fr:9} \emph{host identity replacement program}.
 
 \begin{tabularx}{\textwidth}{|c|c|c|c|X|}
@@ -1069,6 +1103,14 @@ The address here, will take the form:
 \end{grammar}
 
 Note that this particular grammar definition of an IPv6 address is rather vague. A more detailed explanation is given in RFC 5952\cite{rfc5952}.
+
+Typical invocation might be:
+
+\begin{verbatim}
+[user@host ~]$ maphosts -i cap1.pcap -o cap12.pcap -4 192.168.0.20=172.16.0.20
+\end{verbatim}
+
+for replacing occurences of \texttt{192.168.0.20} with \texttt{172.16.0.20}.
 
 \chapter{Implementation}
 Implementation started concurrently with design. Challenges encountered during implementation would change the design, and vice versa.
@@ -1277,7 +1319,7 @@ The \texttt{filter} module contains the \emph{filter} generator function.
 
 The filter function takes a packet source, two sets of \emph{prototype lists} and a policy.
 
-A prototype list is simply a list of \emph{prototypes}. A prototype is a 2-tuple, consisting of a protocol name and a set of protocol attributes. These protocol attributes are usually obtained from the \texttt{build_attributes} static method in the corresponding Protocol class.
+A prototype list is simply a list of \emph{prototypes}. A prototype is a 2-tuple, consisting of a protocol name and a set of protocol attributes. These protocol attributes are usually obtained from the \texttt{build_attributes} static method in the Protocol class with the corresponding name.
 
 A prototype list matches a protocol identity if:
 \begin{enumerate}[label=\roman*)]
@@ -1286,7 +1328,7 @@ A prototype list matches a protocol identity if:
 \item The number of protocol instances in the protocol identity is equal to or greater than the number of prototypes in the prototype list.
 \end{enumerate}
 
-There is function, \texttt{identity_match}, that implements the matching algorithm described above.
+There is an internal function, \texttt{identity_match}, that implements the matching algorithm described above.
 
 \begin{lstlisting}[
 	language={[3]Python},label={lst:identmatch},
@@ -1322,17 +1364,43 @@ Any packet matching something in the keep set is remitted as output, any packet 
 \subsection{The \texttt{identify} Module}
 The \texttt{identify} module contains the \emph{identify} generator function.
 
-This function is very simple, and offers a nicer interface to the \texttt{root_identify} function in the \texttt{identity.core} module. 
+This function is very simple, and offers a nicer interface to the \texttt{root_identify} function in the \texttt{identity.core} module.
+
+For every packet in the provided source, it will pass it to the \texttt{root_identify} function. If the identity is incomplete, it will store the packet in a buffer and read the \emph{next} packet, buffering these until the first packet has it's identity completed.
 
 \section{The \texttt{pcpapu} Tool}
 During development, it was deemed easier to implement the utilities as \emph{subcommands} in a larger utility.
 
-PCPAPU stands for `Packet Capture Processor and Publishing Utility', and at its basic level, implements the \texttt{-l} option.
+PCPAPU stands for `Packet Capture Processor and Publishing Utility', and at its basic level, implements the \texttt{-l} option, and provides a rudimentary way of loading support code.
 
 \subsection{The \texttt{list} Subcommand}
+The list subcommand implements the same interface as that of the list tool described in the design section \ref{sec:listdes}.
+
+The list command is a very simple tool. Input parsing aside, the list tool consists of a rather elegant two lines:
+\begin{lstlisting}[
+	language={[3]Python},label={lst:listimp},
+	caption={Important section of the list tool.}
+]
+for packet in identify(source):
+    print(packet)
+\end{lstlisting}
+
 \subsection{The \texttt{merge} Subcommand}
+The merge subcommand implements the same interface as that of the merge tool described in the design section \ref{sec:mergedes}.
+
+The merge subcommand exposes the same interface as the merge pipeline. Its input processing expects a date in a specific form, \texttt{YYYY/MM/DD HH:MM:SS}, which is converted into a UNIX timestamp.
+
+Note that this does make for some rather non-intuitive behaviour. In order to merge capture files without altering their timestamps, it is necessary to specify ``\texttt{1970/1/1 00:00:00}'' as the time offset in addition to specifying the \texttt{-a} flag. This interaction should be reviewed at a later date.
+
 \subsection{The \texttt{filter} Subcommand}
+The filter subcommand implements the same interface as that of the filter tool described in the design section \ref{sec:filterdes}.
+
+Just like the merge subcommand, this is implemented in terms of \emph{pipelines}, first using the identify pipeline, then the filter pipeline.
+
 \subsection{The \texttt{maphosts} Subcommand}
+The maphosts subcommand implements the same interface as that of the maphosts tool described in the design section \ref{sec:maphostsdes}.
+
+It utilises the identify pipeline, and will call the cascading \texttt{replace_hosts} method and \texttt{recalculate_checksums} method on the root protocol instance for each packet.
 
 \chapter{Testing}
 The testing for this project was done throughout development. 
@@ -1501,26 +1569,41 @@ The author hopes the current system provides useful utilities and a suitable gro
 
 \chapter{Critical Evaluation}
 \label{sec:criteval}
-The project has covered a lot of groundwork needed for future development on this rather large project.
+The author has covered a lot of groundwork needed for future development on this rather large project.
 
 \section{Success}
 The author is generally pleased with the outcome of the project, a working and usable suite of tools.
 
+\subsection{Protocol support}
+The tool suite supports modifying a number of essential protocols fully, with falsification undetectable by \emph{Wireshark} for all supported protocols, falsified packet captures maintain the same degree of legibility as that of the original, with few hints that the file had been tampered with.
+
+Additionally, the author managed to implement core IPv6 support, and can correctly identify the protocols it carries. IPv6 address replacement also works correctly, allowing all typical address types to be changed.
+
+\subsection{Performance}
+While performance was never a primary goal, good performance is indicative of good software.
+
+The order of growth (determined by code analysis) for most of the algorithms in the code is $O(n)$, where $n$ is the number of packets to be processed. This is the best that can reasonably be expected from any kind of stream processor.
+
+The tools seem to perform well, processing moderately sized captures (approx. 600 packets) in immeasurable time. Admittedly, no strict performance tests have been carried out, things like CPU time and I/O time have not been factored in, but the author nonetheless conducted some informal measurements made with the UNIX \texttt{time}  command and a process memory monitor.
+
+The merge tool seems to have a linear complexity. A merge between two large capture files, producing a packet capture around 154 megabytes containing 338 \emph{thousand} packets, took only 6 seconds of real time to create (\emph{Wireshark} took roughly 3 seconds to \emph{open} the file, leading the author to believe that this may be I/O bound). When this file was then merged with itself, it took a predictable 12 seconds of real time.
+
+The filter tool seems to be fairly memory efficient. When filtering the 308 megabyte file produced from the test above, it took 46 seconds to filter all ARP packets from the input and used around 6 megabytes of memory (the python interpreter itself seems to use approximately 3 megabytes). When given an additional criteria to filter IPv6 packets, 49 seconds were required, while retaining the same memory usage.
 
 \section{Criticism}
 \subsection{Protocol support}
-The project was never expected to be $100\%$ complete in terms of supporting protocols, but some important protocol classes are incomplete. Most notably, the TCP class currently supports basic tests against source/destination ports and correcting the checksum - the TCP state machine is non-existent and TCP sessions cannot be tracked. As a result of this, it is currently not possible to distinguish protocols using TCP.
+The project was never expected to be $100\%$ complete in terms of supporting protocols, but some important protocol classes are incomplete. Most notably, the TCP class currently supports basic tests against source/destination ports and correcting the checksum - the TCP state machine is non-existent and TCP sessions cannot be tracked. As a result of this, it is currently not possible to distinguish between protocols using TCP as their transport.
 
 The reason TCP support is incomplete is simply time. The author failed to account for the complexity of tracking TCP sessions, so the class was only half-implemented.
 
-The author would like to point out that despite these limitations, the tools remain useful for their purpose - often, all TCP traffic is interesting and as checksum recalculation is implemented properly, meaning packets \emph{carrying} a TCP session can be manipulated without issue.
+The author would like to point out that despite these limitations, the tools remain useful for their purpose; often \emph{all} TCP traffic is interesting and as checksum recalculation is implemented properly, meaning packets \emph{carrying} a TCP session can be manipulated without issue.
 
-Additionally, ICMPv6 only exists as a stub Protocol class. This is an issue, as ICMPv6 data contains checksums that include carrier information.
+Additionally, ICMP (and ICMPv6) only exists as a stub Protocol class. This is an issue as ICMP, much like TCP and UDP, contains checksums that include carrier information.
 
-\section{Retrospective Design Criticisms}
+\section{Retrospective Design Successes and Criticisms}
+The Protocol class is somewhat unwieldy. In retrospect, a clear distinction between \emph{protocol information} and \emph{dissection} could have been made.
 
-
-\section{Retrospective Method Criticisms}
+\section{Retrospective Method Successes and Criticisms}
 
 \begin{center}
 Elliot Thomas
@@ -1762,7 +1845,5 @@ optional arguments:
   -m MAC-pair, --mac MAC-pair
                         MAC address find/replace pair.
 \end{verbatim}
-
-
 
 \end{document}
