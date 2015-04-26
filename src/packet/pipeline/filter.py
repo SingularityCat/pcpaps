@@ -13,13 +13,21 @@ def identity_match(protocol_instances, prototypes):
     Every prototype must match it's corresponding protocol instance.
     Prototypes are a (name, attrs) tuple.
     """
+    prototype_iter = iter(prototypes)
     match = False
-    for protocol_instance, prototype in zip(protocol_instances, prototypes):
+    for protocol_instance, prototype in zip(protocol_instances, prototype_iter):
         if protocol_instance.name is not prototype[0] or \
           not protocol_instance.match_attributes(prototype[1]):
             break
     else:
-        match = True
+        # A short prototype list should match a more specific protocol identity, but
+        # A short identitiy should not match a more specific prototype list.
+        # This sees if the number of prototypes exceeds the number of protocol_instances.
+        try:
+            next(prototype_iter)
+        except StopIteration:
+            match = True
+
     return match
 
 
