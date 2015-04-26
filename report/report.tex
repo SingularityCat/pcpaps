@@ -33,11 +33,16 @@
 \usepackage{dirtree}
 
 % Provides an extended tabular environment.
+\usepackage{booktabs}
 \usepackage{tabularx}
+\usepackage{ltablex}
 
 % For images.
 \usepackage{graphicx}
 \usepackage{float}
+
+% Put bibliography in ToC
+\usepackage[nottoc]{tocbibind}
 
 % For better enumerations.
 \usepackage{enumitem}
@@ -96,6 +101,9 @@
 %\lstset{upquote=true}
 \lstset{basicstyle=\ttfamily}
 
+% Rename bibliography to references.
+\renewcommand{\bibname}{References}
+
 \author{Elliot Thomas (\texttt{w1372638})\\ \small Supervisor: Sean Tohill\\ \\ University of Westminster}
 \title{Network Packet Capture Generation and Falsification}
 \date{\today}
@@ -112,6 +120,7 @@ Computer Science Project (ECSC699)
 A document describing the design and development of a system to assist in the crafting of network packet captures for educational purposes.
 \end{center}
 \end{abstract}
+\let\thefootnote\relax\footnotetext{This report is submitted in partial fulfillment of the requirements for the BSc (Hons) Computer Science Degree at the University of Westminster.}
 \pagebreak
 \listoffigures
 \lstlistoflistings
@@ -144,8 +153,15 @@ None, it would seem.
 
 There are a number of tools for network packet capture, and a number of tools for analysing them. These tools do not solve the problem \emph{per se}, but do allow packet capture manipulation to a certain extent, and therefore might be a useful aid in manipulating packet captures.
 
+\subsection{wireshark}
+Wireshark is packet sniffer and analysis tool\cite{wireshark}, and contains a suite of utilities (some of which are mentioned below).
+
+Wireshark is typically the tool that students would use to analyse packet captures in this scenario, and as such is an invaluable tool for verifying correctness.
+
+As a tool for falsifying captures, it does provide one useful feature - the ability to change the apparent time a packet arrived.
+
 \subsection{editcap}
-Editcap is a program distributed as part of Wireshark.\\
+Editcap is a program distributed as part of \emph{Wireshark}.\\
 From the manpage\cite{editcap-man}:
 \begin{quote}
 \textbf{Editcap} is a program that reads some or all of the captured packets from the \underline{infile}, optionally converts them in various ways and writes the resulting packets to the capture \underline{outfile} (or outfiles).
@@ -155,7 +171,7 @@ For the purposes of assisting generation, this program allows splitting a file i
 \indent (1, 1, 2, 3, 5, 7, 8) $\rightarrow$ (1, 1, 2), (3), (5), (7, 8)
 
 \subsection{tshark}
-Tshark is a program distributed as part of Wireshark.\\
+Tshark is a program distributed as part of \emph{Wireshark}.\\
 From the manpage\cite{tshark-man}:
 \begin{quote}
 \textbf{TShark} is a network protocol analyzer. It lets you capture packet data from a live network, or read packets from a previously saved capture file, either printing a decoded form of those packets to the standard output or writing the packets to a file.  \textbf{TShark}'s native capture file format is \textbf{pcap} format, which is also the format used by \textbf{tcpdump} and various other tools.
@@ -223,16 +239,16 @@ At its heart, this project is a data processing project. There are no requiremen
 
 Given the minimalistic requirements of the program, just about any Turing-complete language is serviceable. As such, the decision will have to be made predominantly on the other three factors. That's not to say entirely, some languages lend themselves quite well to generic data manipulation, while others are more specialised and geared towards specific purposes. For instance, Javascript is more suited towards web-based projects (given that its usual interpreter is a web browser), while C, Java and Python are more general purpose. Haskell, Java and Python have good support for abstract data structures while various assembly languages barely have the notion of a data type.
 
-One important factor is for the program to be easily extended. While it is possible to write an extendible program in just about any language, it helps considerably if there is support for loading code from an external source at runtime, i.e. to allow building a plugin architecture.
+One important factor is for the program to be easily extended. While it is possible to write an extensible program in just about any language, it helps considerably if there is support for loading code from an external source at runtime, i.e. to allow building a plugin architecture.
 Most languages or platforms allow this in some manner (and practically all platforms depend on doing this in one way or another - this is how shared libraries work). While POSIX platforms provide functions like \lstinline$void *dlopen(const char *filename, int flag);$, this interface is not consistently available on non-POSIX platforms, and requires code to be compiled first. Meanwhile, Python, Javascript and even Bash provide methods for loading new code programatically without the need to compile code first, allowing for a very flexible, powerful and user-friendly system to be developed.
 
 \subsection{Knowledge influence}
-Knowledge is a subjective factor that pertains to the programmer(s) developing the project. It is a limiting factor; a programmer proficient in C is not necessarily going to be able to understand a very different language such as Haskell. Also worth mentioning is simple preference - while not a overriding factor - can help shape a choice.
+Knowledge is a subjective factor that pertains to the programmer(s) developing the project. It is a limiting factor; a programmer proficient in C is not necessarily going to be able to understand a very different language such as Haskell. Also worth mentioning is the preference of the programmer; while this is not an overriding factor it can help shape a decision.
 
 \subsection{Availability influence}
-Availability for most languages is somewhat of a non-issue. Given that portability is a desirable outcome, only languages which have a usable and consistent enough implementation across platforms will be considered. This eliminates some languages such as C\#, Visual Basic (or any .NET language).
+Implementation availability for most languages is somewhat of a non-issue. Given that portability is a desirable outcome, only languages which have a usable and consistent enough implementation across platforms will be considered. This eliminates some languages such as C\#, Visual Basic (or any .NET language).
 
-It is also worth noting portability - are there provisions for file input/output? In the case of the various assembly languages, this is left to the programmer. Even if the assembly language itself is abstract and portable, it only dictates how the processor is used - assembly often leads to some \emph{very} specific code.
+Regarding portability, are there provisions for file input/output? In the case of the various assembly languages, this is left to the programmer. Even if the assembly language itself is abstract and portable, it only dictates how the processor is used - assembly often leads to some \emph{very} specific code.
 
 \begin{lstlisting}[
 	language={[x64]Assembler},captionpos=b,
@@ -246,7 +262,7 @@ syscall      ; Do the system call. Similair to int 0x80.
 \end{lstlisting}
 
 \section{Programming Language: Assessment}
-Many languages were assessed for use in this project using the criteria above, with some being discarded on a singular fatal flaw. These are:
+Many languages were assessed for use in this project using the criteria above, with some being discarded on a single fatal flaw. These are:
 \begin{itemize}
 \item C\#, Visual Basic, other .NET languages: These are fairly portable with the advent of Mono\cite{mono}, but the author still has reservations about this.
 \item Haskell: An interesting language, but requires a substantially different approach to program design than the author is familiar with.
@@ -258,7 +274,7 @@ Many languages were assessed for use in this project using the criteria above, w
 \subsection{C}
 For a while, C was the \emph{lingua franca} of the programming world. C is a fairly old language, dating back to 1972 and was used to write many parts of the UNIX operating system\cite{tcpl}.
 
-C is technically considered a high-level programming language, in that it gives you automatic variable allocation and permits arbitrarily complex arithmetic and logical expressions without explicitly storing intermediary results. The detail of a register (memory that is part of the CPU) is seldom expressed in C code; variables have an addressable place in main memory unless the register keyword is used in variable declaration\footnote{Although, an optimising compiler \emph{can} do this for you.}.
+C is technically considered a high-level programming language, in that it gives you automatic variable allocation and permits arbitrarily complex arithmetic and logical expressions without explicitly storing intermediary results. The detail of a register (memory that is part of the CPU) is seldom expressed in C code; variables have an addressable place in main memory unless the register keyword is used in variable declaration\footnote{Although an optimising compiler \emph{can} do this for you.}.
 
 C has the advantage of very little overhead - there is no garbage collector; all memory management is done manually. Given that networking protocols, particularly the ones relevant to this project, are often implemented in C; C seems like a fair choice despite its shortcomings.
 
@@ -270,7 +286,7 @@ C is a compiled language, which means the project requires compilation to a plat
 Often described as `C with classes', C++ is a derivative (for the most part, a superset) of the C programming language\cite{tcpppl}.
 C++ adds classes, namespaces, `references' and templates to the C language. For the most part, it retains compatibility with the C language and can be freely mixed with C code.
 
-C++ resolves some of the issues with using C for this project. However, the remaining issues make C/C++ difficult to choose.
+C++ resolves some of the issues with using C for this project. However, the remaining issues of memory managment and a fairly `low-level' interface make C/C++ difficult to choose.
 
 \subsection{Java}
 Java is a language usually compiled to \emph{bytecode} and then interpreted by a virtual machine, the Java Virtual Machine (JVM). The virtual machine accepts programs in a standardised form, so Java bytecode can work on multiple implementations. This means that Java programs, once compiled, can be run anywhere\footnote{It should be noted that other compilers exist - GCJ\cite{gcj} is such an example that compiles Java into machine code.}. Java is a very popular language\cite{javatech}, used in enterprise environments and commonly taught to university students doing a course in computer science.
@@ -291,7 +307,7 @@ Python code is usually distributed in source form, but can be compiled to a byte
 Code verbosity is a problem in certain languages, and can make even simple code hard to follow - the less you have to read, the quicker you can comprehend it.
 \pagebreak
 To illustrate this problem, consider a simple task: write a program that counts the number of lines in a text file.
-In the interest of fairness, the program will have specific behaviour; it should accept standard input or a file path as its first command line parameter, and work by looking at each character in the file and comparing it to a line feed. If reading from a file that does not exist, it should print an error message. Additionally, all variable identifiers should be the same or similar when translated to code.\footnote{The author recognises that code style has an impact on the metrics used (line count and source file size), and that all of these programs can be rewritten to occuply less space, however doing so would render them neigh-unmaintainable.} 
+In the interest of fairness, the program will have specific behaviour; it should accept standard input or a file path as its first command line parameter, and work by looking at each character in the file and comparing it to a line feed. If reading from a file that does not exist, it should print an error message. Additionally, all variable identifiers should be the same or similar when translated to code.\footnote{The author recognises that code style has an impact on the metrics used (line count and source file size), and that all of these programs can be rewritten to occupy less space, however doing so would render them nigh unmaintainable.}
 
 This program was fully implemented for the three considered languages - C, Java and Python. The C implementation is as follows:
 \lstinputlisting[
@@ -324,6 +340,7 @@ Time was the unspoken major factor in this decision, and given the liberty to ch
 
 The choice was Python. This was driven by its status as a multi-paradigm language that offers different models of program abstraction.
 To illustrate this, shown below are two functionally equivalent and compatible prime number \emph{iterators};
+
 \begin{lstlisting}[
 	language={[3]Python},label={lst:ooprime},
 	caption={[Python primegen, object style]An object oriented approach to a prime generator.}
@@ -479,18 +496,19 @@ Doing this repeatedly to build a larger system is known as \emph{incremental dev
 Ultimately, a prototype driven iterative and incremental development model seems like the most appropriate approach.
 
 \section{Libraries}
-The use of external libraries was considered for understanding file formats - namely libpcap, a C library, which supports the ubiquitous pcap file format.
+The use of external libraries was considered for understanding file formats - namely libpcap, a C library, which supports the popular pcap file format and provides an interface for sniffing packets.
 
 Python supports a FFI (Foreign Function Interface) module for C libraries under the name `ctypes' and supports understanding C-like data structures using the `struct' module, so this itself is not a limiting factor.
 However, existing bindings are outdated or are for Python 2, so a new set of bindings would have to be written. Libpcap does not have a very complex interface, but a lot of the functionality of libpcap is irrelevant - functionality related to querying network devices and capturing their output is not needed. The effort required to make a proper set of library bindings exceeds the effort to reimplement the desired functionality in pure python.
 
-Instead, the documentation for libpcap's file format was used. This will be discussed later.
+Instead, the documentation for libpcap's file format will be used to make an independent implementation.
 
 \section{Protocols}
+\label{sec:protocols}
 The project needs to deal with real network captures. Therefore, knowledge of protocols that occur on real networks is essential. Dissecting packets to extract and replace information is a task that requires specific knowledge. Fortunately, obtaining this is a fairly straightforward task.
 
 The first problem is finding out \emph{what} protocols are used. This is almost trivial, and can be determined in numerous ways; an empirical method would be simply to examining a live network, this will tell you not only what protocols are in use, but how often they are used.
-Another method would be to simply gather some background knowledge - how networks operate and what they are used for. Internet access is almost ubiquitous, and the world wide web has become a prominent part of modern society - the world wide web is accessed using HTTP, which depends on TCP for it's transport, which then depends on IP as it's carrier. Additionally, for hosts implementing HTTP, DNS is used for resolving host names to IP addresses.
+Another method would be to simply gather some background knowledge - how networks operate and what they are used for. Internet access is almost ubiquitous, and the world wide web has become a prominent part of modern society - the world wide web is accessed using HTTP, which depends on TCP for its transport, which then depends on IP as its carrier. Additionally, for hosts implementing HTTP, DNS is used for resolving host names to IP addresses.
 
 Local area networks typically have a homogeneous medium, the most common of which is Ethernet. From a data analysis point of view, this is one of the basic `carrier protocols' that all other protocols are encapsulated within.\footnote{It is worth noting that an IP router may also act as a gateway between two different networks, possibly with different media.}
 
@@ -508,7 +526,7 @@ There are other types of data with some significance. Protocols which split thei
 \label{sec:eth}
 Ethernet is the common name for the IEEE 802.3 standards family, which is part of the broader family known as IEEE 802, covering technology used in Local/Metropolitan Area Networks.
 
-Unlike the family of Internet Standards, Ethernet is a \emph{physical} to \emph{link-layer} specification maintained by IEEE-SA (Institute of Electrical and Electronics Engineers Standards Association), an organisation part of IEEE.
+Unlike the family of Internet Standards, Ethernet is a \emph{physical} to \emph{link-layer} specification maintained by IEEE-SA (Institute of Electrical and Electronics Engineers Standards Association), an organisational part of IEEE.
 
 
 \begin{figure}[H]
@@ -653,15 +671,9 @@ The User Datagram Protocol (UDP) is specified in RFC 768\cite{rfc768}.
 
 The user datagram protocol exists as a relatively thin layer over IP. It offers data integrity and not much else.
 
+UDP has a checksum field  with an algorithm that depends on the carrier protocol. The UDP checksum algorithm makes use of a `psuedoheader' consisting of the source and destination addresses, the length of the entire UDP segment and the IP protocol number for UDP (as a 16 bit integer). Because UDP segments can have an odd length, a byte with a value of $0$ should be appended to the segment for the purposes of the calculation.
+
 The UDP introduces the concept of a `port'. This is little more then a flexible protocol identification field, with well-known protocols operating over well-known ports. For further analysis, the \emph{destination port} should be used for payload identification.
-
-\subsection{Domain Name System}
-\label{sec:dns}
-The Domain Name System (DNS) is specified in RFC 1035\cite{rfc1035}.
-
-This protocol normally operates over UDP port $53$, but can use TCP as an alternate transport.
-
-
 
 \subsection{Transmission Control Protocol}
 \label{sec:tcp}
@@ -686,15 +698,38 @@ The Transmission Control Protocol (TCP) is specified in RFC 793\cite{rfc793}.
 \label{fig:tcpfmt}
 \end{figure}
 
-The Transmission Control Protocol is a reliable stream transport protocol, used over an unreliable carrier such as IP. TCP headers have many fields as seen in figure \ref{fig:tcpfmt}, but there are seven important ones: source port, destination port, sequence number, acknowledgement number, data offset, flags and checksum. These are used to establish a kind of `circuit-switched' connection over a packet-switched network. TCP has a three-way handshake between client and server, used to negotiate this connection.\\
+The Transmission Control Protocol is a reliable stream transport protocol, used over an unreliable carrier such as IP. TCP headers have many fields as seen in figure \ref{fig:tcpfmt}, but there are seven important ones: source port, destination port, sequence number, acknowledgement number, data offset, flags and checksum. These are used to establish a kind of `circuit-switched' connection over a packet-switched network. TCP has a three-way handshake between client and server, used to negotiate this connection.
 
 Client machines initiate a connection by sending a header with the SYN (synchronise) flag set, the destination port set to the port number used for the desired service, and the source port set to a random, ephemeral value.
-Upon receiving a SYN, the TCP implementation on the server will, if said service is supported, will send a SYN-ACK (Synchronise/Acknowledgement) back; with the destination port set to the source port of the initial packet and the source port set to a random, ephemeral port. Finally, the client then responds with an ACK and the handshake is complete.\\
+Upon receiving a SYN, the TCP implementation on the server will, if said service is supported, will send a SYN-ACK (Synchronise/Acknowledgement) back; with the destination port set to the source port of the initial packet and the source port set to a random, ephemeral port. Finally, the client then responds with an ACK and the handshake is complete.
 
-From then on, either side can send headers with the PSH (push) flag set. These contain the data being sent over the logical stream. Each PSH should be reciprocated with an ACK from the other side. The FIN (
+From then on, either side can send headers with the PSH (push) flag set. These contain the data being sent over the logical stream. Communication is full duplex, either side can send data. Each PSH should be reciprocated with an ACK from the other side. The FIN (Finish) flag can be set to indicate that no further PSH flags will occur in communication, effectively closing one end of the  bi-directional stream.
+
+TCP has a checksum that depends on its carrier protocol. The TCP checksum is defined in a similar way to the UDP checksum, with a `psuedoheader' consisting of the source and destination addresses, the length of the entire TCP segment and the IP protocol number for TCP (as a 16 bit integer). Given that a TCP segment can have an odd length, a single byte with a value of $0$ should be appended for the purposes of the calculation.
+
+TCP also has the notion of a port. The initial destination port (sent in a segment with the SYN flag) indicates the type of service. Further segments use ephemeral ports, so in order to reliably filter higher level protocols, all parts of a TCP stream need to be tracked and presented as a unit.
+
+\subsection{Domain Name System}
+\label{sec:dns}
+The Domain Name System (DNS) is specified in RFC 1035\cite{rfc1035}.
+
+This protocol normally operates over UDP port $53$, but can use TCP as an alternate transport.
+
+The domain name system is most commonly used to map a set of named \emph{hosts}, each belonging to a \emph{domain}, to a set of IP addresses.
+
+\begin{figure}[H]
+\center
+\texttt{blackhole.time-domain.co.uk} $\rightarrow$ \texttt{81.142.251.220}
+\caption{Example of a domain name resolution.}
+\end{figure}
+
+The domain name system has a common message header indicating what kind of request or reply is being being sent. DNS has multiple kinds of records that can be presented.
 
 \subsection{Neighbour Discovery Protocol}
 \label{sec:ndp}
+The Neighbour Discover Protocol (NDP) is specified in RFC 4861\cite{rfc4861}.
+
+NDP fills a similar role to ARP (\ref{sec:arp}) in the IPv6 role (among others), and has a message structure comparable to that of DNS (\ref{sec:dns}). NDP also provides 
 
 %%%%%%%%%%%%%%%%
 % Requirements %
@@ -710,8 +745,15 @@ You sanitise by removing some packets e.g. arp, proxy.
 You change ip addresses of the host to something else.
 
 You put them together to make a larger capture, you need to alter times and stuff here.
-
 \end{quote}
+
+Based on this proposed workflow, it was determined that at least three programs would need to exist:
+\begin{enumerate}[label=\roman*)]
+\item A program that can filter certain protocols from packet capture files.
+\item A program that can alter \emph{host identities} from packet capture files.
+\item A program that can merge packet capture files.
+\end{enumerate}
+These are more formally specified in the functional and non-functional requirements below.
 
 \section{Functional Requirements}
 
@@ -747,11 +789,16 @@ You put them together to make a larger capture, you need to alter times and stuf
 \item \label{nfr:13} The programs should be secure - they should handle malicious data in a safe way.
 \end{enumerate}
 
+\section{Functional Requirement No. 3}
+\ref{fr:3} \emph{packet identification} is quite an open ended requirement and leaves an important detail to consider: \emph{which protocols?}
+
+Section \ref{sec:protocols} talks about common protocols, but understanding just one of these protocols takes a considerable amount of time. Because of this, the author decided to \emph{initially} focus on a small number of protocols, based on their frequency of occurrence and importance; these are Ethernet, IPv4, TCP, UDP and ARP, possibly considering more should the time be available. Additionally, partial, \emph{identify only} support should be included for at least IPv6 and ICMP. This selection provides reasonable filtering and adjustment capabilities for common capture files.
+
 %%%%%%%%%%
 % Design %
 %%%%%%%%%%
 \chapter{Design}
-It is important to note that the design evolved with the implementation - challenges discovered in implementation will be reflected in the design.
+It is important to note that the design evolved with the implementation - challenges discovered in implementation will be reflected in the design. One of the most important factors in this project was building it so that future developers could work on it, so a fair amount of work has gone into structuring the project well.
 
 \section{Structure}
 Ultimately, code maintainability relies on a logical layout. Firstly, a clear distinction between \emph{application code} and \emph{library code} was decided. All \emph{library code} is to be contained in its own Python package.
@@ -802,7 +849,10 @@ Here, \emph{linktype} is an integer constant that represents one of many network
 The \emph{identity} is a field holds the root protocol (i.e. the bottom most protocol) instance for this packet. This is set to None by default, signifying the packet either has not been identified or has no known interpretation. More on this in the \emph{Protocols} section (\ref{sec:desproto}).
 
 \subsection{Packet Sources and Sinks}
-\emph{Packet sources} are objects that support Python's \emph{iterator protocol} that yield the packet objects mentioned above. Packet sources are presented by the library as building blocks for higher level applications.
+\label{sec:despacksrc}
+In order to help ensure scalability, the flow of the system should work around processing individual packets, rather then entire collections of packets. This means a packet is only resident in memory for the time it is needed - permitting processing very large files without too much memory usage. 
+
+\emph{Packet sources} are the realisation of this goal. Packet sources are objects that support Python's \emph{iterator protocol}, that yield the packet objects mentioned in the previous section. Packet sources are presented by the library as building blocks for higher level applications.
 Packet sources represent a kind of lazily-evaluated interface towards streams of packets - this cuts down on memory usage, improving scalability. Sources that depend on other sources can be chained without restriction.
 
 A certain type of packet source, a packet reader, is to represent sources based off the various packet capture file formats. These classes implement methods in an abstract class, PacketReader. This abstract class will implement the interface of a packet source using \texttt{read_packet}, and can be used just like one. Along with a packet reader, a packet writer class is available as a \emph{packet sink} - there are no semantics beyond implementing the \texttt{close} and \texttt{write_packet} methods in the PacketWriter class.
@@ -829,7 +879,7 @@ A carrier protocol will also have some kind of \emph{route}, a known source and 
 \caption{The protocol and carrier protocol classes}
 \end{figure}
 
-The diagram above shows the design of the Protocol and CarrierProtocol classes. For any protocol to be represented in the program, it must have a Protocol class. This class has a well defined form, and this is important as extensibility 
+The diagram above shows the design of the Protocol and CarrierProtocol classes. For any protocol to be represented in the program, it must have a Protocol class. This class has a well defined form, and this is important as extensibility is a key requirement.
 
 Protocol classes have a single \emph{class variable} and three \emph{unbound methods} (static methods), in addition to the per-instance fields and bound methods typical of most classes. These are used to identify the protocol, and construct protocol instances respectively. A more detailed description of these is given below.
 
@@ -847,13 +897,13 @@ As replacing host identity information is one of the goals of the project, a \te
 
 The \texttt{get_attributes}, \texttt{set_attributes}, \texttt{match_attributes} (and \texttt{build_attributes})  methods all work with or produce  a set of \emph{protocol attributes}. The precise format of said attributes is entirely up to the implementing class, but is suggested to be a \emph{dictionary}.
 
-\texttt{get_attributes} is supposed to return `attributes' of that protocol instance (for example, IPv4 attributes might contain the source/destination address and the protocol number). Conversely, \texttt{set_attributes} is supposed to alter packet data such that the packet corresponds to the attributes provided. \texttt{match_attributes} compares a set of attributes to those of the protocol instance - if they match, this method returns true, else false.
+\texttt{get_attributes} should to return `attributes' of that protocol instance (for example, IPv4 attributes might contain the source/destination address and the protocol number). Conversely, \texttt{set_attributes} should to alter packet data such that the packet corresponds to the attributes provided. \texttt{match_attributes} compares a set of attributes to those of the protocol instance - if they match, this method returns true, else false.
 
 Protocol classes are also required to have a few unbound methods. The most important one, is \texttt{interpret_packet}. 
 This method takes two arguments, a \texttt{memoryview} or \texttt{memorymap} object, and a \emph{parent} protocol instance. It is the job of this method to construct and return a protocol instance, possibly calling \texttt{interpret_packet} a subset of the data provided. This method is also responsible for maintaining state for completing deferred identification. \texttt{interpret_stream} effectively does the same thing, but for \emph{streams}.
 Because both of these methods may have side effects, as a library, it was deemed appropriate to have some kind of mechanism for restoring the default set of state for these classes - this is the job of the \texttt{reset_state} method.
 
-\texttt{build_attributes} is the last unbound method. This method is supposed to return attributes not unlike those returned by \texttt{get_attributes}, and is used for turning human input (an `attribute string') into a workable object.
+\texttt{build_attributes} is the last unbound method. This method is intended to return attributes not unlike those returned by \texttt{get_attributes}, and is used for turning human input (an `attribute string') into a workable object.
 
 Finally, all protocol classes need to have a human-readable name. This is for both output (such as when `printing' a packet) but mainly as a unique identifier for a Protocol class. The intention is, that protocols are referred to by this name, and that a Protocol class can be replaced by one with the same name, should the user want to use an alternate implementation. This name is also used in constructing and comparing attributes.
 
@@ -861,7 +911,7 @@ Finally, all protocol classes need to have a human-readable name. This is for bo
 \label{sec:memmap}
 In order to identify protocols, packet data needs to be examined. As some protocols can have a variety of carriers, and carrier protocols can have a variable size, the exact location of one protocol's header is not a constant offset.
 
-The initial approach to this problem was just to copy the payload section of a protocol and present that to the next protocol interpreter. This works, but means any modifications would require the packet to be rebuilt - a time consuming operation.
+The initial approach to this problem was just to copy the payload section of a protocol and present that to the next protocol interpreter. This works, but means any modifications to the protocol header would require the entire packet to be rebuilt - a time consuming operation.
 
 Python \emph{memoryview} objects provide a memory-efficient and simple way of presenting smaller sections of data from an object. They are probably best illustrated with an example:
 \begin{lstlisting}[
@@ -915,10 +965,21 @@ There will be commonalities between tools. These are detailed below.
 \texttt{-o} & \texttt{--output} & unary & singular & The capture file to write to (defaults to stdout).\\ \hline
 \end{tabularx}
 
+\subsection{The List Tool}
+The list tool will take a packet capture, and print out a succinct, human-readable interpretation of each packet.
+
+The list tool has no special parameters, and does \emph{not} accept the \texttt{--output} option.
+
+The output should be something along the lines of:
+
+{\small\texttt{Mon Oct 20 15:51:29 2014 Linktype: 1, Identity: eth/arp, Length: 42}}
+
 \subsection{The Merge Tool}
 The merge tool will take an arbitrary number of packet capture files, and write out a single capture from these.
 
 The merge tool was also seen as the appropriate place to do time alteration, so this program fulfils the role of \ref{fr:6} \emph{merge program} and \ref{fr:7} \emph{timestamp alteration program}.
+
+The merge tool will take a slightly different \texttt{--input} option in that it will permit the option to occur multiple times.
 
 \begin{tabularx}{\textwidth}{|c|c|c|c|X|}
 \cline{1-2}
@@ -976,7 +1037,7 @@ The `maphosts' realises \ref{fr:9} \emph{host identity replacement program}.
 \textbf{Short} & \textbf{Long} & \textbf{Arity} & \textbf{Frequency} & \textbf{Description} \\ \hline
 \texttt{-m} & \texttt{--mac} & unary & arbitrary & A mapping of an Ethernet MAC address to its replacement.\\ \hline
 \texttt{-4} & \texttt{--ip4} & unary & arbitrary & A mapping of an IPv4 address to its replacement.\\ \hline
-\texttt{-6} & \texttt{--ip6} & unary & arbitrary & A mapping of an IPv4 address to its replacement.\\ \hline
+\texttt{-6} & \texttt{--ip6} & unary & arbitrary & A mapping of an IPv6 address to its replacement.\\ \hline
 \end{tabularx}
 
 The \texttt{-m}, \texttt{-4} and \texttt{-6} understand address pairs as their argument. Address pairs have the form:
@@ -1009,8 +1070,10 @@ Implementation started concurrently with design. Challenges encountered during i
 
 Due to the sheer number of networked protocols and the complexities in supporting some of them, the project was never expected to approach $100\%$ completion. As a result of this, much of the implementation time was actually spent improving the design sufficiently to correctly support a small subset of protocols, while considering other protocols being added in the future.
 
+An interesting point to note is that no external\footnote{External dependencies being anything not present in the Python standard library.} dependencies or code were used. Only builtin Python classes and modules in the standard library were used. These were the \texttt{struct} module,  the \texttt{sys} module, the \texttt{binascii} module and (for the commandline interface, the \texttt{argparse} module).
+
 \section{Meta-Implementation}
-While this section is not really about any specific implementation detail, it does cover noteworthy discipline used by the author \emph{while implementing}.
+While this section is not really about any specific implementation detail, it does cover noteworthy disciplines used by the author \emph{while implementing}.
 
 \subsection{Coding Style}
 Some of the functional requirements (namely \ref{nfr:10} \emph{code structure} and \ref{nfr:11} \emph{code documentation}) effectively require code to be well-written and well-documented.
@@ -1033,7 +1096,7 @@ Any programming project will benefit form a form of version control. Version con
 
 Version control is also useful as a kind of synchronisation system between multiple computers, permitting an individual to continue work while away from their normal work environment.
 
-The author used \emph{git} (\url{http://git-scm.com})as their version control system (VCS), as they had prior knowledge on how to use it.
+The author used \emph{git} (\url{http://git-scm.com}) as the version control system (VCS), due to having prior knowledge on how to use it.
 
 \section{The \texttt{memorymap} Module}
 The \texttt{memorymap} module implements the \emph{memorymap} class as described in \ref{sec:memmap}, and works by mapping multiple \emph{memoryview} objects to a single \emph{logical} `index space'.
@@ -1080,10 +1143,10 @@ Also contained, is a handful of input parsing functions. A few basic ones, such 
 There are functions for parsing string representations of MAC, IPv4 and IPv6 addresses, and turning binary representations into strings. these are named \texttt{*_str2bin} and \texttt{*_bin2str}, and take a single argument returning None if the format is erroneous.
 
 \section{The \texttt{capfile} Package}
-This package contains code for reading and writing abstract packets to packet capture files. Currently, only the \emph{pcap} files are supported, but the author hopes extending the library and programs to accept different formats.
+This package contains code for reading and writing abstract packets to packet capture files. Currently, only the \emph{pcap} files are supported, but the author hopes that extending the library and programs to accept different formats to be relatively straightforward.
  
 \subsection{The \texttt{core} Module}
-This contains abstract classes supposed to make adding new capture formats easier. Very simple PacketReader and PacketWriter classes are provided, with a PacketIOError exception class for abstracted error handling.
+This contains abstract classes intended to make adding new capture formats easier. Very simple PacketReader and PacketWriter classes are provided, with a PacketIOError exception class for abstracted error handling.
 
 \subsection{The \texttt{pcap} Module}
 This module contains two classes, a PcapReader class, which implements abstract methods in the PacketReader class, and a PcapWriter class, which implements abstract methods in the PacketWriter class.
@@ -1105,7 +1168,7 @@ These classes implement support for manipulating \emph{pcap} files according to 
 \label{fig:pcapglob}
 \end{figure}
 
-The pcap format is quite simple, perhaps the reasons for its ubiquity. A pcap file starts with a \emph{magic number} field. This indicates the format specifics of that capture file. The magic number is $a1\: b2\: c3\: d4$ for \emph{millisecond resolution} pcap files, and $a1\: b2\: 3c\: 4d$ for \emph{nanosecond resolution} files. Additionally, this field is in the same byte ordering as the rest of the fields in the file, so $d4\: c3\: b2\: a1$ would indicate that the file stores little-endian millisecond resolution fields, rather then big-endian.
+The pcap format is quite simple, perhaps the reason for its ubiquity. A pcap file starts with a \emph{magic number} field. This indicates the format specifics of that capture file. The magic number is $a1\: b2\: c3\: d4$ for \emph{millisecond resolution} pcap files, and $a1\: b2\: 3c\: 4d$ for \emph{nanosecond resolution} files. Additionally, this field is in the same byte ordering as the rest of the fields in the file, so $d4\: c3\: b2\: a1$ would indicate that the file stores little-endian millisecond resolution fields, rather then big-endian.
 
 The rest of the fields are indicated in figure \ref{fig:pcapglob}, and are fairly self explanatory. Linktype is an integer constant indicating the network media (such as Ethernet). These are the same as the values present in the \texttt{common} module.
 
@@ -1133,19 +1196,23 @@ These classes handle erroneous data in a robust and well defined manner - if the
 If the PcapWriter is instructed to write a packet with a LinkType that differs from that of the network section of the file, it will raise a PcapRangeError exception.
 
 \section{The \texttt{identity} Package}
-This module is where most of the interesting code is. This is the package where all `builtin' protocol classes reside.
+This module is where most of the interesting code is and is the package where all `builtin' protocol classes reside.
 
 \subsection{The \texttt{core} Module}
 The core module in the identity package is where the Protocol class is defined. This serves as step 0 in the packet identification system.
 
-This module serves as the registry of all supported protocols, and maintains a mapping of \emph{protocol name} to \emph{protocol class}. All Protocol classes should be registered with this module. Additionally, this module maintains a mapping of \emph{linktypes} to \emph{protocol names}, used in order to determine  which \emph{base protocol class} to use.
+This module contains the registry of all supported protocols, and maintains a mapping of \emph{protocol name} to \emph{protocol class}. All Protocol classes should be registered with this module. Additionally, this module maintains a mapping of \emph{linktypes} to \emph{protocol names}, used in order to determine  which \emph{base protocol class} to use.
 
-The Protocol registration and resolution is done using the \texttt{register_protocol} and \texttt{lookup_protocol}.
+The Protocol registration and resolution is done using the \texttt{register_protocol} and \texttt{lookup_protocol}. The use of a string identifier instead of a direct class reference serves two purposes: Firstly, it allows for \emph{alternate} implementations of builtin Protocol classes to be used, and provides an easy way for parts a program, particularly those that handle user input, to get access to the same Protocol class used in the identity of a packet.
+
+More importantly, it provides the \texttt{root_identify} function, which starts the identification of a packet. This function does not pay attention to \emph{deferred} identities, so applications that want a more complete understanding of packets should use the \texttt{identify} pipeline instead.
  
 \subsection{The \texttt{ip} Module}
 The \texttt{ip} module is part of the identity package, and is used by the the \texttt{ip4} and \texttt{ip6} modules.
 
-Aside from providing the IP protocol registry used by these modules, it provides an implementation of the checksum algorithm mentioned in \ref{sec:ip4}.
+The \texttt{ip} module provides a registry of Protocol classes mapped to IP protocol numbers. It also contains a handful of constants for said numbers\footnote{see IANA for a complete list, \url{http://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml}}. Registration is done just as in the \texttt{core} module.
+
+Aside from providing the IP protocol registry used by these modules, it provides an implementation of the checksum algorithm mentioned in \ref{sec:ip4}. This is used by the IPv4, TCP and UDP Protocol classes, and should be sufficient for others using similar schemes.
 \begin{lstlisting}[
 	language={[3]Python},label={lst:pyipchksum},
 	caption={IP checksum algorithm, in Python.}
@@ -1182,17 +1249,43 @@ There are quite a few Protocol classes implemented, enough to provide basic sani
 
 In this project, each protocol class has its own Python module. The modules that currently exist are \texttt{eth}, \texttt{arp}, \texttt{ip4}, \texttt{ip6}, \texttt{tcp} and \texttt{udp}, \texttt{icmp} and \texttt{icmp6}. (Albeit some are incomplete, see the critical evaluation in chapter \ref{sec:criteval}).
 
-All of these classes expose the same interface as specified in section \ref{sec:desproto} of the design chapter. Because there are so many, this section will focus on one, the IPv4 class in the ip4 module.
+All of these classes expose the same interface as specified in section \ref{sec:desproto} of the design chapter. Because there are so many, this section will focus on one, the IPv4 class in the \texttt{ip4} module.
+
+The IPv4 class is one of the more complex Protocol classes, namely because it specifies fragmentation behaviour and has a checksum.
+
+Internally, the IPv4 class makes use of a `\texttt{FragmentTracker}' class. This class exists to store references to all packets that make up a fragmented datagram. Until such a packet is complete, the \texttt{completed} boolean field is set to false for all constituents. Once the composite datagram is known to be complete, the \texttt{completed} field is set to true, a \texttt{memorymap} is created from the payloads of all constituent packets, and presented to the next Protocol class. The \texttt{next} field for all constituent IPv4 instances is set to that of the new Protocol class and the \emph{last} fragment becomes the parent for that class.
+
 
 \section{The \texttt{pipeline} Package}
-The pipeline package 
+The pipeline package provides three packet sources, \texttt{merge}, \texttt{filter} and \texttt{identify}.
+These all behave like packet sources as described in \ref{sec:despacksrc}, and accept packet sources as input.
+
+\subsection{The \texttt{merge} Module}
+The \texttt{merge} module contains the \emph{merge} generator function.
+
+This function takes a list of packet sources and two optional parameters, \emph{relative} and \emph{offset}.
+If relative is true, then the time stamp of the first packet from a source is subtracted from all packets from that source.
+If offset is set to any number, this value is added to the time of all packets, otherwise the average start time is used in place. This function returns a generator that produces the next chronological packet on each iteration.
+
+\subsection{The \texttt{filter} Module}
+The \texttt{filter} module contains the \emph{filter} generator function.
+
+\subsection{The \texttt{identify} Module}
+The \texttt{identify} module contains the \emph{identify} generator function.
+
+\section{The \texttt{pcpapu} Tool}
+During development, it was deemed easier to implement the utilities as \emph{subcommands} in a larger utility.
+
+PCPAPU stands for `Packet Capture Processor and Publishing Utility'
+
+
 
 \chapter{Testing}
 The testing for this project was done throughout development. 
 A rather informal mixture of \emph{white box} and \emph{black box} testing was employed throughout most of the development process. Typically, a small test run with known inputs and expected outputs was run after every major feature or re-factoring work was carrier out, and if erroneous or regressive behaviour was observed, code was reviewed and debugged.
 
 \section{Testing During Development}
-During development, a straightforward develop, test debug approach was used to check for correctness in new code. Any newly implemented feature would be tested.
+During development, a straightforward develop-test-debug approach was used to check for correctness in new code. Any newly implemented feature would be tested.
 
 For simple modules, an interactive Python interpreter was started and the module imported and interacted with. Many errors in early modules were detected this way.
 
@@ -1205,11 +1298,126 @@ For simple modules, an interactive Python interpreter was started and the module
 When the programs became more complex, a debugger was used. This permitted analysis of complex state at runtime without the (mis)use of `print statements'.
 
 \subsection{Regression Testing}
-When any major feature stopped working, the use of version control and the regression itself (altered output, stack traces etc.) made it easy to determine what changes had caused the problem, and made fixing it easier.
+When any major feature stopped working, the use of version control and the regression itself (altered output, stack traces etc.) made it easy to determine what changes had caused the problem, and made fixing it simple.
+
+Explicit regression testing was done whenever any code re-factoring was carried out.
+
+\subsection{Output verification}
+Output was generally verified using \emph{Wireshark}, to see if the output was a valid pcap file and if packet data was modified correctly. Features of Wireshark such as checksum verification were employed to test wheter checksum recalculation algorithms worked.
+
+\section{Black-Box Testing}
+For these tests, a real network capture between two computers, containing examples of various protocols (in excess of the ones supported) was used. This packet capture starts from 2014/10/20 at 15:49:59.
+
+\subsection{Testing the List Tool}
+The list tool is a very straightforward tool, and was used mostly to verify the output of other tools. Nevertheless, this tool represents a kind of benchmark - if this tool does not work correctly, none of the others are likely to function.
+
+\begin{tabularx}{\textwidth}{|c|X|X|X|X|}
+\hline
+\textbf{Test} & \textbf{Input} & \textbf{Expected} & \textbf{Actual} & \textbf{Comments}\\
+\textbf{ID} & & \textbf{Output} & \textbf{Output} &
+\endhead
+\hline
+LIS1 & filepath specified with the \texttt{-i} option & Listing of packets. & Listing of packets. & Works as expected \\ \hline
+LIS2 & capture file piped to standard input & Listing of packets. & Listing of packets. & Works as expected \\ \hline
+\end{tabularx}
+
+The exact output of this program was cross-referenced with that of \emph{Wireshark}, with which it agreed for all supported protocols.
 
 \subsection{Testing the Merge Tool}
+
+To verify the output of these tests, the \emph{list} tool as tested above was used.
+
+\begin{tabularx}{\textwidth}{|c|X|X|X|X|}
+\hline
+\textbf{Test} & \textbf{Input} & \textbf{Expected} & \textbf{Actual} & \textbf{Comments}\\
+\textbf{ID} & & \textbf{Output} & \textbf{Output} &
+\endhead
+\hline
+MER1 & filepath specified with the \texttt{-i} option, different filepath specified with the \texttt{-o} option. &
+	A duplicate of the capture file. &
+	Almost a duplicate of the capture file. &
+	See section \ref{sec:intrsnaplen}. \\ \hline
+MER2 & like above, with the \texttt{-t} option set to \texttt{"1970/1/1 00:00:00"} &
+	Capture file claiming to start from the 1st of January, 1970. &
+	Capture file claiming to start from the 1st of January, 1970. &
+	Works as expected \\ \hline
+MER3 & like above, with the \texttt{-t} option set to \texttt{"2014/10/30 15:49:59"} &
+	Capture file claiming to start from the 30th of October, 2014. &
+	Capture file claiming to start from the 30th of October, 2014. &
+	Works as expected \\ \hline
+MER4 & Two files specified with \texttt{-i}, the other file being the result of the previous test. &
+	Capture file consisting of packets interleaved from each file, claiming to start from the 15th of October, 2014. &
+	Capture file consisting of packets interleaved from each file, claiming to start from the 15th of October, 2014. &
+	Works as expected \\ \hline
+MER5 & The \texttt{-a} option enabled and the \texttt{-t} option set to \texttt{"1970/1/1 00:00:00"}, along with two files specified with \texttt{-i}, the other file being the result of MER3. &
+	Capture file consisting of packets from each file neatly concatenated, claiming to start from the 10th of October, 2014. &
+	Capture file consisting of packets from each file neatly concatenated, claiming to start from the 10th of October, 2014. &
+	Works as expected \\ \hline
+\end{tabularx}
+
+These captures were also opened in \emph{Wireshark}, which reported no abnormalities.
+
 \subsection{Testing the Filter Tool}
+Thorough testing for this for the filter tool would require testing all possible Protocol classes. This would require a lot of time, so testing will focus on demonstrating tool usage scenarios using different protocol classes.
+
+\begin{tabularx}{\textwidth}{|c|X|X|X|X|}
+\hline
+\textbf{Test} & \textbf{Input} & \textbf{Expected} & \textbf{Actual} & \textbf{Comments}\\
+\textbf{ID} & & \textbf{Output} & \textbf{Output} &
+\endhead
+\hline
+FIL1 & filepath specified with the \texttt{-i} option, different filepath specified with the \texttt{-o} option. &
+	A duplicate of the capture file. &
+	Almost a duplicate of the capture file. &
+	See section \ref{sec:intrsnaplen}. \\ \hline
+FIL2 & As above, but with the \texttt{-d} option given \texttt{eth/arp} as an argument. &
+	A similar capture file, stripped of all Ethernet/ARP packets. &
+	A similar capture file, stripped of all Ethernet/ARP packets. &
+	Works as expected. \\ \hline
+FIL3 & As above, but using \texttt{-k} instead of \texttt{-d} and with {-p} set to \texttt{discard} &
+	A capture file, containing nothing but Ethernet/ARP packets. &
+	A capture file, containing nothing but Ethernet/ARP packets. &
+	Works as expected. \\ \hline
+FIL4 & Similar I/O flags, with \texttt{-k eth/ip4/tcp} and \texttt{-d eth/ip4} &
+	A similar capture file, where all Ethernet/IPv4 packets are removed unless they carry TCP. &
+	A similar capture file, where all Ethernet/IPv4 packets are removed unless they carry TCP, or use an unsupported protocol on top of IP. &
+	This was discovered to be a bug in the filter pipeline, where more specific prototypes would apparently match less specific identities. \\ \hline
+FIL4 & Similar I/O flags, with \texttt{-k eth/ip4/tcp} and \texttt{-d eth/ip4} &
+	A similar capture file, where all Ethernet/IPv4 packets are removed unless they carry TCP. &
+	A similar capture file, where all Ethernet/IPv4 packets are removed unless they carry TCP. &
+	Works as expected, error in filter pipeline fixed. \\ \hline
+\end{tabularx}
+
 \subsection{Testing the Maphosts Tool}
+
+\begin{tabularx}{\textwidth}{|c|X|X|X|X|}
+\hline
+\textbf{Test} & \textbf{Input} & \textbf{Expected} & \textbf{Actual} & \textbf{Comments}\\
+\textbf{ID} & & \textbf{Output} & \textbf{Output} &
+\endhead
+\hline
+FIL1 & filepath specified with the \texttt{-i} option, different filepath specified with the \texttt{-o} option. &
+	A duplicate of the capture file. &
+	Almost a duplicate of the capture file, with some TCP checksums corrected. &
+	See extended commentary in section \ref{sec:tcpchksum}. \\ \hline
+FIL2 & Similar, with the addition of \texttt{-m de:ad:be:ef:13:37} = \texttt{bc:ee:7b:df:e8:08} &
+	A variant of the capture file, with all references to the MAC address \texttt{de:ad:be:ef:13:37} replaced with \texttt{bc:ee:7b:df:e8:08}. &
+	A variant of the capture file, with all references to the MAC address \texttt{de:ad:be:ef:13:37} replaced with \texttt{bc:ee:7b:df:e8:08}. &
+	Worked as expected. References to the old MAC address persisted in the form of link-local IPv6 address. This is not considered a bug.\\ \hline
+FIL3 & 
+\end{tabularx}
+
+\section{Interesting results}
+\subsection{Pcap Global Header Snapshot Length Difference}
+\label{sec:intrsnaplen}
+The maximum length field in the pcap global header differed, otherwise these captures were identical.
+
+This is not to be considered an error, the PcapWriter class, by default, creates output files with a snapshot length of 65535. This is well in excess of any packet length actually sent over the network, and was suggested on the libpcap format description as a value. Wireshark itself uses a larger value.
+
+\subsection{TCP checksums}
+\label{sec:tcpchksum}
+Much to the authors surprise, there were \emph{less} TCP checksum errors in the reproduced packet capture.
+It would seem that all TCP PSH command packets sent \emph{from the host conducting the packet capture} had incorrect checksums in the original sample capture, yet these packets were never resent. This was determined to be because of TCP checksum offloading on said host, meaning that the capture software recorded TCP segments \emph{before} the correct checksum had been computed and sent. This is supported for correct checksums being present in packets sent \emph{to the host}
 
 \chapter{Future Work}
 The author hopes the current system provides useful utilities and a suitable groundwork for further extension, but naturally, there are aspects that would make the current system better.
@@ -1225,28 +1433,41 @@ The author hopes the current system provides useful utilities and a suitable gro
 
 \chapter{Critical Evaluation}
 \label{sec:criteval}
-\section{Successes}
+The project has covered a lot of groundwork needed for future development.
+
+\section{Success}
 The author is generally pleased with the outcome of the project, a working and usable suite of tools.
 
-The filtering system works rather well, and can support very specific 
-\section{Failures}
-The project was never expected to be $100\%$ complete in terms of supporting protocols, but some important protocol classes are at time of writing, incomplete.
+
+\section{Criticism}
+\subsection{Protocol support}
+The project was never expected to be $100\%$ complete in terms of supporting protocols, but some important protocol classes are incomplete. Most notably, the TCP class currently supports basic tests against source/destination ports and correcting the checksum - the TCP state machine is non-existent and TCP sessions cannot be tracked. As a result of this, it is currently not possible to distinguish protocols using TCP.
+
+The reason TCP support is incomplete is simply time. The author failed to account for the complexity of tracking TCP sessions, so the class was only half-implemented.
+
+The author would like to point out that despite these limitations, the tools remain useful for their purpose - often, all TCP traffic is interesting and as checksum recalculation is implemented properly, meaning packets \emph{carrying} a TCP session can be manipulated without issue.
+
+Additionally, ICMPv6 only exists as a stub Protocol class. This is an issue, as ICMPv6 data contains checksums that include carrier information.
 
 \section{Retrospective Design Criticisms}
 
+
 \section{Retrospective Method Criticisms}
 
-
-\chapter{Appendix}
-\section{Formats}
-Pcap file format.
-
+\begin{center}
+Elliot Thomas
+\end{center}
 
 %%%%%%%%%%%%%%%%
 % Bibliography %
 %%%%%%%%%%%%%%%%
 
 \begin{thebibliography}{99}
+\bibitem{wireshark}
+	The Wireshark team (Accessed April, 2015)\\
+	The Wireshark network protocol analyser\\
+	\url{https://www.wireshark.org/}
+
 \bibitem{editcap-man}
     Richard Sharpe, Guy Harris, Ulf Lamping (4th of March, 2015)\\
     EDITCAP (1), The Wireshark Network Analyzer
@@ -1256,13 +1477,13 @@ Pcap file format.
     WIRESHARK (1), The Wireshark Network Analyzer
 
 \bibitem{tcpreplay-web}
-    Aaron Turner, Fred Klassen\\
-    tcpeplay home page(s).
+    Aaron Turner, Fred Klassen (Accessed April, 2015)\\
+    tcpreplay home page(s).
     \url{http://tcpreplay.appneta.com}\\
     (see also: \url{http://tcpreplay.synfin.net/})
 
 \bibitem{bittwist-web}
-    Addy Yeow Chin Heng\\
+    Addy Yeow Chin Heng (Accessed April, 2015)\\
     libpcap-based Ethernet packet generator.\\
     \url{http://bittwist.sourceforge.net/}
 
@@ -1339,15 +1560,20 @@ Pcap file format.
 	User Datagram Protocol\\
 	\url{https://tools.ietf.org/html/rfc768}
 
+\bibitem{rfc793}
+	Information Sciences Institute, University of Southern California (September, 1981)\\
+	TRANSMISSION CONTROL PROTOCOL\\
+	\url{https://tools.ietf.org/html/rfc793}
+
 \bibitem{rfc1035}
 	P. Mockapetris (November, 1987)\\
 	DOMAIN NAMES - IMPLEMENTATION AND SPECIFICATION\\
 	\url{https://tools.ietf.org/html/rfc1035}
 
-\bibitem{rfc793}
-	Information Sciences Institute, University of Southern California (September, 1981)\\
-	TRANSMISSION CONTROL PROTOCOL\\
-	\url{https://tools.ietf.org/html/rfc793}
+\bibitem{rfc4861}
+	T. Narten, E. Nordmark, W. Simpson, H. Soliman (September, 2007)\\
+	Neighbor Discovery for IP version 6 (IPv6)\\
+	\url{https://tools.ietf.org/html/rfc4861}
 
 \bibitem{rfc5952}
 	S. Kawamura, M. Kawashima (August 2010)\\
@@ -1357,7 +1583,7 @@ Pcap file format.
 \bibitem{pep8}
 	Guido van Rossum, Barry Warsaw, Nick Coghlan (1st of August, 2013)\\
 	PEP 8 - Style Guide for Python Code\\
-	\url{https://www.python.org/dev/peps/pep-0008/}\\
+	\url{https://www.python.org/dev/peps/pep-0008/}
 	
 \bibitem{pep8chk}
 	Johann C. Rocholl (last updated 18th of March, 2015)\\
@@ -1370,4 +1596,105 @@ Pcap file format.
 	\url{https://wiki.wireshark.org/Development/LibpcapFileFormat}
 
 \end{thebibliography}
+
+\chapter{Appendix}
+\section{Program help text}
+\subsection{\texttt{pcpapu --help}}
+\begin{verbatim}
+usage: ./pcpapu [-h] [-l LOAD] {filter,merge,maphosts,list} ...
+
+Packet Caputre Processor And Publishing Utility.
+
+positional arguments:
+  {filter,merge,maphosts,list}
+                        subcommand
+  args                  subcommand arguments
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -l LOAD, --load LOAD
+\end{verbatim}
+
+\subsection{\texttt{pcpapu list --help}}
+\begin{verbatim}
+usage: ./pcpapu list [-h] [-i filepath]
+
+Print packet metadata to standard output.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i filepath, --in filepath
+                        Input file
+\end{verbatim}
+
+\subsection{\texttt{pcpapu merge --help}}
+\begin{verbatim}
+usage: ./pcpapu merge [-h] [-i filepath] [-o filepath] [-r] [-a] [-t time]
+
+Merge packet captures and adjust their times.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i filepath, --in filepath
+                        Input file (can occur multiple times)
+  -o filepath, --out filepath
+                        Output file
+  -r, --relative        Use relative times. (Default)
+  -a, --absolute        Do not use relative times.
+  -t time, --time-offset time
+                        Time offset, in Y/M/D H:M:S format.
+\end{verbatim}
+
+\subsection{\texttt{pcpapu filter --help}}
+\begin{verbatim}
+usage: ./pcpapu filter [-h] [-i filepath] [-o filepath] [-k identity]
+                       [-d identity] [-p keep/discard]
+
+Filter packets from a capture.
+Identities have the form:
+<identity> ::= <prototype> | <prototype> / <identity>
+<prototype> ::= <protocol name> | <protocol name> : <protocol attributes>
+For example, to identify any ethernet packet carrying TCP over IP: /eth/ip4/tcp
+More specific identities can be specified.
+For example, /eth:dmac=30:21:af:42:73:30/ip4
+will match all ethernet/IPv4 packets with that destination MAC address.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i filepath, --in filepath
+                        Input file
+  -o filepath, --out filepath
+                        Output file
+  -k identity, --keep identity
+                        Packets matching this identity will be kept.
+  -d identity, --discard identity
+                        Packets matching this identity will be discarded.
+  -p keep/discard, --policy keep/discard
+                        The policy for any packet not matching an identity.
+                        (Default is keep)
+\end{verbatim}
+
+\subsection{\texttt{pcpapu maphosts --help}}
+\begin{verbatim}
+usage: ./pcpapu maphosts [-h] [-i filepath] [-o filepath] [-4 IP4-pair]
+                         [-6 IP6-pair] [-m MAC-pair]
+
+Replace host identities inside packets from a capture.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i filepath, --in filepath
+                        Input file
+  -o filepath, --out filepath
+                        Output file
+  -4 IP4-pair, --ip4 IP4-pair
+                        IPv4 address find/replace pair.
+  -6 IP6-pair, --ip6 IP6-pair
+                        IPv6 address find/replace pair.
+  -m MAC-pair, --mac MAC-pair
+                        MAC address find/replace pair.
+\end{verbatim}
+
+
+
 \end{document}
