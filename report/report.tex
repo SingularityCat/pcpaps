@@ -521,7 +521,7 @@ As this project is about manipulating packet captures, it is essential to know w
 \item Things that maintain data integrity - checksums and the like, which require updating if packet contents is modified.
 \end{itemize}
 
-There are other types of data with some significance. Protocols which split their payload over multiple packets (e.g. fragmented IP packets or TCP) will have some kind of identification in order to permit reassembly or to identify parts of a stream. This is important if reconstructing the whole transmission.
+There are other types of data with some significance. Protocols which split their payload over multiple segments (e.g. fragmented IP packets or TCP) will have some kind of identification in order to permit reassembly or to identify parts of a stream. This is important if reconstructing the whole transmission.
 \subsection{Ethernet II/IEEE 802.3}
 \label{sec:eth}
 Ethernet is the common name for the IEEE 802.3 standards family, which is part of the broader family known as IEEE 802, covering technology used in Local/Metropolitan Area Networks.
@@ -665,13 +665,13 @@ The User Datagram Protocol (UDP) is specified in RFC 768\cite{rfc768}.
 \bitbox{16}{Length} & \bitbox{16}{Checksum}\\
 \wordbox{1}{Data ...}
 \end{bytefield}
-\caption{UDP Packet format.}
+\caption{UDP header format.}
 \label{fig:udpfmt}
 \end{figure}
 
 The user datagram protocol exists as a relatively thin layer over IP. It offers data integrity and not much else.
 
-UDP has a checksum field  with an algorithm that depends on the carrier protocol. The UDP checksum algorithm makes use of a `psuedoheader' consisting of the source and destination addresses, the length of the entire UDP segment and the IP protocol number for UDP (as a 16 bit integer). Because UDP segments can have an odd length, a byte with a value of $0$ should be appended to the segment for the purposes of the calculation.
+UDP has a checksum field  with an algorithm that depends on the carrier protocol. The UDP checksum algorithm makes use of a `psuedoheader' consisting of the source and destination addresses, the length of the entire UDP segment and the IP protocol number for UDP (as 16 bit integers for IPv4, or 32 bit integers for IPv6). Because UDP datagrams can have an odd length, a byte with a value of $0$ should be appended to the segment for the purposes of the calculation.
 
 The UDP introduces the concept of a `port'. This is little more then a flexible protocol identification field, with well-known protocols operating over well-known ports. For further analysis, the \emph{destination port} should be used for payload identification.
 
@@ -694,20 +694,23 @@ The Transmission Control Protocol (TCP) is specified in RFC 793\cite{rfc793}.
 \bitbox{16}{Checksum} & \bitbox{16}{Urgent Pointer}\\
 \wordbox{1}{Data}\\
 \end{bytefield}
-\caption{Typical TCP header format, sans options.}
+\caption{Typical TCP segment header format, sans options.}
 \label{fig:tcpfmt}
 \end{figure}
 
 The Transmission Control Protocol is a reliable stream transport protocol, used over an unreliable carrier such as IP. TCP headers have many fields as seen in figure \ref{fig:tcpfmt}, but there are seven important ones: source port, destination port, sequence number, acknowledgement number, data offset, flags and checksum. These are used to establish a kind of `circuit-switched' connection over a packet-switched network. TCP has a three-way handshake between client and server, used to negotiate this connection.
 
-Client machines initiate a connection by sending a header with the SYN (synchronise) flag set, the destination port set to the port number used for the desired service, and the source port set to a random, ephemeral value.
-Upon receiving a SYN, the TCP implementation on the server will, if said service is supported, will send a SYN-ACK (Synchronise/Acknowledgement) back; with the destination port set to the source port of the initial packet and the source port set to a random, ephemeral port. Finally, the client then responds with an ACK and the handshake is complete.
+Client machines initiate a connection by sending a TCP segment with the SYN (synchronise) flag set, the destination port set to the port number used for the desired service, and the source port set to a random, ephemeral value.
 
-From then on, either side can send headers with the PSH (push) flag set. These contain the data being sent over the logical stream. Communication is full duplex, either side can send data. Each PSH should be reciprocated with an ACK from the other side. The FIN (Finish) flag can be set to indicate that no further PSH flags will occur in communication, effectively closing one end of the  bi-directional stream.
+Upon receiving a SYN, the TCP implementation on the server will, if said service is supported, will send a SYN-ACK (Synchronise/Acknowledgement) segment back; with the destination port set to the source port of the initial segment and the source port set to a random, ephemeral port. Finally, the client then responds with an ACK and the handshake is complete.
 
-TCP has a checksum that depends on its carrier protocol. The TCP checksum is defined in a similar way to the UDP checksum, with a `psuedoheader' consisting of the source and destination addresses, the length of the entire TCP segment and the IP protocol number for TCP (as a 16 bit integer). Given that a TCP segment can have an odd length, a single byte with a value of $0$ should be appended for the purposes of the calculation.
+From then on, either side can send segment headers with the PSH (push) flag set. These contain the data being sent over the logical stream. Communication is full duplex, either side can send data segments. Each PSH should be reciprocated with an ACK from the other side, returning the acknowledgement number of the received push segment. Each time any TCP PSH segment transfer is carried out, the sequence number is incremented.
 
-TCP also has the notion of a port. The initial destination port (sent in a segment with the SYN flag) indicates the type of service. Further segments use ephemeral ports, so in order to reliably filter higher level protocols, all parts of a TCP stream need to be tracked and presented as a unit.
+The FIN (Finish) flag can be sent to indicate that no further PSH flags will occur in communication, effectively closing one end of the  bi-directional stream.
+
+TCP has a checksum that depends on its carrier protocol. The TCP checksum is defined in a similar way to the UDP checksum, with a `psuedoheader' consisting of the source and destination addresses, the length of the entire TCP segment and the IP protocol number for TCP (again, as 16 bit integers for IPv4, or 32 bit integers for IPv6). Given that, like a UDP datagram, a TCP segment can have an odd length. To account for this, a single byte with a value of $0$ should be appended for the purposes of the calculation.
+
+TCP also has the notion of a port. The initial destination port (sent in a segment with the SYN flag) indicates the type of service. Further segments use ephemeral ports, so in order to reliably identify higher level protocols, all parts of a TCP stream need to be tracked and presented as a unit.
 
 \subsection{Domain Name System}
 \label{sec:dns}
@@ -717,19 +720,21 @@ This protocol normally operates over UDP port $53$, but can use TCP as an altern
 
 The domain name system is most commonly used to map a set of named \emph{hosts}, each belonging to a \emph{domain}, to a set of IP addresses.
 
-\begin{figure}[H]
-\center
+\begin{center}
 \texttt{blackhole.time-domain.co.uk} $\rightarrow$ \texttt{81.142.251.220}
-\caption{Example of a domain name resolution.}
-\end{figure}
 
-The domain name system has a common message header indicating what kind of request or reply is being being sent. DNS has multiple kinds of records that can be presented.
+\emph{\small Example of a domain name resolution.}
+\end{center}
+
+The domain name system exists as a distributed hierarchical database.
+
+DNS messages have a common header format, indicating what kind of request or reply is being sent. DNS messages can contain a wide variety of record types, such as `A' records for IPv4 addresses, `AAAA' records for IPv6 addresses, and many others.
 
 \subsection{Neighbour Discovery Protocol}
 \label{sec:ndp}
 The Neighbour Discover Protocol (NDP) is specified in RFC 4861\cite{rfc4861}.
 
-NDP fills a similar role to ARP (\ref{sec:arp}) in the IPv6 role (among others), and has a message structure comparable to that of DNS (\ref{sec:dns}). NDP also provides 
+NDP fills a similar role to ARP (\ref{sec:arp}) in the IPv6 role (among others), and has a message structure comparable to that of DNS (\ref{sec:dns}). NDP also provides other features for networks. Supporting NDP manipulation is considered a luxury goal for this project.
 
 %%%%%%%%%%%%%%%%
 % Requirements %
@@ -846,7 +851,7 @@ Packets are represented by instances of a \emph{Packet class}. The Packet class 
 
 Here, \emph{linktype} is an integer constant that represents one of many network media types. An important design decision was to make as few assumptions as possible about program input, so this field exists to identify what kind of packet this is. The most common value for this will be $1$, which corresponds to Ethernet (\texttt{LinkType.ETHERNET}) but other values are possible and should be supported.
 
-The \emph{identity} is a field holds the root protocol (i.e. the bottom most protocol) instance for this packet. This is set to None by default, signifying the packet either has not been identified or has no known interpretation. More on this in the \emph{Protocols} section (\ref{sec:desproto}).
+The \emph{identity} is a field holds the root (i.e. the bottom most) \emph{protocol instance}  for this packet. This should be set to None by default, signifying the packet has not been identified. More on this in the \emph{Protocols} section (\ref{sec:desproto}).
 
 \subsection{Packet Sources and Sinks}
 \label{sec:despacksrc}
@@ -865,11 +870,11 @@ A certain type of packet source, a packet reader, is to represent sources based 
 
 The PacketReader and PacketWriter classes should also raise exceptions when they find a problem reading or writing a packet, respectively. The exceptions raised should be derive from the PacketIOError class.
 
-\subsection{Protocols}
+\subsection{Protocols and Protocol Instances}
 \label{sec:desproto}
-Network protocols are represented by Protocol classes. Protocol classes are the most complex abstraction.
+Network protocols are represented by Protocol classes. Protocols are the most complex abstraction represented in this design.
 
-Logically speaking, instances of communication over a network have a linear hierarchy of protocols. A \emph{carrier protocol} encapsulates another protocol, which itself may be another carrier protocol.
+Logically speaking, instances of communication over a network conform to a linear hierarchy of protocols. A \emph{carrier protocol} encapsulates another protocol, which itself may be another carrier protocol. The system models a packet's identity around the concept of \emph{protocol instances}, which are instances of communication adhering to a specific protocol.
 
 A carrier protocol will also have some kind of \emph{route}, a known source and destination. This may or may not depend  on the parent protocol. For instance, IP packets will typically be sent over Ethernet frames, but IP implements a logically independent network from an Ethernet network - these frames, when reaching a router, will be sent somewhere else (with altered frame data), potentially to entirely different routers over an entirely different carrier, all while preserving the IP frame. This is how internetworking works. Conversely, UDP packets rely on the logical route established by IP packets to transmit data, and are basically an extension of the \emph{protocol} or \emph{next} field in an IP header.
 
@@ -881,7 +886,7 @@ A carrier protocol will also have some kind of \emph{route}, a known source and 
 
 The diagram above shows the design of the Protocol and CarrierProtocol classes. For any protocol to be represented in the program, it must have a Protocol class. This class has a well defined form, and this is important as extensibility is a key requirement.
 
-Protocol classes have a single \emph{class variable} and three \emph{unbound methods} (static methods), in addition to the per-instance fields and bound methods typical of most classes. These are used to identify the protocol, and construct protocol instances respectively. A more detailed description of these is given below.
+Protocol classes have a single \emph{class variable} and three \emph{unbound methods} (static methods), in addition to the per-instance fields and bound methods typical of most classes. These are used to identify the protocol, and construct \emph{protocol instances} respectively. A more detailed description of these is given below.
 
 Firstly, every protocol instance has a field called data. This is intended to be used as a quasi-internal field, holding either a Python `memoryview' object or a `memorymap' object (see \ref{sec:memmap}). Python \texttt{memoryview} objects are effectively pointers to regions of memory held by objects supporting the \emph{buffer} protocol. A \texttt{memoryview} of a \texttt{bytearray} provides a read-write view of that data without requiring a direct reference to it. Like most python collections, \texttt{memoryview} objects support being sliced - this is important.
 
@@ -1223,7 +1228,7 @@ Aside from providing the IP protocol registry used by these modules, it provides
 #      computing the checksum, the value of the checksum field is zero.
 
 def checksum(data):
-    """General implementation of the IP checksum algorithm."""
+    # General implementation of the IP checksum algorithm.
     n16words, rem = divmod(len(data), 2)
 
     if rem != 0:
@@ -1270,15 +1275,64 @@ If offset is set to any number, this value is added to the time of all packets, 
 \subsection{The \texttt{filter} Module}
 The \texttt{filter} module contains the \emph{filter} generator function.
 
+The filter function takes a packet source, two sets of \emph{prototype lists} and a policy.
+
+A prototype list is simply a list of \emph{prototypes}. A prototype is a 2-tuple, consisting of a protocol name and a set of protocol attributes. These protocol attributes are usually obtained from the \texttt{build_attributes} static method in the corresponding Protocol class.
+
+A prototype list matches a protocol identity if:
+\begin{enumerate}[label=\roman*)]
+\item Each prototype in the prototype list has a protocol name matching that of the corresponding protocol instance in the identity.
+\item Each prototype in the prototype list has a set of protocol attributes which, when passed to the \texttt{match_attributes} method of the corresponding protocol instance, evaluates to true.
+\item The number of protocol instances in the protocol identity is equal to or greater than the number of prototypes in the prototype list.
+\end{enumerate}
+
+There is function, \texttt{identity_match}, that implements the matching algorithm described above.
+
+\begin{lstlisting}[
+	language={[3]Python},label={lst:identmatch},
+	caption={Packet identity matching algorithm.}
+]
+def identity_match(protocol_instances, prototypes):
+    # Compares a packet's identity list (protocol instances) to a list of
+    # 'prototypes'.
+    # Every prototype must match it's corresponding protocol instance.
+    # Prototypes are a (name, attrs) tuple.
+    
+    prototype_iter = iter(prototypes)
+    match = False
+    for protocol_instance, prototype in\
+      zip(protocol_instances, prototype_iter):
+        if protocol_instance.name is not prototype[0] or \
+          not protocol_instance.match_attributes(prototype[1]):
+            break
+    else:
+        # This checks if the number of prototypes exceeds
+        # the number of protocol_instances.
+        try:
+            next(prototype_iter)
+        except StopIteration:
+            match = True
+
+    return match
+\end{lstlisting}
+
+These two sets of prototype lists are the \emph{keep} set and \emph{discard} set.
+Any packet matching something in the keep set is remitted as output, any packet matching something in the discard set is not. If a packet matches no prototype lists, the \emph{policy} is used, either keeping or discarding the packet.
+
 \subsection{The \texttt{identify} Module}
 The \texttt{identify} module contains the \emph{identify} generator function.
+
+This function is very simple, and offers a nicer interface to the \texttt{root_identify} function in the \texttt{identity.core} module. 
 
 \section{The \texttt{pcpapu} Tool}
 During development, it was deemed easier to implement the utilities as \emph{subcommands} in a larger utility.
 
-PCPAPU stands for `Packet Capture Processor and Publishing Utility'
+PCPAPU stands for `Packet Capture Processor and Publishing Utility', and at its basic level, implements the \texttt{-l} option.
 
-
+\subsection{The \texttt{list} Subcommand}
+\subsection{The \texttt{merge} Subcommand}
+\subsection{The \texttt{filter} Subcommand}
+\subsection{The \texttt{maphosts} Subcommand}
 
 \chapter{Testing}
 The testing for this project was done throughout development. 
@@ -1321,7 +1375,7 @@ LIS1 & filepath specified with the \texttt{-i} option & Listing of packets. & Li
 LIS2 & capture file piped to standard input & Listing of packets. & Listing of packets. & Works as expected \\ \hline
 \end{tabularx}
 
-The exact output of this program was cross-referenced with that of \emph{Wireshark}, with which it agreed for all supported protocols.
+The exact output of this program was cross-referenced with that of \emph{Wireshark}, with which it agreed with for all supported protocols.
 
 \subsection{Testing the Merge Tool}
 
@@ -1360,6 +1414,8 @@ These captures were also opened in \emph{Wireshark}, which reported no abnormali
 \subsection{Testing the Filter Tool}
 Thorough testing for this for the filter tool would require testing all possible Protocol classes. This would require a lot of time, so testing will focus on demonstrating tool usage scenarios using different protocol classes.
 
+Additionally, not all protocols are supported by the library. \emph{Unsupported} protocols are not identified, and packets that contain them will have a short identity chain, e.g. ``eth/ip4".
+
 \begin{tabularx}{\textwidth}{|c|X|X|X|X|}
 \hline
 \textbf{Test} & \textbf{Input} & \textbf{Expected} & \textbf{Actual} & \textbf{Comments}\\
@@ -1388,7 +1444,10 @@ FIL4 & Similar I/O flags, with \texttt{-k eth/ip4/tcp} and \texttt{-d eth/ip4} &
 	Works as expected, error in filter pipeline fixed. \\ \hline
 \end{tabularx}
 
+The filter program performed its job admirably, with only one error corrected in testing.
+
 \subsection{Testing the Maphosts Tool}
+Replacement is only expected to function for the protocols supported. This meant that occurrences in unsupported protocols such as DNS are \emph{not} expected to be replaced.
 
 \begin{tabularx}{\textwidth}{|c|X|X|X|X|}
 \hline
@@ -1400,11 +1459,18 @@ FIL1 & filepath specified with the \texttt{-i} option, different filepath specif
 	A duplicate of the capture file. &
 	Almost a duplicate of the capture file, with some TCP checksums corrected. &
 	See extended commentary in section \ref{sec:tcpchksum}. \\ \hline
-FIL2 & Similar, with the addition of \texttt{-m de:ad:be:ef:13:37} = \texttt{bc:ee:7b:df:e8:08} &
+FIL2 & Similar, with the addition of \texttt{-m de:ad:be:ef:13:37 = bc:ee:7b:df:e8:08} &
 	A variant of the capture file, with all references to the MAC address \texttt{de:ad:be:ef:13:37} replaced with \texttt{bc:ee:7b:df:e8:08}. &
 	A variant of the capture file, with all references to the MAC address \texttt{de:ad:be:ef:13:37} replaced with \texttt{bc:ee:7b:df:e8:08}. &
-	Worked as expected. References to the old MAC address persisted in the form of link-local IPv6 address. This is not considered a bug.\\ \hline
-FIL3 & 
+	Worked as expected. References to the old MAC address persisted in the form of link-local IPv6 address. This is not considered a bug\footnote{To elaborate, IPv6 link local addresses are often based on the MAC address of the link hardware they are set on. These addresses are actually IPv6 addresses, and hence should \emph{not} be replaced as a MAC address.}.\\ \hline
+FIL3 & Similar, but with \texttt{-4 10.128.128.1 = 192.168.0.20} &
+	A variant of the capture file, with all references to the IP address \texttt{10.128.128.1} replaced with \texttt{192.168.0.20}. &
+	A variant of the capture file, with all references to the IP address \texttt{10.128.128.1} replaced with \texttt{192.168.0.20}. &
+	Works as expected. \\ \hline
+FIL4 & Similar, but with \texttt{-6 fe80::14fa:1cff: feaa:7cfa = fe80::f00f:bad0} &
+	A variant of the capture file, with all references to the IP address \texttt{fe80::14fa:1cff: feaa:7cfa} replaced with \texttt{fe80::f00f:bad0}. &
+	A variant of the capture file, with all references to the IP address \texttt{fe80::14fa:1cff: feaa:7cfa} replaced with \texttt{fe80::f00f:bad0}. &
+	Works as expected. \\ \hline
 \end{tabularx}
 
 \section{Interesting results}
@@ -1414,10 +1480,12 @@ The maximum length field in the pcap global header differed, otherwise these cap
 
 This is not to be considered an error, the PcapWriter class, by default, creates output files with a snapshot length of 65535. This is well in excess of any packet length actually sent over the network, and was suggested on the libpcap format description as a value. Wireshark itself uses a larger value.
 
-\subsection{TCP checksums}
+\subsection{TCP/UDP checksums}
 \label{sec:tcpchksum}
 Much to the authors surprise, there were \emph{less} TCP checksum errors in the reproduced packet capture.
-It would seem that all TCP PSH command packets sent \emph{from the host conducting the packet capture} had incorrect checksums in the original sample capture, yet these packets were never resent. This was determined to be because of TCP checksum offloading on said host, meaning that the capture software recorded TCP segments \emph{before} the correct checksum had been computed and sent. This is supported for correct checksums being present in packets sent \emph{to the host}
+It would seem that all TCP PSH command packets sent \emph{from the host conducting the packet capture} had incorrect checksums in the original sample capture, yet these packets were never resent. The same was true with UDP checksums from this host - incorrect.
+
+This was determined to be because of TCP/UDP checksum offloading on said host, meaning that the capture software recorded TCP/UDP segments \emph{before} the correct checksum had been computed and sent. This is supported by the fact correct checksums being present in segments sent \emph{to the host}.
 
 \chapter{Future Work}
 The author hopes the current system provides useful utilities and a suitable groundwork for further extension, but naturally, there are aspects that would make the current system better.
@@ -1433,7 +1501,7 @@ The author hopes the current system provides useful utilities and a suitable gro
 
 \chapter{Critical Evaluation}
 \label{sec:criteval}
-The project has covered a lot of groundwork needed for future development.
+The project has covered a lot of groundwork needed for future development on this rather large project.
 
 \section{Success}
 The author is generally pleased with the outcome of the project, a working and usable suite of tools.
