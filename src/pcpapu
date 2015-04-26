@@ -93,6 +93,7 @@ def filter_prog(name, argv):
             return DISCARD
         else:
             return KEEP
+
     helptext = """Filter packets from a capture.
 Identities have the form:
 <identity> ::= <prototype> | <prototype> / <identity>
@@ -111,7 +112,7 @@ will match all ethernet/IPv4 packets with that destination MAC address.
         metavar="identity", help="Packets matching this identity will be kept.")
     parser.add_argument("-d", "--discard", type=build_prototype_list, dest="discard_set", action="append",
         metavar="identity", help="Packets matching this identity will be discarded.")
-    parser.add_argument("-p", "--policy", type=interpret_policy, dest="policy", action="store", choices={"discard", "keep"}, default="keep",
+    parser.add_argument("-p", "--policy", dest="policy", action="store", choices={"discard", "keep"}, default="keep",
         metavar="keep/discard", help="The policy for any packet not matching an identity. (Default is keep)")
 
     arguments = parser.parse_args(argv)
@@ -124,7 +125,7 @@ will match all ethernet/IPv4 packets with that destination MAC address.
     source = pcap.PcapReader(arguments.infile)
     destination = pcap.PcapWriter(arguments.outfile)
 
-    for packet in filter(identify(source), keep=arguments.keep_set, discard=arguments.discard_set, policy=interpet_policy(arguments.policy)):
+    for packet in filter(identify(source), keep=arguments.keep_set, discard=arguments.discard_set, policy=interpret_policy(arguments.policy)):
         destination.write_packet(packet)
 
     destination.close()
