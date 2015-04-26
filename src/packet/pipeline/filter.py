@@ -20,9 +20,10 @@ def identity_match(protocol_instances, prototypes):
           not protocol_instance.match_attributes(prototype[1]):
             break
     else:
-        # A short prototype list should match a more specific protocol identity, but
-        # A short identitiy should not match a more specific prototype list.
-        # This sees if the number of prototypes exceeds the number of protocol_instances.
+        # A short prototype list should match a more specific protocol identity,
+        # but a short identity should not match a more specific prototype list.
+        # This sees if the number of prototypes exceeds
+        # the number of protocol_instances.
         try:
             next(prototype_iter)
         except StopIteration:
