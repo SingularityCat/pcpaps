@@ -47,6 +47,9 @@
 % For better enumerations.
 \usepackage{enumitem}
 
+% For verbatim text.
+\usepackage{fancyvrb}
+
 % For source code listings.
 \usepackage{listings}
 
@@ -131,7 +134,7 @@ A document describing the design and development of a system to assist in the cr
 \thispagestyle{empty}
 This document was typeset using \LaTeX.
 
-With thanks to Andy Thomas for proofreading, \url{tex.stackexchange.com} for typesetting help and the Python Software Foundation for providing such a wonderful programming language.
+With thanks to Andy Thomas for proofreading, fellow students for keeping the author sane, \url{tex.stackexchange.com} for typesetting help and the Python Software Foundation for providing such a wonderful programming language.
 \pagebreak
 %%%%%%%%%%%%%%%%
 % Introduction %
@@ -305,7 +308,7 @@ Java has the advantage of executable portability that C and C++ do not, and is a
 The only real issue is somewhat subjective - the author finds Java code needlessly verbose. This is discussed in the verbosity section (\ref{sec:verbosity}).
 
 \subsection{Python}
-Python is an interpreted, multi-paradigm, fully object oriented language. Python also has its own philosophy - solutions are often deemed to be \emph{pythonic} based on various factors such as elegance and being obvious. However, in Python, mechanism is separate from policy; the various Python conventions are exactly that - conventions.
+Python is an interpreted, multi-paradigm, fully object oriented language, developed and promoted by the Python Software Foundation\cite{python}. Python also has its own philosophy - solutions are often deemed to be \emph{pythonic} based on various factors such as elegance and being obvious. However, in Python, mechanism is separate from policy; the various Python conventions are exactly that - conventions.
 
 Python code is usually distributed in source form, but can be compiled to a bytecode not unlike Java. Python as a language does not enforce any kind of information hiding or encapsulation, and does \emph{not} require nor support typed variables\footnote{Note that this does not mean python is weakly typed -  Python has strong typing that requires explicit conversion.}. This is in contrast to Java, which provides these kind of access qualifiers. Instead of these, a convention is used - private and protected access qualifiers are signified by a single underscore before member names, and API documentation is generally used to specify argument and return types for functions and methods.
 
@@ -1119,6 +1122,8 @@ Due to the sheer number of networked protocols and the complexities in supportin
 
 An interesting point to note is that no external\footnote{External dependencies being anything not present in the Python standard library.} dependencies or code were used. Only builtin Python classes and modules in the standard library were used. These were the \texttt{struct} module,  the \texttt{sys} module, the \texttt{binascii} module and (for the commandline interface, the \texttt{argparse} module).
 
+Code may be found on the additional media supplied with this document, if this is a physical copy. 
+
 \section{Meta-Implementation}
 While this section is not really about any specific implementation detail, it does cover noteworthy disciplines used by the author \emph{while implementing}.
 
@@ -1144,6 +1149,13 @@ Any programming project will benefit form a form of version control. Version con
 Version control is also useful as a kind of synchronisation system between multiple computers, permitting an individual to continue work while away from their normal work environment.
 
 The author used \emph{git} (\url{http://git-scm.com}) as the version control system (VCS), due to having prior knowledge on how to use it.
+
+\section{The \texttt{packet} super-package}
+The `library' portion of the implementation is contained within its own package, the \texttt{packet} package. All of the modules have PyDoc docstrings, allowing for interactive documentation browsing with the pydoc utility. Should the reader want to do this, simply do:
+
+\texttt{\$ pydoc -b packet}
+
+from the \texttt{src} directory. The same documentation is also included in the appendix (section \ref{sec:apidoc}).
 
 \section{The \texttt{memorymap} Module}
 The \texttt{memorymap} module implements the \emph{memorymap} class as described in \ref{sec:memmap}, and works by mapping multiple \emph{memoryview} objects to a single \emph{logical} `index space'.
@@ -1300,8 +1312,9 @@ All of these classes expose the same interface as specified in section \ref{sec:
 
 The IPv4 class is one of the more complex Protocol classes, namely because it specifies fragmentation behaviour and has a checksum.
 
-Internally, the IPv4 class makes use of a `\texttt{FragmentTracker}' class. This class exists to store references to all packets that make up a fragmented datagram. Until such a packet is complete, the \texttt{completed} boolean field is set to false for all constituents. Once the composite datagram is known to be complete, the \texttt{completed} field is set to true, a \texttt{memorymap} is created from the payloads of all constituent packets, and presented to the next Protocol class. The \texttt{next} field for all constituent IPv4 instances is set to that of the new Protocol class and the \emph{last} fragment becomes the parent for that class.
+Internally, the IPv4 class makes use of a `\texttt{FragmentTracker}' class. This class exists to store references to all packets that make up a fragmented datagram. Until such a packet is complete, the \texttt{completed} boolean field is set to false for all constituents. Once the composite datagram is known to be complete, the \texttt{completed} field is set to true, a \texttt{memorymap} is created from the payloads of all constituent packets, and presented to the next Protocol class.
 
+Once a complete datagram is reassembled, the protocol field in the IP header (see figure \ref{fig:ip4fmt}) is used with the \texttt{ip.lookup_ip_protocol} function to determine the next Protocol class to use. The \texttt{next} field for all constituent IPv4 instances is set to that of the new Protocol class and the \emph{last} fragment becomes the parent for that class.
 
 \section{The \texttt{pipeline} Package}
 The pipeline package provides three packet sources, \texttt{merge}, \texttt{filter} and \texttt{identify}.
@@ -1368,10 +1381,14 @@ This function is very simple, and offers a nicer interface to the \texttt{root_i
 
 For every packet in the provided source, it will pass it to the \texttt{root_identify} function. If the identity is incomplete, it will store the packet in a buffer and read the \emph{next} packet, buffering these until the first packet has it's identity completed.
 
+If the packet source is exhausted before a packet has its identity completed, then the incompletely identified packets are returned.
+
 \section{The \texttt{pcpapu} Tool}
 During development, it was deemed easier to implement the utilities as \emph{subcommands} in a larger utility.
 
 PCPAPU stands for `Packet Capture Processor and Publishing Utility', and at its basic level, implements the \texttt{-l} option, and provides a rudimentary way of loading support code.
+
+This utility comes with seperate help text for all subcommands, see appendix (section \ref{sec:helptext}).
 
 \subsection{The \texttt{list} Subcommand}
 The list subcommand implements the same interface as that of the list tool described in the design section \ref{sec:listdes}.
@@ -1601,12 +1618,18 @@ The author would like to point out that despite these limitations, the tools rem
 Additionally, ICMP (and ICMPv6) only exists as a stub Protocol class. This is an issue as ICMP, much like TCP and UDP, contains checksums that include carrier information.
 
 \section{Retrospective Design Successes and Criticisms}
+The representation of packet identities as a \emph{list} of protocol identities enables a
+
 The Protocol class is somewhat unwieldy. In retrospect, a clear distinction between \emph{protocol information} and \emph{dissection} could have been made.
 
 \section{Retrospective Method Successes and Criticisms}
 
+
+
 \begin{center}
 Elliot Thomas
+
+\today
 \end{center}
 
 %%%%%%%%%%%%%%%%
@@ -1655,6 +1678,11 @@ Elliot Thomas
 	Oracle Corporation (Accessed April, 2015)\\
 	`Learn about Java Technology'\\
 	\url{https://www.java.com/en/about/}
+
+\bibitem{python}
+	Python Software Foundation (Accessed April, 2015)\\
+	Python\\
+	\url{https://www.python.org/}
 
 \bibitem{haskfunc}
     Simon Peyton Jones (December, 2014)\\
@@ -1750,6 +1778,7 @@ Elliot Thomas
 
 \chapter{Appendix}
 \section{Program help text}
+\label{sec:helptext}
 \subsection{\texttt{pcpapu --help}}
 \begin{verbatim}
 usage: ./pcpapu [-h] [-l LOAD] {filter,merge,maphosts,list} ...
@@ -1845,5 +1874,43 @@ optional arguments:
   -m MAC-pair, --mac MAC-pair
                         MAC address find/replace pair.
 \end{verbatim}
+
+\section{Packet package API documentation}
+\label{sec:apidoc}
+\subsection{packet.capfile.core}
+\VerbatimInput{../src/doc/packet.capfile.core}
+\subsection{packet.capfile.pcap}
+\VerbatimInput{../src/doc/packet.capfile.pcap}
+
+\subsection{packet.identity.arp}
+\VerbatimInput{../src/doc/packet.identity.arp}
+\subsection{packet.identity.core}
+\VerbatimInput{../src/doc/packet.identity.core}
+\subsection{packet.identity.eth}
+\VerbatimInput{../src/doc/packet.identity.eth}
+\subsection{packet.identity.icmp6}
+\VerbatimInput{../src/doc/packet.identity.icmp6}
+\subsection{packet.identity.icmp}
+\VerbatimInput{../src/doc/packet.identity.icmp}
+\subsection{packet.identity.ip4}
+\VerbatimInput{../src/doc/packet.identity.ip4}
+\subsection{packet.identity.ip6}
+\VerbatimInput{../src/doc/packet.identity.ip6}
+\subsection{packet.identity.ip}
+\VerbatimInput{../src/doc/packet.identity.ip}
+\subsection{packet.identity.tcp}
+\VerbatimInput{../src/doc/packet.identity.tcp}
+\subsection{packet.identity.udp}
+\VerbatimInput{../src/doc/packet.identity.udp}
+
+\subsection{packet.pipeline.merge}
+\VerbatimInput{../src/doc/packet.pipeline.merge}
+\subsection{packet.pipeline.filter}
+\VerbatimInput{../src/doc/packet.pipeline.filter}
+\subsection{packet.pipeline.identify}
+\VerbatimInput{../src/doc/packet.pipeline.identify}
+
+../src/doc/packet.common
+../src/doc/packet.memorymap
 
 \end{document}
