@@ -3,7 +3,7 @@ from .. import common
 from . import core
 from . import ip
 
-from .core import uint16pack, uint16unpack
+from .core import uint16pack, uint16unpack, uint32pack, uint32unpack
 
 # RFC 793: Transmission Control Protocol.
 
@@ -86,10 +86,20 @@ class TCP(core.CarrierProtocol):
         if isinstance(self.prev, core.CarrierProtocol):
             # Nullify the checksum and replace.
             self.data[self._chksum] = b"\x00\x00"
-            # TCP psuedoheader
-            phdr = self.prev.get_route() +\
-                uint16pack(self.prev.get_payload_length()) +\
-                bytes((0, ip.PROTO_TCP))
+
+            if self.prev.name == "ip4":
+                # TCP over IPv4 psuedoheader
+                phdr = self.prev.get_route() +\
+                    uint16pack(self.prev.get_payload_length()) +\
+                    bytes((0, ip.PROTO_TCP))
+            elif self.prev.name == "ip6":
+                # TCP over IPv6 psuedoheader
+                phdr = self.prev.get_route() +\
+                    uint32pack(self.prev.get_payload_length()) +\
+                    bytes((0, 0, 0, ip.PROTO_TCP))
+            else:
+                # Unknown carrier. Huh. Use -no- psuedoheader.
+                phdr = b""
 
             # Actual TCP header/payload
             if len(self.data) % 2 == 0:
