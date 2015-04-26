@@ -1617,7 +1617,7 @@ The author would like to point out that despite these limitations, the tools rem
 
 Additionally, ICMP (and ICMPv6) only exists as a stub Protocol class. This is an issue as ICMP, much like TCP and UDP, contains checksums that include carrier information.
 
-\subsection{The \texttt{set_attributes} method.}
+\subsection{The \texttt{set_attributes} method}
 The \texttt{set_attributes} method is not used by any code in the project. It was the author's hope that a \texttt{modify} tool could be produced, but this did not happen due to time constraints.
 
 The \texttt{set_attributes} method remains unimplemented in most protocol classes, with only ARP and Ethernet fully supporting it. This should have been made clearer in the documentation.
@@ -1895,9 +1895,13 @@ optional arguments:
                         MAC address find/replace pair.
 \end{verbatim}
 
-\section{Packet package API documentation}
+\newgeometry{left=4cm,right=1.5cm,top=1.5cm,bottom=1.5cm}
+\section{\texttt{packet} package API documentation}
+This documentation was generated from the documentation strings in the packet package written for this project using pydoc.
 \label{sec:apidoc}
-{\small
+{
+\fontsize{7pt}{1em}
+\setlength{\parskip}{0.0em}
 \subsection{packet.capfile.core}
 \VerbatimInput{../src/doc/packet.capfile.core}
 \subsection{packet.capfile.pcap}

@@ -1,0 +1,25 @@
+Help on module packet.pipeline.filter in packet.pipeline:
+
+NAME
+    packet.pipeline.filter - filter: contains the filter function.
+
+FUNCTIONS
+    filter(source, keep=None, discard=None, policy=True)
+        Selectively keeps or discards packets based on their identity.
+        This pipeline assumes that packets have been identified prior to use.
+        The keep and discard sets are collections of 'identities'
+        Identities are lists of 'prototypes'.
+        A prototype is a combination of a protocol name and a set of attributes.
+        The name must match that of the corresponding protocol instance, and the
+        match_attributes method of the corresponding protocol instance must
+        return true when presented with the prototype attributes.
+    
+    identity_match(protocol_instances, prototypes)
+        Compares a packet's identity list (protocol instances) to a list of
+        'prototypes'.
+        Every prototype must match it's corresponding protocol instance.
+        Prototypes are a (name, attrs) tuple.
+
+DATA
+    DISCARD = False
+    KEEP = True

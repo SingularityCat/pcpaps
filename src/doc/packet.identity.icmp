@@ -1,0 +1,105 @@
+Help on module packet.identity.icmp in packet.identity:
+
+NAME
+    packet.identity.icmp
+
+CLASSES
+    packet.identity.core.ProtocolStub(packet.identity.core.Protocol)
+        ICMP
+    
+    class ICMP(packet.identity.core.ProtocolStub)
+     |  ICMP stub.
+     |  
+     |  Method resolution order:
+     |      ICMP
+     |      packet.identity.core.ProtocolStub
+     |      packet.identity.core.Protocol
+     |      builtins.object
+     |  
+     |  Data and other attributes defined here:
+     |  
+     |  name = 'icmp'
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from packet.identity.core.ProtocolStub:
+     |  
+     |  get_attributes(self)
+     |      Stub. Returns an empty dictionary.
+     |  
+     |  match_attributes(self, attrs)
+     |      Stub. Always returns true.
+     |  
+     |  set_attributes(self, attrs)
+     |      Stub. Does nothing.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Class methods inherited from packet.identity.core.ProtocolStub:
+     |  
+     |  interpret_packet(data, parent) from builtins.type
+     |      Stub. Returns an instance of this class.
+     |  
+     |  interpret_stream(stream, parent) from builtins.type
+     |      Stub. Returns an instance of this class.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Static methods inherited from packet.identity.core.ProtocolStub:
+     |  
+     |  build_attributes(attrstr)
+     |      Stub. Returns an empty dictionary.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from packet.identity.core.ProtocolStub:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from packet.identity.core.Protocol:
+     |  
+     |  __init__(self, data, prev)
+     |      Constructor for protocol instances.
+     |  
+     |  __iter__(self)
+     |      Generator method for accessing this/child protocol instances.
+     |  
+     |  is_complete(self)
+     |      Returns True if this and all child protocols are complete.
+     |  
+     |  recalculate_checksums(self)
+     |      This method should recalculate any kind of checksum used by this
+     |      protocol, after any 'child' checksums have been recomputed.
+     |      That is to say, the recalculation should propagate up, from the
+     |      highest-level protocol to the lowest. The default implementation does
+     |      nothing other then this propogation and should suffice for
+     |      protocols without validation.
+     |  
+     |  replace_hosts(self, hostmap)
+     |      This method should replace instances of host identification,
+     |      namely IP addresses and MAC addresses.
+     |      This operation should propagate to child protocols.
+     |      The default implementation does nothing other then this propogation
+     |      and should suffice for protocols without any kind of host identification.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Static methods inherited from packet.identity.core.Protocol:
+     |  
+     |  reset_state()
+     |      This static method should restore the initial state to any kind of
+     |      state tracker this class uses. This means, any data held by the class
+     |      to associate multiple bits of data (think IP fragmentation or TCP)
+     |      should be forgotten.
+     |      The default implementation does nothing and should suffice for simple protocols.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from packet.identity.core.Protocol:
+     |  
+     |  completed
+     |  
+     |  data
+     |  
+     |  next
+     |  
+     |  prev

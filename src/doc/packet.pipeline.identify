@@ -1,0 +1,14 @@
+Help on module packet.pipeline.identify in packet.pipeline:
+
+NAME
+    packet.pipeline.identify - identify: Contains the identify function.
+
+FUNCTIONS
+    identify(source)
+        Returns each packet in the source, with the packet identity set.
+        This generator will defer packets until their identity is complete.
+        As a result, this generator can consume a lot of memory, up to the total
+        number of packets produced by source.
+        
+        If the source is exhausted before a packet's identity is complete,
+        the packets will then be returned regardless of status.

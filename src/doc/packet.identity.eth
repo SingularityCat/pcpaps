@@ -1,0 +1,153 @@
+Help on module packet.identity.eth in packet.identity:
+
+NAME
+    packet.identity.eth
+
+DESCRIPTION
+    Ethernet dissection module.
+    Contains the Ethernet (eth) Protocol class, and a handful of constants.
+
+CLASSES
+    packet.identity.core.CarrierProtocol(packet.identity.core.Protocol)
+        Ethernet
+    
+    class Ethernet(packet.identity.core.CarrierProtocol)
+     |  Class representing the Ethernet II (IEEE 802.3/1Q/1AD) protocol.
+     |  
+     |  Method resolution order:
+     |      Ethernet
+     |      packet.identity.core.CarrierProtocol
+     |      packet.identity.core.Protocol
+     |      builtins.object
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, data, prev)
+     |      Constructor.
+     |  
+     |  get_attributes(self)
+     |      Returns the fields in this packet as a attribute dict.
+     |  
+     |  get_ethertype(self)
+     |      Returns the ethertype as a number.
+     |  
+     |  get_route(self)
+     |      Returns the route of this ethernet header, as a 12-byte string.
+     |  
+     |  get_route_reciprocal(self)
+     |      Returns the reciprocal route of this ethernet header.
+     |  
+     |  replace_hosts(self, hostmap)
+     |      Replaces the source and destination mac addresses with the corresponding
+     |      value in the MAC section of the hostmap argument (if present).
+     |  
+     |  set_attributes(self, attrs)
+     |      Updates the fields in this header to represent the contents of an attribute dict.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Static methods defined here:
+     |  
+     |  build_attributes(attrstr)
+     |      Creates a set of attributes from an attribute string.
+     |  
+     |  interpret_packet(data, parent)
+     |      Creates a protocol instance and determines the next protocol to use.
+     |      This makes use of a registry of ethertype -> protocol names, updated
+     |      with the 'register_ethertype' function in this module.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  payload_offset
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  name = 'eth'
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from packet.identity.core.CarrierProtocol:
+     |  
+     |  get_payload_length(self)
+     |      Abstract method returning the lengh of the payload,
+     |      if indicated in the protocol.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from packet.identity.core.CarrierProtocol:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from packet.identity.core.Protocol:
+     |  
+     |  __iter__(self)
+     |      Generator method for accessing this/child protocol instances.
+     |  
+     |  is_complete(self)
+     |      Returns True if this and all child protocols are complete.
+     |  
+     |  match_attributes(self, tattrs)
+     |      Tests wether this ProtocolIdentity matches a set of attributes.
+     |      This is the default implementation and compares attributes of this
+     |      instance (from get_attributes) to the provided attributes (tattrs).
+     |      This is not commutative - all of the target keys MUST be in
+     |      this ProtocolIdentity's keys. Additionally, if the target's key is
+     |      equal to None, it is treated as a wildcard and matches.
+     |  
+     |  recalculate_checksums(self)
+     |      This method should recalculate any kind of checksum used by this
+     |      protocol, after any 'child' checksums have been recomputed.
+     |      That is to say, the recalculation should propagate up, from the
+     |      highest-level protocol to the lowest. The default implementation does
+     |      nothing other then this propogation and should suffice for
+     |      protocols without validation.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Static methods inherited from packet.identity.core.Protocol:
+     |  
+     |  interpret_stream(stream, parent)
+     |      Abstract static method interpret_stream.
+     |      Like interpret_packet, this takes two arguments, a 'parent' protocol
+     |      instance (which can be none) and a 'stream' object.
+     |      This method should create an instance of it's class, determine the next
+     |      (if any) protocol to interpret, (setting the next field), then
+     |      return said instance.
+     |  
+     |  reset_state()
+     |      This static method should restore the initial state to any kind of
+     |      state tracker this class uses. This means, any data held by the class
+     |      to associate multiple bits of data (think IP fragmentation or TCP)
+     |      should be forgotten.
+     |      The default implementation does nothing and should suffice for simple protocols.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from packet.identity.core.Protocol:
+     |  
+     |  completed
+     |  
+     |  data
+     |  
+     |  next
+     |  
+     |  prev
+
+FUNCTIONS
+    find_ethertype_offset(data)
+        Finds the offset of the true ethertype of a frame.
+    
+    register_ethertype(protocol, ethertype)
+        Associates a protocol name with an ethertype.
+
+DATA
+    ETHERNET_MIN_FRAME_SIZE = 16
+    ETHERTYPE_ARP = 2054
+    ETHERTYPE_IEEE802_1AD = 34984
+    ETHERTYPE_IEEE802_1Q = 33024
+    ETHERTYPE_IP4 = 2048
+    ETHERTYPE_IP6 = 34525
+    ETHERTYPE_WOL = 2114
+    ethertype_registry = {2048: 'ip4', 2054: 'arp', 34525: 'ip6'}

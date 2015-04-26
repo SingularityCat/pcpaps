@@ -1,0 +1,28 @@
+Help on module packet.identity.ip in packet.identity:
+
+NAME
+    packet.identity.ip
+
+DESCRIPTION
+    ip: 
+    Internet Protocol Number registry and checksum algorithm.
+
+FUNCTIONS
+    checksum(data)
+        General implementation of the IP checksum algorithm.
+    
+    lookup_ip_protocol(protonum)
+        Looks up a protocol name from number.
+    
+    register_ip_protocol(protoname, protonum)
+        Add a protocol number <-> name mapping.
+
+DATA
+    PROTO_ETHERIP = 97
+    PROTO_ICMP = 1
+    PROTO_IPV4 = 4
+    PROTO_IPV6 = 41
+    PROTO_IPV6_ICMP = 58
+    PROTO_TCP = 6
+    PROTO_UDP = 17
+    ip_protocol_registry = {1: 'icmp', 6: 'tcp', 17: 'udp', 58: 'icmp6'}

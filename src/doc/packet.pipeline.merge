@@ -1,0 +1,13 @@
+Help on module packet.pipeline.merge in packet.pipeline:
+
+NAME
+    packet.pipeline.merge - merge: contains the definition for the merge function.
+
+FUNCTIONS
+    merge(preaders, relative=True, offset=None)
+        Generator function that takes a list of packet sources and two parameters.
+        If relative is true, then the time of the -first- packet from a source is
+        subtracted from all packets from that source.
+        If offset is not none, this value is added to the time of all packets,
+        otherwise the average start time is used.
+        Returns a generator that produces the next chronological packet on each iteration.

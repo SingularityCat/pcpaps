@@ -1,0 +1,227 @@
+Help on module packet.memorymap in packet:
+
+NAME
+    packet.memorymap - memorymap: Providing a logically contiguous mapping of several memoryviews
+
+CLASSES
+    builtins.tuple(builtins.object)
+        segment
+    collections.abc.MutableSequence(collections.abc.Sequence)
+        memorymap
+    
+    class memorymap(collections.abc.MutableSequence)
+     |  Maps a series of memoryview objects (or 'segments') into a single
+     |  logical address space.
+     |  
+     |  Method resolution order:
+     |      memorymap
+     |      collections.abc.MutableSequence
+     |      collections.abc.Sequence
+     |      collections.abc.Sized
+     |      collections.abc.Iterable
+     |      collections.abc.Container
+     |      builtins.object
+     |  
+     |  Methods defined here:
+     |  
+     |  __delitem__(self, idx)
+     |      Deleting items is not allowed.
+     |  
+     |  __getitem__(self, idx)
+     |      Returns the item(s) at the specified index,
+     |      or returns a memorymap in the given range.
+     |  
+     |  __init__(self, obj, slc=slice(None, None, None))
+     |  
+     |  __len__(self)
+     |      Return the length of the logical memory map.
+     |  
+     |  __setitem__(self, idx, val)
+     |      Sets the item(s) ad the specified index or slice.
+     |  
+     |  add_segment(self, memview)
+     |      Takes a memorymap, memoryview or object supporting the
+     |      buffer interface, and adds it to a logical combination of buffers.
+     |  
+     |  insert(self, idx, val)
+     |      Inserting items is not allowed.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  segments
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  __abstractmethods__ = frozenset([])
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from collections.abc.MutableSequence:
+     |  
+     |  __iadd__(self, values)
+     |  
+     |  append(self, value)
+     |      S.append(value) -- append value to the end of the sequence
+     |  
+     |  clear(self)
+     |      S.clear() -> None -- remove all items from S
+     |  
+     |  extend(self, values)
+     |      S.extend(iterable) -- extend sequence by appending elements from the iterable
+     |  
+     |  pop(self, index=-1)
+     |      S.pop([index]) -> item -- remove and return item at index (default last).
+     |      Raise IndexError if list is empty or index is out of range.
+     |  
+     |  remove(self, value)
+     |      S.remove(value) -- remove first occurrence of value.
+     |      Raise ValueError if the value is not present.
+     |  
+     |  reverse(self)
+     |      S.reverse() -- reverse *IN PLACE*
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from collections.abc.Sequence:
+     |  
+     |  __contains__(self, value)
+     |  
+     |  __iter__(self)
+     |  
+     |  __reversed__(self)
+     |  
+     |  count(self, value)
+     |      S.count(value) -> integer -- return number of occurrences of value
+     |  
+     |  index(self, value)
+     |      S.index(value) -> integer -- return first index of value.
+     |      Raises ValueError if the value is not present.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Class methods inherited from collections.abc.Sized:
+     |  
+     |  __subclasshook__(C) from abc.ABCMeta
+    
+    class segment(builtins.tuple)
+     |  segment(start, end, mem)
+     |  
+     |  Method resolution order:
+     |      segment
+     |      builtins.tuple
+     |      builtins.object
+     |  
+     |  Methods defined here:
+     |  
+     |  __getnewargs__(self)
+     |      Return self as a plain tuple.  Used by copy and pickle.
+     |  
+     |  __getstate__(self)
+     |      Exclude the OrderedDict from pickling
+     |  
+     |  __repr__(self)
+     |      Return a nicely formatted representation string
+     |  
+     |  _asdict(self)
+     |      Return a new OrderedDict which maps field names to their values.
+     |  
+     |  _replace(_self, **kwds)
+     |      Return a new segment object replacing specified fields with new values
+     |  
+     |  ----------------------------------------------------------------------
+     |  Class methods defined here:
+     |  
+     |  _make(iterable, new=<built-in method __new__ of type object at 0x7fb20369f000>, len=<built-in function len>) from builtins.type
+     |      Make a new segment object from a sequence or iterable
+     |  
+     |  ----------------------------------------------------------------------
+     |  Static methods defined here:
+     |  
+     |  __new__(_cls, start, end, mem)
+     |      Create new instance of segment(start, end, mem)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      A new OrderedDict mapping field names to their values
+     |  
+     |  end
+     |      Alias for field number 1
+     |  
+     |  mem
+     |      Alias for field number 2
+     |  
+     |  start
+     |      Alias for field number 0
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  _fields = ('start', 'end', 'mem')
+     |  
+     |  _source = "from builtins import property as _property, tupl..._itemget...
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from builtins.tuple:
+     |  
+     |  __add__(self, value, /)
+     |      Return self+value.
+     |  
+     |  __contains__(self, key, /)
+     |      Return key in self.
+     |  
+     |  __eq__(self, value, /)
+     |      Return self==value.
+     |  
+     |  __ge__(self, value, /)
+     |      Return self>=value.
+     |  
+     |  __getattribute__(self, name, /)
+     |      Return getattr(self, name).
+     |  
+     |  __getitem__(self, key, /)
+     |      Return self[key].
+     |  
+     |  __gt__(self, value, /)
+     |      Return self>value.
+     |  
+     |  __hash__(self, /)
+     |      Return hash(self).
+     |  
+     |  __iter__(self, /)
+     |      Implement iter(self).
+     |  
+     |  __le__(self, value, /)
+     |      Return self<=value.
+     |  
+     |  __len__(self, /)
+     |      Return len(self).
+     |  
+     |  __lt__(self, value, /)
+     |      Return self<value.
+     |  
+     |  __mul__(self, value, /)
+     |      Return self*value.n
+     |  
+     |  __ne__(self, value, /)
+     |      Return self!=value.
+     |  
+     |  __rmul__(self, value, /)
+     |      Return self*value.
+     |  
+     |  __sizeof__(...)
+     |      T.__sizeof__() -- size of T in memory, in bytes
+     |  
+     |  count(...)
+     |      T.count(value) -> integer -- return number of occurrences of value
+     |  
+     |  index(...)
+     |      T.index(value, [start, [stop]]) -> integer -- return first index of value.
+     |      Raises ValueError if the value is not present.
+
+FUNCTIONS
+    clamp_end(idx, length)
+        Clamps an index from None/negative to length (inclusive).
+    
+    clamp_start(idx, length)
+        Clamps an index from 0 to length (exclusive).

@@ -1,0 +1,141 @@
+Help on module packet.identity.tcp in packet.identity:
+
+NAME
+    packet.identity.tcp
+
+CLASSES
+    builtins.object
+        TCPStateMachine
+    packet.identity.core.CarrierProtocol(packet.identity.core.Protocol)
+        TCP
+    
+    class TCP(packet.identity.core.CarrierProtocol)
+     |  Method resolution order:
+     |      TCP
+     |      packet.identity.core.CarrierProtocol
+     |      packet.identity.core.Protocol
+     |      builtins.object
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, data, prev)
+     |  
+     |  get_attributes(self)
+     |      Retrieve a set of attributes describing fields in this protocol.
+     |  
+     |  recalculate_checksums(self)
+     |      Recalculate the checksum for this TCP header.
+     |  
+     |  set_attributes(self, attrs)
+     |      Alter packet data to match a set of protocol attributes.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Static methods defined here:
+     |  
+     |  build_attributes(attrstr)
+     |      Creates a set of attributes from an attribute string.
+     |  
+     |  interpret_packet(data, parent)
+     |      Interpret packet data for this protocol.
+     |  
+     |  reset_state()
+     |      Resets the tcp_routes dict.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  payload_offset
+     |  
+     |  port
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  name = 'tcp'
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from packet.identity.core.CarrierProtocol:
+     |  
+     |  get_payload_length(self)
+     |      Abstract method returning the lengh of the payload,
+     |      if indicated in the protocol.
+     |  
+     |  get_route(self)
+     |      Abstract method returning a hashable object that represents
+     |      the 'route' (the destination, source and direction) a carrier
+     |      protocol would direct a packet.
+     |  
+     |  get_route_reciprocal(self)
+     |      Abstract method returning a hashable object not unlike the above,
+     |      that returns the opposite route.
+     |      E.g. if get_route returned A -> B, this should return B -> A.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from packet.identity.core.CarrierProtocol:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from packet.identity.core.Protocol:
+     |  
+     |  __iter__(self)
+     |      Generator method for accessing this/child protocol instances.
+     |  
+     |  is_complete(self)
+     |      Returns True if this and all child protocols are complete.
+     |  
+     |  match_attributes(self, tattrs)
+     |      Tests wether this ProtocolIdentity matches a set of attributes.
+     |      This is the default implementation and compares attributes of this
+     |      instance (from get_attributes) to the provided attributes (tattrs).
+     |      This is not commutative - all of the target keys MUST be in
+     |      this ProtocolIdentity's keys. Additionally, if the target's key is
+     |      equal to None, it is treated as a wildcard and matches.
+     |  
+     |  replace_hosts(self, hostmap)
+     |      This method should replace instances of host identification,
+     |      namely IP addresses and MAC addresses.
+     |      This operation should propagate to child protocols.
+     |      The default implementation does nothing other then this propogation
+     |      and should suffice for protocols without any kind of host identification.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Static methods inherited from packet.identity.core.Protocol:
+     |  
+     |  interpret_stream(stream, parent)
+     |      Abstract static method interpret_stream.
+     |      Like interpret_packet, this takes two arguments, a 'parent' protocol
+     |      instance (which can be none) and a 'stream' object.
+     |      This method should create an instance of it's class, determine the next
+     |      (if any) protocol to interpret, (setting the next field), then
+     |      return said instance.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from packet.identity.core.Protocol:
+     |  
+     |  completed
+     |  
+     |  data
+     |  
+     |  next
+     |  
+     |  prev
+    
+    class TCPStateMachine(builtins.object)
+     |  Methods defined here:
+     |  
+     |  __init__(self, ir, rr)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  initiator_route
+     |  
+     |  responder_route
+
+DATA
+    tcp_routes = {}

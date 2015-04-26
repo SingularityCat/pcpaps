@@ -1,0 +1,348 @@
+Help on module packet.common in packet:
+
+NAME
+    packet.common
+
+DESCRIPTION
+    common:
+     - Definition for the 'Packet' class
+     - Functions for operating on the 'Packet' class.
+     - Functions for handling generic user input, i.e. parse_int.
+     - Functions for converting a ip4/ip6/mac address to string form and back.
+    Contains two constants, PACKET_MINAGE and PACKET_MAXAGE, two
+    psuedopackets being older then or newer then all other packets, respectively.
+
+CLASSES
+    builtins.object
+        Packet
+    enum.Enum(builtins.object)
+        LinkType
+    
+    class LinkType(enum.Enum)
+     |  Linktype Enumerations matching those used in tcpdump and pcap files.
+     |  
+     |  Method resolution order:
+     |      LinkType
+     |      enum.Enum
+     |      builtins.object
+     |  
+     |  Data and other attributes defined here:
+     |  
+     |  APPLE_IP_OVER_IEEE1394 = <LinkType.APPLE_IP_OVER_IEEE1394: 138>
+     |  
+     |  ARCNET_BSD = <LinkType.ARCNET_BSD: 7>
+     |  
+     |  ARCNET_LINUX = <LinkType.ARCNET_LINUX: 129>
+     |  
+     |  ATM_RFC1483 = <LinkType.ATM_RFC1483: 100>
+     |  
+     |  AX25 = <LinkType.AX25: 3>
+     |  
+     |  AX25_KISS = <LinkType.AX25_KISS: 202>
+     |  
+     |  BACNET_MS_TP = <LinkType.BACNET_MS_TP: 165>
+     |  
+     |  BLUETOOTH_BREDR_BB = <LinkType.BLUETOOTH_BREDR_BB: 255>
+     |  
+     |  BLUETOOTH_HCI_H4 = <LinkType.BLUETOOTH_HCI_H4: 187>
+     |  
+     |  BLUETOOTH_HCI_H4_WITH_PHDR = <LinkType.BLUETOOTH_HCI_H4_WITH_PHDR: 201...
+     |  
+     |  BLUETOOTH_LE_LL = <LinkType.BLUETOOTH_LE_LL: 251>
+     |  
+     |  BLUETOOTH_LE_LL_WITH_PHDR = <LinkType.BLUETOOTH_LE_LL_WITH_PHDR: 256>
+     |  
+     |  BLUETOOTH_LINUX_MONITOR = <LinkType.BLUETOOTH_LINUX_MONITOR: 254>
+     |  
+     |  CAN_SOCKETCAN = <LinkType.CAN_SOCKETCAN: 227>
+     |  
+     |  C_HDLC = <LinkType.C_HDLC: 104>
+     |  
+     |  C_HDLC_WITH_DIR = <LinkType.C_HDLC_WITH_DIR: 205>
+     |  
+     |  DBUS = <LinkType.DBUS: 231>
+     |  
+     |  DOCSIS = <LinkType.DOCSIS: 143>
+     |  
+     |  DVB_CI = <LinkType.DVB_CI: 235>
+     |  
+     |  EPON = <LinkType.EPON: 259>
+     |  
+     |  ERF = <LinkType.ERF: 197>
+     |  
+     |  ETHERNET = <LinkType.ETHERNET: 1>
+     |  
+     |  FC_2 = <LinkType.FC_2: 224>
+     |  
+     |  FC_2_WITH_FRAME_DELIMS = <LinkType.FC_2_WITH_FRAME_DELIMS: 225>
+     |  
+     |  FDDI = <LinkType.FDDI: 10>
+     |  
+     |  FRELAY = <LinkType.FRELAY: 107>
+     |  
+     |  FRELAY_WITH_DIR = <LinkType.FRELAY_WITH_DIR: 206>
+     |  
+     |  GPRS_LLC = <LinkType.GPRS_LLC: 169>
+     |  
+     |  IEEE802_11 = <LinkType.IEEE802_11: 105>
+     |  
+     |  IEEE802_11_AVS = <LinkType.IEEE802_11_AVS: 163>
+     |  
+     |  IEEE802_11_PRISM = <LinkType.IEEE802_11_PRISM: 119>
+     |  
+     |  IEEE802_11_RADIOTAP = <LinkType.IEEE802_11_RADIOTAP: 127>
+     |  
+     |  IEEE802_15_4 = <LinkType.IEEE802_15_4: 195>
+     |  
+     |  IEEE802_15_4_NOFCS = <LinkType.IEEE802_15_4_NOFCS: 230>
+     |  
+     |  IEEE802_15_4_NONASK_PHY = <LinkType.IEEE802_15_4_NONASK_PHY: 215>
+     |  
+     |  IEEE802_5 = <LinkType.IEEE802_5: 6>
+     |  
+     |  INFINIBAND = <LinkType.INFINIBAND: 247>
+     |  
+     |  IPMB_LINUX = <LinkType.IPMB_LINUX: 209>
+     |  
+     |  IPMI_HPM_2 = <LinkType.IPMI_HPM_2: 260>
+     |  
+     |  IPNET = <LinkType.IPNET: 226>
+     |  
+     |  IPOIB = <LinkType.IPOIB: 242>
+     |  
+     |  IPV4 = <LinkType.IPV4: 228>
+     |  
+     |  IPV6 = <LinkType.IPV6: 229>
+     |  
+     |  IP_OVER_FC = <LinkType.IP_OVER_FC: 122>
+     |  
+     |  LAPD = <LinkType.LAPD: 203>
+     |  
+     |  LINUX_IRDA = <LinkType.LINUX_IRDA: 144>
+     |  
+     |  LINUX_LAPD = <LinkType.LINUX_LAPD: 177>
+     |  
+     |  LINUX_SLL = <LinkType.LINUX_SLL: 113>
+     |  
+     |  LOOP = <LinkType.LOOP: 108>
+     |  
+     |  LTALK = <LinkType.LTALK: 114>
+     |  
+     |  MPEG_2_TS = <LinkType.MPEG_2_TS: 243>
+     |  
+     |  MTP2 = <LinkType.MTP2: 140>
+     |  
+     |  MTP2_WITH_PHDR = <LinkType.MTP2_WITH_PHDR: 139>
+     |  
+     |  MTP3 = <LinkType.MTP3: 141>
+     |  
+     |  MUX27010 = <LinkType.MUX27010: 236>
+     |  
+     |  NETANALYZER = <LinkType.NETANALYZER: 240>
+     |  
+     |  NETANALYZER_TRANSPARENT = <LinkType.NETANALYZER_TRANSPARENT: 241>
+     |  
+     |  NETLINK = <LinkType.NETLINK: 253>
+     |  
+     |  NFC_LLCP = <LinkType.NFC_LLCP: 245>
+     |  
+     |  NFLOG = <LinkType.NFLOG: 239>
+     |  
+     |  NG40 = <LinkType.NG40: 244>
+     |  
+     |  NULL = <LinkType.NULL: 0>
+     |  
+     |  PFLOG = <LinkType.PFLOG: 117>
+     |  
+     |  PKTAP = <LinkType.PKTAP: 258>
+     |  
+     |  PPI = <LinkType.PPI: 192>
+     |  
+     |  PPP = <LinkType.PPP: 9>
+     |  
+     |  PPP_ETHER = <LinkType.PPP_ETHER: 51>
+     |  
+     |  PPP_HDLC = <LinkType.PPP_HDLC: 50>
+     |  
+     |  PPP_PPPD = <LinkType.PPP_PPPD: 166>
+     |  
+     |  PPP_WITH_DIR = <LinkType.PPP_WITH_DIR: 204>
+     |  
+     |  PROFIBUS_DL = <LinkType.PROFIBUS_DL: 257>
+     |  
+     |  RAW = <LinkType.RAW: 101>
+     |  
+     |  RTAC_SERIAL = <LinkType.RTAC_SERIAL: 250>
+     |  
+     |  SCCP = <LinkType.SCCP: 142>
+     |  
+     |  SCTP = <LinkType.SCTP: 248>
+     |  
+     |  SITA = <LinkType.SITA: 196>
+     |  
+     |  SLIP = <LinkType.SLIP: 8>
+     |  
+     |  STANAG_5066_D_PDU = <LinkType.STANAG_5066_D_PDU: 237>
+     |  
+     |  SUNATM = <LinkType.SUNATM: 123>
+     |  
+     |  USBPCAP = <LinkType.USBPCAP: 249>
+     |  
+     |  USB_LINUX = <LinkType.USB_LINUX: 189>
+     |  
+     |  USB_LINUX_MMAPPED = <LinkType.USB_LINUX_MMAPPED: 220>
+     |  
+     |  USER0 = <LinkType.USER0: 147>
+     |  
+     |  USER1 = <LinkType.USER1: 148>
+     |  
+     |  USER10 = <LinkType.USER10: 157>
+     |  
+     |  USER11 = <LinkType.USER11: 158>
+     |  
+     |  USER12 = <LinkType.USER12: 159>
+     |  
+     |  USER13 = <LinkType.USER13: 160>
+     |  
+     |  USER14 = <LinkType.USER14: 161>
+     |  
+     |  USER15 = <LinkType.USER15: 162>
+     |  
+     |  USER2 = <LinkType.USER2: 149>
+     |  
+     |  USER3 = <LinkType.USER3: 150>
+     |  
+     |  USER4 = <LinkType.USER4: 151>
+     |  
+     |  USER5 = <LinkType.USER5: 152>
+     |  
+     |  USER6 = <LinkType.USER6: 153>
+     |  
+     |  USER7 = <LinkType.USER7: 154>
+     |  
+     |  USER8 = <LinkType.USER8: 155>
+     |  
+     |  USER9 = <LinkType.USER9: 156>
+     |  
+     |  WATTSTOPPER_DLM = <LinkType.WATTSTOPPER_DLM: 263>
+     |  
+     |  ZWAVE_R1_R2 = <LinkType.ZWAVE_R1_R2: 261>
+     |  
+     |  ZWAVE_R3 = <LinkType.ZWAVE_R3: 262>
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from enum.Enum:
+     |  
+     |  name
+     |      The name of the Enum member.
+     |  
+     |  value
+     |      The value of the Enum member.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from enum.EnumMeta:
+     |  
+     |  __members__
+     |      Returns a mapping of member name->value.
+     |      
+     |      This mapping lists all enum members, including aliases. Note that this
+     |      is a read-only view of the internal mapping.
+    
+    class Packet(builtins.object)
+     |  Class consisting of five fields,
+     |   - unixtime: Floating point number, time in seconds since 1st Jan, 1970.
+     |   - linktype: Integer constant representing the root format of the
+     |               packet as specified by the source.
+     |   - origlen: Original length of the 'data' field.
+     |   - data: Packet data as a bytearray.
+     |   - identity: The root protocol instance.
+     |  
+     |  Comparison operator methods and the length method are implemented.
+     |  Comparisons work on the value of unixtime, so a < b means a is older then b.
+     |  The length is 'origlen', so len(a) < len(b) means a was shorter then b.
+     |  
+     |  Methods defined here:
+     |  
+     |  __eq__(self, other)
+     |  
+     |  __ge__(self, other)
+     |  
+     |  __gt__(self, other)
+     |  
+     |  __init__(self, ut, lt, ol, dat)
+     |  
+     |  __le__(self, other)
+     |  
+     |  __len__(self)
+     |      # Implement length func based on 'origlen', such that:
+     |      # len(a) < len(b) means a has an original length shorter then b.
+     |  
+     |  __lt__(self, other)
+     |      # Implement comprison operations based on 'unixtime', such that:
+     |      # a < b means a is older then b.
+     |  
+     |  __ne__(self, other)
+     |  
+     |  __str__(self)
+     |      Creates a human readable string summary of this packet.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  data
+     |  
+     |  identity
+     |  
+     |  linktype
+     |  
+     |  origlen
+     |  
+     |  unixtime
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  __hash__ = None
+
+FUNCTIONS
+    ip4_bin2str(ip4b)
+        Converts a IPv4 address in big-endian byte form to a
+        string form not unlike the one accepted by the function above.
+        Returns None on a format error.
+    
+    ip4_str2bin(ip4s)
+        Converts a IPv4 address in dotted octet string form to a big-endian
+        byte representation.
+        Returns None on a format error.
+    
+    ip6_bin2str(ip6b)
+        Converts a IPv6 address in big-endian byte form to a
+        string form not unlike the one accepted by the function above.
+        Returns None on a format error.
+    
+    ip6_str2bin(ip6s)
+        Converts a IPv6 address in RFC-5952 format to a big-endian
+        byte representation.
+        Returns None on a format error.
+    
+    mac_bin2str(macb)
+        Converts a MAC address in big-endian byte form to a
+        string form not unlike the one accepted by the function above.
+        Returns None on a format error.
+    
+    mac_str2bin(macs)
+        Converts a MAC address in string representation (six hex numbers,
+        delimited by colons) to a big-endian byte representation.
+        Returns None on a format error.
+    
+    parse_hexbytes(hexstr)
+        Simple hex string -> bytes parsing function.
+        Uses binascii to do actual conversion, returns None on error.
+    
+    parse_int(intstr)
+        Simple string -> integer parsing/guessing function.
+        Uses 'int' to do actual conversion, returns None on error.
+
+DATA
+    PACKET_MAXAGE = <packet.common.Packet object>
+    PACKET_MINAGE = <packet.common.Packet object>
