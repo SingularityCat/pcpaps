@@ -3,7 +3,7 @@ from .. import common
 from . import core
 from . import ip
 
-from .core import uint16pack, uint16unpack
+from .core import uint16pack, uint16unpack, uint32pack, uint32unpack
 
 # RFC 768: User Datagram Protocol
 
@@ -62,6 +62,31 @@ class UDP(core.CarrierProtocol):
         """Recalculate the checksum for this UDP header."""
         if self.next is not None:
             self.next.recalculate_checksums()
+
+        if isinstance(self.prev, core.CarrierProtocol):
+            # Nullify the checksum
+            self.data[self._chksum] = b"\x00\x00"
+
+            if self.prev.name == "ip4":
+                # UDP over IPv4 psuedoheader
+                phdr = self.prev.get_route() +\
+                    uint16pack(self.prev.get_payload_length()) +\
+                    bytes((0, ip.PROTO_UDP))
+            elif self.prev.name == "ip6":
+                # UDP over IPv6 psuedoheader
+                phdr = self.prev.get_route() +\
+                    uint32pack(self.prev.get_payload_length()) +\
+                    bytes((0, 0, 0, ip.PROTO_UDP))
+            else:
+                # Unknown carrier. Huh. Use -no- psuedoheader.
+                phdr = b""
+
+            # Actual UDP header/payload
+            if len(self.data) % 2 == 0:
+                ahdr = bytes(self.data)
+            else:
+                ahdr = bytes(self.data) + b"\x00"
+            self.data[self._chksum] = ip.checksum(phdr + ahdr)
 
     # <attr> = <key> "=" <value>
     # <attrstr> = <attr> | <attr> ";" <attrstr>
