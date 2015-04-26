@@ -252,7 +252,7 @@ class ProtocolStub(Protocol):
 # Utility functions useful for protocol classes.
 
 uint16 = struct.Struct("!H")
-
+uint32 = struct.Struct("!I")
 
 def uint16pack(i):
     """Converts a 16-bit int into bytes (big endian)"""
@@ -263,6 +263,15 @@ def uint16unpack(b):
     """Converts bytes into a 16-bit int (big endian)"""
     return uint16.unpack(b)[0]
 
+
+def uint32pack(i):
+    """Converts a 32-bit int into bytes (big endian)"""
+    return uint32.pack(i)
+
+
+def uint32unpack(b):
+    """Converts bytes into a 32-bit int (big endian)"""
+    return uint32.unpack(b)[0]
 
 # Functions dealing with identification,
 # protocol registration and linktype registration.
