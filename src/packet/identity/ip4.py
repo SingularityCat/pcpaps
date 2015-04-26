@@ -316,3 +316,4 @@ class IPv4(core.CarrierProtocol):
 core.register_protocol(IPv4)
 core.register_linktype(IPv4.name, common.LinkType.IPV4.value)
 eth.register_ethertype(IPv4.name, eth.ETHERTYPE_IP4)
+ip.register_ip_protocol(IPv4.name, ip.PROTO_IPV4)
