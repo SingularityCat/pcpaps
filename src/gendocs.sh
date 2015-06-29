@@ -1,4 +1,6 @@
 #!/bin/sh
+# Basic script that writes out pydoc documentation for all source files.
+# Elliot Thomas, public domain.
 
 pydoc packet.capfile.core > ./doc/packet.capfile.core
 pydoc packet.capfile.pcap > ./doc/packet.capfile.pcap
