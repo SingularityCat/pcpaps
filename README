@@ -1,27 +1,26 @@
-### Dissertation/Report ###
-report/ - Source code and diagrams used in the report. 
-report/diagrams/ - Diagram sources (in graphviz dot/GIMP xcf) and rendered images.
-report/pictures/ - Screenshots, etc.
-report/report.tex - TeX source code for the actual report. Requires XeLaTeX.
+All files, unless otherwise stated, are copyright Elliot Thomas (2015) and are subject to the GNU GPLv3 or later. A copy of the GNU GPLv3 is present in the COPYING file.
 
-report.pdf - The report, in PDF form. It's got hyperlinks and everything!
+### Dissertation/Report ###
+ - report/ - Source code and diagrams used in the report.
+ - report/diagrams/ - Diagram sources (in graphviz dot/GIMP xcf) and rendered images.
+ - report/pictures/ - Screenshots, etc.
+ - report/report.tex - TeX source code for the actual report. Requires XeLaTeX.
+ - report.pdf - The report, in PDF form. It's got hyperlinks and everything!
 
 ### Source code ###
-src/ - Source code for the project.
-src/packet/ - The 'packet' module.
-src/doc/ - pydoc generated documentation (included in report appendix).
-src/gendoc.sh - Small shellscript to generate the documentation in the doc directory.
-src/pcpapu - The PCPAPU tool.
-
-src/lspcap - Small sample utility, uses the packet package.
+ - src/ - Source code for the project.
+ - src/packet/ - The 'packet' module.
+ - src/doc/ - pydoc generated documentation (included in report appendix).
+ - src/gendoc.sh - Small shellscript to generate the documentation in the doc directory.
+ - src/pcpapu - The PCPAPU tool.
+ - src/lspcap - Small sample utility, uses the packet package.
 
 ### 'Binaries' ###
-# Note: Requires Python 3.4 or newer.
-# Obtainable from: https://www.python.org/downloads/release/python-340/
-
-pcpapu - Zipped python source/bytecode, with a UNIX shebang appended to the start.
-pcpapu.pyz - Same as above, but without shebang.
+Note: Requires Python 3.4 or newer.
+Obtainable from: https://www.python.org/downloads/release/python-340/
+ - pcpapu - Zipped python source/bytecode, with a UNIX shebang appended to the start.
+ - pcpapu.pyz - Same as above, but without shebang.
 
 
 ### Meta ###
-README - This file.
+- README - This file.
